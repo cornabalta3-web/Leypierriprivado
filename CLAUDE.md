@@ -9,7 +9,7 @@ El usuario es Balta, abogado de la Escribanía. No es programador de oficio: las
 ## Reglas que no se negocian
 
 - **Datos personales.** El sistema trata nombre, DNI, domicilio y situación posesoria de miles de ciudadanos. Nunca se commitea la base `pierri.db`, los PDF, la carpeta `embudo/`, el padrón, `config.json`, ni el banco de pruebas. El `.gitignore` los excluye; revisarlo antes de cada commit.
-- **Publicación con clave.** Balta, con autorización del ministro, publica una copia de solo lectura en un repositorio público aparte (`relevamiento-pierri`, GitHub Pages). Lo único que sale del equipo es lo que arma `publicar.js`: la página entera cifrada. Nunca se sube el JSON exportado ni nada sin cifrar, y este repositorio sigue sin datos.
+- **Versión web.** Con autorización del ministro, el sistema también anda desde un link de GitHub Pages (repositorio público aparte, `relevamiento-pierri`). Ahí solo va el código que arma `armar_web.js`, sin los ejemplos reales, y los datos que el propio sitio guarda cifrados en `datos/`. Nunca se sube nada sin cifrar, y este repositorio sigue sin datos.
 - **Claves.** La clave de API va en una variable de entorno, nunca en un archivo del repositorio ni en `config.json` versionado.
 - **Nada de normativa inventada.** Si una afirmación jurídica no está respaldada por el texto de la ley, no se escribe. Ante la duda, preguntar.
 - **La reglamentación de la Ley 8932 no está dictada.** No afirmar que algo del circuito puede hacerse sin ella.
@@ -27,7 +27,8 @@ Node 22.13 o superior, sin framework. Base SQLite en un único archivo, usando e
 | `pierri_lector.js` | lectura de un PDF: carril texto (pdfjs-dist) y carril modelo |
 | `procesar_lote.js` | motor de línea de comandos para carpetas de miles de PDF, reanudable |
 | `cruzar_padron.js` | cruce con el padrón del Registro General |
-| `publicar.js` | copia de solo lectura del Tablero con los datos adentro, cifrada con clave (AES-256-GCM, PBKDF2) |
+| `web/pierri_web.js` | versión web: hace en el navegador lo que pierri.js (usuarios, cifrado AES-256-GCM, guardar en GitHub) |
+| `armar_web.js` | arma el sitio público con el Tablero y `web/pierri_web.js`; saca los ejemplos reales y corta si queda alguno |
 | `evaluar_motor.js` | mide exactitud contra resoluciones verificadas a mano |
 | `tablero_pierri.html` | el tablero completo: listado, filtros, mapa, expediente, usuarios, auditoría |
 

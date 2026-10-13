@@ -86,27 +86,38 @@ La terminal muestra una dirección tipo `http://192.168.1.25:3777`. Cualquiera e
 
 Sirve para guardar versiones y trabajarlo con Claude Code, no para que la gente entre. El kit trae un `.gitignore` para que la base, los PDF y la clave no salgan del edificio: `pierri.db`, `embudo/`, `config.json`, `node_modules/`.
 
-## Publicar una copia con clave (GitHub Pages)
+## La versión web: el sistema desde un link
 
-Sirve para que la Escribana u otra persona autorizada vea el relevamiento desde cualquier navegador, con un link y una clave. Es una copia de solo lectura: muestra lo que había cuando se armó, no se actualiza sola y no lee PDF.
+El sistema también anda desde **https://cornabalta3-web.github.io/relevamiento-pierri/**, sin instalar nada. Cada persona entra con su usuario y su contraseña. Los datos se guardan cifrados en el repositorio público `relevamiento-pierri`: sin una contraseña válida no se pueden leer.
 
-**Una sola vez:** en el repositorio público `relevamiento-pierri`, entrá a **Settings** y después a **Pages**. En *Branch* elegí `main` y `/ (root)`, y apretá **Save**. El link queda `https://cornabalta3-web.github.io/relevamiento-pierri/`.
+Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventario y Catastro todavía se hacen en el kit, y lo leído se sube a la web con el JSON.
 
-**Cada vez que quieras actualizar la copia**
-1. Abrí la aplicación (2_abrir.bat). En **Expedientes**, tocá **Guardar JSON**. Se baja `relevamiento_ley_pierri.json` a Descargas.
-2. En la consola, dentro de la carpeta del sistema:
-   ```
-   node publicar.js --json "%USERPROFILE%\Downloads\relevamiento_ley_pierri.json"
-   ```
-   Te pide la clave dos veces. Tiene que tener 12 caracteres o más; mejor cuatro o cinco palabras sueltas que nadie adivine. Deja `index.html` y `robots.txt` en la carpeta `publicacion`.
-3. En el repositorio público: **Add file**, **Upload files**, arrastrás los dos archivos de `publicacion` y apretás **Commit changes**. En un par de minutos el link muestra la versión nueva.
-4. Borrá el JSON de Descargas: ese sí está sin cifrar.
+**Puesta en marcha (una sola vez)**
+1. En GitHub: botón **+**, **New repository**, nombre `relevamiento-pierri`, **Public**, **Create repository**.
+2. Subir los archivos del sitio (`index.html`, `pierri_web.js`, `robots.txt`, `.nojekyll`). Los arma `node armar_web.js --salida <carpeta>`.
+3. En el repositorio: **Settings**, **Pages**, *Branch* `main` y `/ (root)`, **Save**.
+4. Crear el permiso para escribir (token): en GitHub, tu foto, **Settings**, **Developer settings**, **Personal access tokens**, **Fine-grained tokens**, **Generate new token**.
+   - Nombre: `relevamiento-pierri`. Vencimiento: un año.
+   - *Repository access*: **Only select repositories**, `relevamiento-pierri`.
+   - *Permissions*, *Repository permissions*, **Contents: Read and write**.
+   - **Generate token** y copiarlo (empieza con `github_pat_`).
+5. Abrir el link. Como está vacío, pide crear el administrador: usuario, nombre, contraseña y el token.
+
+**Usuarios** (solo el administrador): **Configuración**, **Usuarios y perfiles**.
+- *Crear usuario*: usuario, nombre, perfil y contraseña. La contraseña la definís vos y se la pasás a la persona por un medio seguro.
+- *nueva contraseña*: se la cambia.
+- *desactivar*: su contraseña deja de servir. Los datos se vuelven a cifrar con una llave nueva y, si la persona tenía la sesión abierta, queda afuera.
+
+**Subir lo leído en el kit**
+1. En el kit: **Expedientes**, **Guardar JSON**.
+2. En la web, entrando como administrador: **Embudo**, arrastrar ese JSON. Se guarda cifrado; los demás lo ven en unos minutos.
+3. Borrar el JSON de Descargas: ese está sin cifrar.
 
 **Lo que hay que saber**
-- Sin la clave, lo publicado no se puede leer: ni los datos ni el Tablero. El descifrado lo hace el navegador de quien entra, y la clave no viaja a ningún lado.
-- La clave se manda por otro medio (en persona, por teléfono), nunca en el mismo mensaje que el link.
-- Quien tenga la clave puede guardarse una copia. Cambiar la clave es volver a publicar con otra, pero la versión vieja queda en el historial del repositorio: para cortar el acceso de verdad hay que borrar el repositorio y crear otro.
-- Si `index.html` pesa más de 25 MB, la página de GitHub no deja subirlo arrastrando: hay que usar git o GitHub Desktop.
+- La contraseña de cada uno es la única protección: 12 caracteres o más, mejor una frase larga. No hay bloqueo por intentos fallidos, porque cualquiera puede bajarse los archivos cifrados y probar contraseñas en su propia computadora.
+- Desactivar a alguien le corta el acceso a todo lo que se guarde desde ese momento. Las versiones anteriores siguen en el historial del repositorio, cifradas con la llave vieja: con la contraseña vieja se podrían abrir. Para borrar el historial hay que borrar el repositorio, crearlo de nuevo y repetir la puesta en marcha.
+- El token queda guardado adentro de la bóveda cifrada con la contraseña del administrador. Si vence o se sospecha que se filtró: revocarlo en GitHub, crear uno nuevo y cargarlo en **Configuración**.
+- La sesión dura lo que la pestaña: al cerrarla, hay que volver a ingresar.
 
 ## Cargar miles de resoluciones de una vez
 

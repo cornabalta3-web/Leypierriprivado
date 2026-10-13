@@ -644,7 +644,7 @@
   /**
    * Agrupa derivados por domicilio del rogante y por matrícula afectada. Muta cada derivado agregando
    * cluster_domicilio / cluster_matricula (id y tamaño) y la señal DOMICILIO_COMPARTIDO o MATRICULA_COMPARTIDA.
-   * Ejemplo real: tres rogantes con domicilio Tristán de Tejeda 560 (Villa de Soto) poseen tres fracciones de la MFR 1199926.
+   * Caso que lo motivó: tres rogantes con el mismo domicilio que poseen tres fracciones de una misma matrícula.
    */
   function detectarClusters(derivados) {
     const porDom = new Map(), porMat = new Map();
@@ -763,7 +763,7 @@ REGLAS
 1. Respondé ÚNICAMENTE con un objeto JSON válido, sin texto antes ni después, sin bloques de código.
 2. Usá exactamente este esquema (mismas claves, mismo anidamiento). Cuando un dato no aparece, poné null. Nunca inventes ni completes con datos plausibles.
 ${JSON.stringify(ESQUEMA_VACIO, null, 2)}
-3. Formatos: fechas en ISO YYYY-MM-DD ("18/07/2025" → "2025-07-18"; sello "20 DIC 2024" → "2024-12-20"); DNI solo dígitos, sin puntos (2.492.082 → "2492082"); CUIL con guiones; decimales con punto (669,18 → 669.18); número de cuenta y expediente tal como aparecen; apellido_nombre en mayúsculas con formato "APELLIDO, NOMBRES" aunque el documento lo escriba en otro orden o en minúsculas.
+3. Formatos: fechas en ISO YYYY-MM-DD ("18/07/2025" → "2025-07-18"; sello "20 DIC 2024" → "2024-12-20"); DNI solo dígitos, sin puntos (12.345.678 → "12345678"); CUIL con guiones; decimales con punto (669,18 → 669.18); número de cuenta y expediente tal como aparecen; apellido_nombre en mayúsculas con formato "APELLIDO, NOMBRES" aunque el documento lo escriba en otro orden o en minúsculas.
 4. tipo_documento según el verbo del art. 1°: "ORDENAR la inscripción" → RESOLUCION_INSCRIPCION; DESESTIMAR/ARCHIVAR/RECHAZAR → RESOLUCION_DESESTIMA; RECTIFICAR/AMPLIAR → RESOLUCION_RECTIFICA; CANCELAR/DEJAR SIN EFECTO → RESOLUCION_CANCELA; otra → OTRO. Si las imágenes no son una resolución (portada, hoja en blanco, oficio, plano, nota) → NO_ES_RESOLUCION y el resto null.
 5. rogantes: lista, una entrada por persona a cuyo favor se ordena la inscripción, en el orden en que aparecen. domicilio: el del rogante en el art. 1° (calle, número, barrio si lo dice, C.P., localidad, departamento).
 6. inmueble: ubicación según el plano (Departamento, Pedanía, Localidad o Municipalidad —ambas van en localidad—, calle, número, manzana, lote, barrio). tipo: "urbano" si hay manzana/calle/barrio y la superficie está en m2; "rural" si habla de hectáreas, campo, fracción rural o no hay manzana; "indeterminado" si no se puede saber.
