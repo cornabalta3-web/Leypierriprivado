@@ -1,0 +1,40 @@
+# ───────────────────────────────────────────────────────────────────
+# Nada de lo que esté acá abajo entra al repositorio.
+# Son datos personales de ciudadanos (nombre, DNI, domicilio, posesión)
+# o archivos que cada instalación genera por su cuenta.
+# ───────────────────────────────────────────────────────────────────
+
+# La base de datos y los documentos cargados
+pierri.db
+pierri.db-journal
+pierri.db-wal
+pierri.db-shm
+embudo/
+
+# Claves y configuración local
+config.json
+.env
+
+# Entradas y salidas del procesamiento
+resoluciones/
+salida/
+padron/
+inventario/
+*.pdf
+*.csv
+*.xlsx
+*.xls
+*.log
+
+# Banco de pruebas: contiene texto literal de resoluciones reales,
+# con nombres y DNI. Se guarda fuera del repositorio.
+banco_pruebas_texto.js
+casos_prototipo.json
+ejemplo_resultados.json
+verdad.csv
+
+# Dependencias y basura del sistema
+node_modules/
+package-lock.json
+.DS_Store
+Thumbs.db

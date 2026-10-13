@@ -1,0 +1,20 @@
+{
+  "name": "relevamiento-ley-pierri",
+  "version": "1.0.0",
+  "description": "Relevamiento de expedientes de la Unidad Ejecutora para el Saneamiento de Títulos (Ley 9150) elegibles para la Ley Pierri (Ley 24.374 / Ley 8932). Escribanía General de Gobierno de Córdoba.",
+  "private": true,
+  "main": "pierri.js",
+  "scripts": {
+    "start": "node pierri.js",
+    "lote": "node procesar_lote.js",
+    "evaluar": "node evaluar_motor.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "4.10.38",
+    "xlsx": "0.18.5"
+  }
+}
