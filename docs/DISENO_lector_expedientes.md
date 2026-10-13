@@ -63,8 +63,10 @@ Fuente: inventario de Neura/Ypsilon, captura del 13/10/2026.
 | — solo resolución | 6.891 |
 | — sin recuperar | 571 |
 | Sin digitalizar | 16.358: INC-incompleto 8.572, sin estado 7.814, ARCHIVADO 422, OK 44, ANULADO 4, otros 2 |
+
+> **A confirmar con Neura:** el desglose de los sin digitalizar suma 16.858, no 16.358 (8.572 + 7.814 + 422 + 44 + 4 + 2). El total 16.358 sí cierra con 49.668 − 33.310. Alguna de las cifras del desglose está mal en el tablero de Neura.
 | Número de cuenta (digitalizados) | 28.312 correctas (12 dígitos), 6.584 con pocos dígitos, 140 con exceso, 2 con texto, 58 vacías |
-| Sin cuenta válida | 6.784: 2.963 con resolución y sin cuerpo, 3.688 con cuerpo y sin cuenta, 133 sin recuperar |
+| Sin cuenta válida | 6.784: 2.963 con resolución y sin cuerpo (son parte de los 6.891 "solo resolución"), 3.688 con cuerpo y sin cuenta, 133 sin recuperar |
 
 - **Cuerpos que se pueden leer: 27.634** (27.443 + 191). Según la SPEC, un expediente "solo cuerpo" tiene 6 hojas o más.
 - **Cómo cierran los totales.** 49.668 = 33.310 digitalizados "en universo" + 16.358 sin digitalizar. Los otros 1.786 digitalizados (1.746 "fuera" y 40 sin el dato) no están entre los 49.668. Es una inferencia hecha con los números y hay que confirmarla con Neura.
@@ -756,7 +758,7 @@ Ninguna absorbe a las otras.
 ### 6.6 Estados propuestos y señales
 
 **`estado_propuesto`:**
-- `SIN_CUERPO_DIGITALIZADO`: los 16.358 sin digitalizar y los 2.963 con resolución y sin cuerpo.
+- `SIN_CUERPO_DIGITALIZADO`: los 16.358 sin digitalizar y los 6.891 "solo resolución". De estos, 2.963 tampoco tienen cuenta válida.
 - `SIN_CUERPO_LEIDO`
 - `SIN_ROGANTE`: hay cuerpo leído, pero no se pudo identificar al rogante por ninguna fuente (§6.1).
 - `SIN_INDICIOS`
@@ -890,7 +892,7 @@ Lo de todos los días no cambia.
   - documentos o rogante por revisar;
   - departamento;
   - cuerpo leído o no.
-- Botón **"Pedir escaneo"**: exporta los 2.963 expedientes con resolución y sin cuerpo, solo con su número y una columna que dice si la resolución leída ya trae la cuenta.
+- Botón **"Pedir escaneo"**: exporta los expedientes con resolución y sin cuerpo, solo con su número y una columna que dice si la resolución leída ya trae la cuenta. Primero los 2.963 sin cuenta válida; el resto de los 6.891 "solo resolución", si Balta lo pide.
 
 **Ficha** (`GET /api/expediente?exp=`):
 - el rogante y de dónde salió;
@@ -1258,7 +1260,7 @@ Hoy los digitalizados no tienen estado del SUAC. Por eso los grupos se arman con
 - Cómo se exportan los cuerpos en masa, cómo se llaman los archivos (si el nombre trae el expediente) y si un expediente viene en uno o en varios PDF.
 - **Si escanearon anverso y reverso**, y cuántas páginas hay por hoja.
 - **Si pueden entregar los PDF con OCR.** Es la forma más barata de bajar el costo.
-- Escanear los cuerpos de los 2.963 expedientes que tienen resolución y no tienen cuerpo. La lista sale del botón "Pedir escaneo".
+- Escanear los cuerpos de los 2.963 expedientes que tienen resolución y no tienen cuerpo ni cuenta válida (y, si se decide, el resto de los 6.891 "solo resolución"). La lista sale del botón "Pedir escaneo".
 - Los instructivos internos de la UEST sobre bajas, archivos e INC, si existen. El Decreto 586/04 art. 8 la habilita a dictarlos [T].
 - Qué significa "En universo" y qué son los 27.443 "solo cuerpo": nunca resueltos, archivados, o resueltos con la resolución sin escanear (SPEC:508, ABIERTO).
 
