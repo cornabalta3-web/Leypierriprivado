@@ -86,6 +86,28 @@ La terminal muestra una dirección tipo `http://192.168.1.25:3777`. Cualquiera e
 
 Sirve para guardar versiones y trabajarlo con Claude Code, no para que la gente entre. El kit trae un `.gitignore` para que la base, los PDF y la clave no salgan del edificio: `pierri.db`, `embudo/`, `config.json`, `node_modules/`.
 
+## Publicar una copia con clave (GitHub Pages)
+
+Sirve para que la Escribana u otra persona autorizada vea el relevamiento desde cualquier navegador, con un link y una clave. Es una copia de solo lectura: muestra lo que había cuando se armó, no se actualiza sola y no lee PDF.
+
+**Una sola vez:** en el repositorio público `relevamiento-pierri`, entrá a **Settings** y después a **Pages**. En *Branch* elegí `main` y `/ (root)`, y apretá **Save**. El link queda `https://cornabalta3-web.github.io/relevamiento-pierri/`.
+
+**Cada vez que quieras actualizar la copia**
+1. Abrí la aplicación (2_abrir.bat). En **Expedientes**, tocá **Guardar JSON**. Se baja `relevamiento_ley_pierri.json` a Descargas.
+2. En la consola, dentro de la carpeta del sistema:
+   ```
+   node publicar.js --json "%USERPROFILE%\Downloads\relevamiento_ley_pierri.json"
+   ```
+   Te pide la clave dos veces. Tiene que tener 12 caracteres o más; mejor cuatro o cinco palabras sueltas que nadie adivine. Deja `index.html` y `robots.txt` en la carpeta `publicacion`.
+3. En el repositorio público: **Add file**, **Upload files**, arrastrás los dos archivos de `publicacion` y apretás **Commit changes**. En un par de minutos el link muestra la versión nueva.
+4. Borrá el JSON de Descargas: ese sí está sin cifrar.
+
+**Lo que hay que saber**
+- Sin la clave, lo publicado no se puede leer: ni los datos ni el Tablero. El descifrado lo hace el navegador de quien entra, y la clave no viaja a ningún lado.
+- La clave se manda por otro medio (en persona, por teléfono), nunca en el mismo mensaje que el link.
+- Quien tenga la clave puede guardarse una copia. Cambiar la clave es volver a publicar con otra, pero la versión vieja queda en el historial del repositorio: para cortar el acceso de verdad hay que borrar el repositorio y crear otro.
+- Si `index.html` pesa más de 25 MB, la página de GitHub no deja subirlo arrastrando: hay que usar git o GitHub Desktop.
+
 ## Cargar miles de resoluciones de una vez
 
 Cuando llega el archivo completo (carpeta con miles de PDF), no se cargan de a una por pantalla. Son dos pasos:

@@ -20,6 +20,8 @@ resoluciones/
 salida/
 padron/
 inventario/
+publicacion/
+relevamiento_ley_pierri*.json
 *.pdf
 *.csv
 *.xlsx

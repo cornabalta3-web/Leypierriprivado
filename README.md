@@ -80,6 +80,7 @@ El sistema trata datos personales de miles de ciudadanos: nombre, DNI, domicilio
 | `pierri_lector.js` | lectura de un PDF: carril texto y carril modelo |
 | `procesar_lote.js` | el motor de línea de comandos para carpetas grandes |
 | `cruzar_padron.js` | cruce con el padrón del Registro General |
+| `publicar.js` | arma una copia de solo lectura del Tablero, con los datos adentro y cerrada con clave, para publicar en GitHub Pages |
 | `evaluar_motor.js` | mide la exactitud del motor contra resoluciones verificadas a mano |
 | `tablero_pierri.html` | el tablero completo, en un solo archivo |
 | `docs/` | entrega técnica, análisis de brechas contra los estándares de gobierno, especificación |
