@@ -1368,7 +1368,9 @@ ${JSON.stringify(EJEMPLOS[2], null, 1)}`;
 const P = window.PierriCore;
 const $ = id => document.getElementById(id);
 let registros = [], vista = [], localidadSel = null, agrupacion = 'localidad', orden = { k: 'localidad', asc: true }, pagina = 0, POR_PAG = 100, mapa = null, capa = null, origenNombre = '', resumenSrv = {};
-const SERVIDOR = /^https?:/.test(location.protocol);
+// Una página con los datos adentro (demo o publicada con publicar.js) nunca habla con pierri.js, aunque se sirva por https.
+const SERVIDOR = /^https?:/.test(location.protocol) && !window.DEMO_DATOS;
+const HASH_INICIAL = location.hash.slice(1);   // antes de que ir() la reescriba al arrancar
 
 const VISTAS = ['cargar','inventario','resumen','expedientes','mapa','padron','config'];
 let mapaInv = null, capaInv = null, capaDep = null, capaDepMapa = null;
@@ -1766,7 +1768,7 @@ function pintarRecientes(){
     || '<tr><td colspan="5" class="vacio">Todavía no hay resoluciones cargadas.</td></tr>';
 }
 $('verRecientes').addEventListener('click', () => { limpiarFiltros(); orden = { k: 'cargado', asc: false }; pagina = 0; pintarTabla(); ir('expedientes'); });
-function pintarPie(){ $('pie').innerHTML = registros.length ? `pierri.db · ${registros.length} resoluciones` + (resumenSrv.padron && resumenSrv.padron.filas ? `<br>Padrón: ${resumenSrv.padron.filas} filas` : '') : 'sin datos cargados'; }
+function pintarPie(){ $('pie').innerHTML = registros.length ? `${SERVIDOR ? 'pierri.db' : esc(origenNombre || 'archivo')} · ${registros.length} resoluciones` + (resumenSrv.padron && resumenSrv.padron.filas ? `<br>Padrón: ${resumenSrv.padron.filas} filas` : '') : 'sin datos cargados'; }
 function pintarMetricas(){
   const R = registros.map(r => r.derivado);
   const c = k => R.filter(d => cl(d) === k).length;
@@ -2143,7 +2145,7 @@ function pintarMapa(){
   if(pts.length) mapa.fitBounds(pts, { padding: [24, 24], maxZoom: 16 });
 }
 
-$('expJson').addEventListener('click', () => descargar(JSON.stringify({ sistema: 'Relevamiento Ley Pierri', autor: 'Baltasar Corna Fantin', organismo: 'Escribanía General de Gobierno de Córdoba', fecha: new Date().toISOString(), origen: origenNombre, config: config(), resultados: registros }, null, 1), 'relevamiento_ley_pierri.json', 'application/json'));
+$('expJson').addEventListener('click', () => descargar(JSON.stringify({ sistema: 'Relevamiento Ley Pierri', autor: 'Baltasar Corna Fantin', organismo: 'Escribanía General de Gobierno de Córdoba', fecha: new Date().toISOString(), origen: origenNombre, config: config(), resumen: resumenSrv, resultados: registros }, null, 1), 'relevamiento_ley_pierri.json', 'application/json'));
 $('expKml').addEventListener('click', () => {
   const grupos = new Map();
   for(const r of vista){ const d = r.derivado; if(!d.geo || d.geo.lat == null) continue; const k = d.geo.lat.toFixed(6) + ',' + d.geo.lon.toFixed(6); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(d); }
@@ -2157,16 +2159,18 @@ function descargar(contenido, nombre, tipo){ const a = document.createElement('a
 function avisar(t, err){ $('aviso').innerHTML = `<div class="msg ${err ? 'err' : ''}" style="margin-bottom:16px">${esc(t)}</div>`; setTimeout(() => { if($('aviso').textContent === t) $('aviso').innerHTML = ''; }, 9000); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-// Modo demo: si esta página lleva datos embebidos (window.DEMO_DATOS), se muestran directamente, sin servidor.
+// Modo demo o publicado: si esta página lleva datos embebidos (window.DEMO_DATOS), se muestran directamente, sin servidor.
+// publicar.js agrega window.DEMO_INFO con los textos y el resumen de la base de donde salieron.
 // Va al final del script, después de que todas las funciones de pintado ya están definidas.
 if(!SERVIDOR && window.DEMO_DATOS){
+  const info = window.DEMO_INFO || {};
   registros = window.DEMO_DATOS.filter(r => r && r.derivado && !r.repetido_de);
-  origenNombre = 'demo';
-  $('cargarTitulo').textContent = 'Demostración con datos de prueba';
-  $('cargarSub').textContent = 'Resoluciones reales de Villa de Soto + resoluciones de prueba con la plantilla real. En la versión completa acá se tiran los PDF.';
-  $('origen').innerHTML = `<span><b>${registros.length}</b> resoluciones cargadas (demo)</span>`;
-  resumenSrv = { padron: { archivo: 'POS_al_16-09-2026.xls', filas: 8021, cargado_en: new Date().toISOString() } };
-  recalcularLocal(); ir(location.hash.slice(1) || 'resumen');
+  origenNombre = info.origen || 'demo';
+  $('cargarTitulo').textContent = info.titulo || 'Demostración con datos de prueba';
+  $('cargarSub').textContent = info.sub || 'Resoluciones reales de Villa de Soto + resoluciones de prueba con la plantilla real. En la versión completa acá se tiran los PDF.';
+  $('origen').innerHTML = `<span><b>${registros.length}</b> resoluciones cargadas (${esc(info.etiqueta || 'demo')})</span>`;
+  resumenSrv = info.resumen || { padron: { archivo: 'POS_al_16-09-2026.xls', filas: 8021, cargado_en: new Date().toISOString() } };
+  recalcularLocal(); ir(HASH_INICIAL || 'resumen');
 }
 })();
 </script>
