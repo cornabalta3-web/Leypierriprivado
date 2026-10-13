@@ -45,3 +45,5 @@ Un cambio que mejore un caso y rompa otro no es una mejora. La medición a ciega
 ## Estado
 
 En producción incipiente, instalado en un equipo del Gobierno de la Provincia. Pendiente con la Dirección de Sistemas: ambientes, cifrado en reposo, antivirus sobre las cargas, y la excepción documentada al estándar de bases de datos E_SIG_002. Está detallado en `docs/BRECHAS_estandares_gobierno.md`.
+
+En diseño, sin implementar: el lector de expedientes completos (cuerpos), para buscar en boletas, facturas, boletos y cesiones indicios de posesión, y el motivo de las bajas de la UEST. Está en `docs/DISENO_lector_expedientes.md`. Sus citas legales están marcadas [T]/[P]/[NV] y hay que cotejarlas con el texto oficial antes de usarlas.
