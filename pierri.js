@@ -82,6 +82,7 @@ fs.mkdirSync(RUTA_EMBUDO, { recursive: true });
 const db = new DatabaseSync(RUTA_DB);
 db.exec(`
   PRAGMA journal_mode = WAL;
+  PRAGMA synchronous = NORMAL;
   CREATE TABLE IF NOT EXISTS archivos (
     hash TEXT PRIMARY KEY, nombre TEXT, tipo TEXT, paginas INTEGER, unidades INTEGER, paginas_sueltas TEXT, cargado_en TEXT
   );
@@ -187,6 +188,18 @@ function filaDesde(r) {
     r.inscripcion ? r.inscripcion.estado : null, r.repetido_de ? 0 : 1, d.resolucion_fecha || null, r.tokens || 0, r.error || null, r.cargado_en || ahora(), JSON.stringify(r)];
 }
 function guardarRegistro(r) { q.insRes.run(...filaDesde(r)); }
+/**
+ * Varias escrituras con una sola confirmación a disco: con miles de resoluciones, reescribir la base de a una por vez
+ * hacía que cada PDF del Embudo tardara segundos. No se anida: si ya hay una abierta, solo corre fn.
+ */
+let EN_TRANSACCION = false;
+function enTransaccion(fn) {
+  if (EN_TRANSACCION) return fn();
+  db.prepare('BEGIN').run(); EN_TRANSACCION = true;
+  try { const r = fn(); db.prepare('COMMIT').run(); return r; }
+  catch (e) { try { db.prepare('ROLLBACK').run(); } catch (x) { /* ya cerrada */ } throw e; }
+  finally { EN_TRANSACCION = false; }
+}
 function actualizarRegistro(r) {
   const d = r.derivado || {}, g = d.geo || {}, c = g.catastro || {};
   q.actJson.run(JSON.stringify(r), d.tipo_documento ? PierriCore.clasificar(d) : null, d.revisar ? 1 : 0, r.inscripcion ? r.inscripcion.estado : null,
@@ -422,10 +435,12 @@ async function recibirPDF(buf, nombre) {
   q.insArchivo.run(h, nombre, tipo, paginas, registros.length, JSON.stringify(sueltas.map(p => p + 1)), t);
   // Repetidos y Padrón sobre todo lo que hay
   const todos = todosLosRegistros();
-  marcarRepetidos(todos);
-  cruzarConPadron(todos);
-  PierriCore.detectarClusters(todos.filter(r => r.derivado && !r.repetido_de).map(r => r.derivado));
-  for (const r of todos) actualizarRegistro(r);
+  enTransaccion(() => {
+    marcarRepetidos(todos);
+    cruzarConPadron(todos);
+    PierriCore.detectarClusters(todos.filter(r => r.derivado && !r.repetido_de).map(r => r.derivado));
+    for (const r of todos) actualizarRegistro(r);
+  });
   return { estado: 'procesado', hash: h, tipo, paginas, unidades: registros.length, sueltas: sueltas.map(p => p + 1),
     paginas_cuerpo: paginasCuerpo || 0, bloques_descartados: bloquesDescartados || 0, resoluciones_tramite: resolucionesTramite || 0,
     por_texto: registros.filter(r => r.fuente === 'texto').length, por_modelo: registros.filter(r => r.fuente === 'modelo').length,
@@ -451,10 +466,13 @@ function recalcularTodo() {
     aplicarRevision(r, cfg);
     PierriCore.ubicarPorLocalidad(d, LOCALIDADES);
   }
-  marcarRepetidos(todos);
-  const cruce = cruzarConPadron(todos);
-  PierriCore.detectarClusters(todos.filter(r => r.derivado && !r.repetido_de).map(r => r.derivado));
-  for (const r of todos) actualizarRegistro(r);
+  const cruce = enTransaccion(() => {
+    marcarRepetidos(todos);
+    const c = cruzarConPadron(todos);
+    PierriCore.detectarClusters(todos.filter(r => r.derivado && !r.repetido_de).map(r => r.derivado));
+    for (const r of todos) actualizarRegistro(r);
+    return c;
+  });
   return { total: todos.length, cruce };
 }
 
@@ -804,7 +822,7 @@ const servidor = http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/catastro') {
       const todos = todosLosRegistros();
       const n = await Lector.ubicarEnCatastro(todos.filter(r => r.derivado).map(r => r.derivado), TABLA);
-      for (const r of todos) actualizarRegistro(r);
+      enTransaccion(() => { for (const r of todos) actualizarRegistro(r); });
       return json(res, { ubicadas: n });
     }
     if (req.method === 'GET' && u.pathname === '/api/documento') {
@@ -911,9 +929,11 @@ function importarLote(dirSalida, dirPDFs) {
   } catch (e) { db.prepare('ROLLBACK').run(); console.error('Falló la importación, no se guardó nada:', e.message); process.exit(1); }
 
   const todos = todosLosRegistros();
-  marcarRepetidos(todos);
-  cruzarConPadron(todos);
-  for (const r of todos) if (r.derivado) { PierriCore.ubicarPorLocalidad(r.derivado, LOCALIDADES); q.insRes.run(...filaDesde(r)); }
+  enTransaccion(() => {
+    marcarRepetidos(todos);
+    cruzarConPadron(todos);
+    for (const r of todos) if (r.derivado) { PierriCore.ubicarPorLocalidad(r.derivado, LOCALIDADES); q.insRes.run(...filaDesde(r)); }
+  });
   recalcularTodo();
   const c = {};
   for (const f of db.prepare('SELECT clasificacion k, COUNT(*) n FROM resoluciones WHERE valida = 1 GROUP BY clasificacion').all()) c[f.k] = f.n;

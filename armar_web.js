@@ -148,7 +148,7 @@ function main() {
   const huellasScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => `'sha256-${crypto.createHash('sha256').update(m[1], 'utf8').digest('base64')}'`);
   const csp = `default-src 'self'; script-src 'self' ${huellasScripts.join(' ')}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ` +
     "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://wms.ign.gob.ar https://server.arcgisonline.com https://idecor-ws.mapascordoba.gob.ar; " +
-    "connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
+    "connect-src 'self' https://api.github.com https://raw.githubusercontent.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
   html = html.replace('<head>', `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">\n<meta name="robots" content="noindex, nofollow">`);
 
   barrer('index.html', html, s.huellas);

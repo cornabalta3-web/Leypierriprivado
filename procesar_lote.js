@@ -175,12 +175,12 @@ function guardarTodo(registros) {
           tomos++;
           const { unidades: us, sueltas } = cortarTomo(pags);
           if (sueltas.length) errores.push(`${nombre}\tpáginas sin resolución (portada, índice, oficio u OCR ilegible): ${sueltas.map(p => p + 1).join(', ')}`);
-          us.forEach(u => unidades.push({ ruta, buf, nombre: `${nombre}#p${u.desde + 1}-${u.hasta + 1}`, texto: pags.slice(u.desde, u.hasta + 1).join(' '),
+          us.forEach(u => unidades.push({ ruta, id: hash(buf) + `#${u.desde}`, nombre: `${nombre}#p${u.desde + 1}-${u.hasta + 1}`, texto: pags.slice(u.desde, u.hasta + 1).join(' '),
             paginas: u.hasta - u.desde + 1, tomo: { archivo: nombre, desde: u.desde, hasta: u.hasta, expedienteVisto: u.expediente, dudosa: !!u.dudosa },
             nombreControl: u.expediente ? `documento_${u.expediente.replace('/', '-')}_tomo.pdf` : null }));
           console.log(`  tomo ${nombre}: ${pags.length} páginas → ${us.length} resoluciones · ${sueltas.length} páginas sueltas`);
         } else {
-          unidades.push({ ruta, buf, nombre, texto: pags.join(' '), paginas: pags.length, tomo: null, nombreControl: nombre });
+          unidades.push({ ruta, id: hash(buf), nombre, texto: pags.join(' '), paginas: pags.length, tomo: null, nombreControl: nombre });
         }
       } catch (err) { errores.push(`${nombre}\t${err.message}`); registros.push({ archivo: nombre, ruta, error: String(err.message || err) }); }
     }
@@ -188,9 +188,9 @@ function guardarTodo(registros) {
 
     // Paso 1: carril texto, secuencial y rápido. Deja separadas las que necesitan modelo.
     const paraModelo = [];
-    const idUnidad = u => hash(u.buf) + (u.tomo ? `#${u.tomo.desde}` : '');
+    const idUnidad = u => u.id;   // el PDF no queda en memoria: se vuelve a leer del disco si va al modelo
     for (const u of unidades) {
-      const { nombre, ruta, buf, texto, paginas } = u;
+      const { nombre, ruta, texto, paginas } = u;
       try {
         const r = PierriTexto.extraerDeTexto(texto, u.nombreControl);
         if (r.suficiente) {
@@ -199,7 +199,7 @@ function guardarTodo(registros) {
             lectura: { fuente: 'texto', cobertura: r.cobertura, faltan: r.faltan } });
           porTexto++;
         } else if (O.key) {
-          paraModelo.push({ ruta, nombre, buf, texto, previo: r, tomo: u.tomo, nombreControl: u.nombreControl, id: idUnidad(u) });
+          paraModelo.push({ ruta, nombre, texto, previo: r, tomo: u.tomo, nombreControl: u.nombreControl, id: idUnidad(u) });
         } else {
           const derivado = PierriCore.procesarRegistro(r.extraido, CFG, TABLA, vistos, { nombreArchivo: u.nombreControl, textoCapaPDF: texto });
           derivado.revisar = true;
@@ -225,7 +225,8 @@ function guardarTodo(registros) {
         while (i < paraModelo.length) {
           const it = paraModelo[i++];
           try {
-            const bufEnvio = it.tomo ? await recortarPaginas(it.buf, it.tomo.desde, it.tomo.hasta) : it.buf;
+            const buf0 = fs.readFileSync(it.ruta);
+            const bufEnvio = it.tomo ? await recortarPaginas(buf0, it.tomo.desde, it.tomo.hasta) : buf0;
             const { extraido, tokens: tk } = await leerConModelo(bufEnvio);
             const fusion = fusionar(it.previo.extraido, extraido);
             const derivado = PierriCore.procesarRegistro(fusion, CFG, TABLA, vistos, { nombreArchivo: it.nombreControl, textoCapaPDF: it.texto });
