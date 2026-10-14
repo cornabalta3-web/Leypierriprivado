@@ -91,7 +91,7 @@ Sirve para guardar versiones y trabajarlo con Claude Code, no para que la gente 
 
 El sistema también anda desde **https://cornabalta3-web.github.io/relevamiento-pierri/**, sin instalar nada. Cada persona entra con su usuario y su contraseña. Los datos se guardan cifrados en el repositorio público `relevamiento-pierri`: sin una contraseña válida no se pueden leer.
 
-En la web se hace todo lo del kit salvo tres cosas: la lectura con el modelo (para las resoluciones escaneadas sin capa de texto), "Volver a leer todo" y "Vaciar la base". Se leen los PDF, se guardan cifrados junto con el original, se ven, se corrigen, y se cargan el Padrón, el inventario y Catastro. El kit queda para esas tres cosas.
+En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base". Se leen los PDF, se guardan cifrados junto con el original, se ven, se corrigen, se cargan el Padrón, el inventario y Catastro, y lo que el texto no alcanza a leer se completa con el modelo, solo cuando se toca el botón.
 
 **Puesta en marcha (una sola vez)**
 1. En GitHub: botón **+**, **New repository**, nombre `relevamiento-pierri`, **Public**, **Create repository**.
@@ -117,11 +117,16 @@ En la web se hace todo lo del kit salvo tres cosas: la lectura con el modelo (pa
 1. **Cargar** (el Embudo): arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
 2. Cada PDF se lee en tu computadora, igual que en el kit sin clave de API: tomos, expedientes completos y sueltas. Se guarda en GitHub cifrado, el PDF original incluido, cada 250 archivos (o 60 MB) y al terminar. Lo que ya estaba se saltea: si se corta, se vuelve a elegir la misma carpeta y sigue.
 3. Con miles de PDF tarda (más o menos un segundo por archivo, según la conexión): la pestaña tiene que quedar abierta, pero la sesión no se cierra mientras trabaja. Si GitHub pide una pausa por la cantidad de pedidos, espera solo y sigue.
-4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo": hoy se completan en el kit, con el modelo.
+4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo". Cargar nunca usa el modelo: se completan después, con el botón (ver abajo).
 
 **Ver y corregir**
 - En **Expedientes**, al abrir una resolución: **Ver la resolución original** la muestra al costado, solo sus páginas. La ven todos los usuarios.
 - La caja **Revisada** (solo el administrador): tilde, fecha de posesión corregida, tipo, quién y observación. Se guarda al instante y queda en la auditoría.
+
+**Lectura con el modelo** (solo el administrador, en **Configuración**, recuadro **Lectura con el modelo**)
+1. Una sola vez: **Cargar instrucciones del modelo** con el archivo `instrucciones_modelo.json` (lo arma `node armar_web.js --instrucciones <archivo>` en el kit; normalmente te lo pasa Claude). Las instrucciones citan resoluciones reales: se guardan cifradas, y después hay que borrar el archivo.
+2. Pegar la clave de API de Anthropic y **Guardar**. Queda solo en esta computadora, cifrada con tu contraseña; no va al repositorio. Para dejar de usarla: borrar el campo y **Guardar**.
+3. **Completar incompletas con el modelo**: antes de empezar dice cuántas va a leer y pide confirmación, porque gasta tokens. Lee solo las que el texto no resolvió y tienen su PDF guardado. Nada más usa el modelo: ni cargar PDF ni mirar.
 
 **Padrón, inventario y Catastro**: los mismos botones que en el kit (**Padrón**, **Inventario**, **Reintentar Catastro** en el Mapa). Se guardan cifrados y el cruce se calcula al mirar, así que una carga nueva de resoluciones ya sale cruzada.
 

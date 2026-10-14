@@ -438,7 +438,9 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
           <div class="grupo"><label for="modelo">Modelo</label><select id="modelo"><option value="claude-haiku-4-5-20251001">Haiku 4.5</option><option value="claude-sonnet-4-6">Sonnet 4.6</option></select></div>
         </div>
         <div class="acciones"><button id="btnGuardarConfig">Guardar</button><button id="btnCompletar" class="sec">Completar incompletas con el modelo</button><button id="btnRecargar" class="sec">Actualizar</button><button id="btnReleer" class="sec">Volver a leer todo</button><button id="btnVaciar" class="sec" style="color:var(--rojo);border-color:#dcb8b2">Empezar de cero</button></div>
-        <p class="mini" style="margin:0">Sin clave se lee solo por texto, gratis. Con clave, lo que el texto no resuelve (escaneos ilegibles, dos rogantes) lo lee el modelo. La clave queda en <b>config.json</b>, solo en esta computadora. La base es <b>pierri.db</b>, al lado de pierri.js.</p>
+        <div class="acciones oculto" id="filaInstr"><button class="sec" id="btnInstr">Cargar instrucciones del modelo</button><span class="mini" id="subInstr"></span></div>
+        <input id="fileInstr" type="file" accept=".json,application/json" class="oculto">
+        <p class="mini" style="margin:0" id="textoApp">Sin clave se lee solo por texto, gratis. Con clave, lo que el texto no resuelve (escaneos ilegibles, dos rogantes) lo lee el modelo. La clave queda en <b>config.json</b>, solo en esta computadora. La base es <b>pierri.db</b>, al lado de pierri.js.</p>
       </div></div>
     </div>
   </section>
@@ -1488,6 +1490,7 @@ async function cargarDesdeServidor(){
   const res = resumenSrv;
   $('origen').innerHTML = `<span><b>${Number(res.archivos) || 0}</b> archivos cargados</span><span><b>${Number(res.resoluciones) || 0}</b> resoluciones válidas</span><span>${Number(res.repetidas) || 0} repetidas · ${Number(res.incompletas) || 0} incompletas · ${Number(res.errores) || 0} con error</span><span>tokens ${Number(res.tokens || 0).toLocaleString('es-AR')}</span>`;
   $('subApp').textContent = d.config && d.config.key ? `clave cargada (${d.config.key}) · ${d.config.modelo}` : 'sin clave: se lee solo por texto';
+  if(WEB) $('subInstr').textContent = res.instrucciones_modelo ? 'instrucciones cargadas' : 'faltan: sin ellas no se puede usar el modelo (se cargan una sola vez)';
   if(d.config){ $('regla').value = d.config.regla || 'CORTE_FIJO'; $('corte').value = d.config.fechaCorte || '2006-01-01'; $('margen').value = d.config.margenBordeMeses ?? 12; $('modelo').value = d.config.modelo || 'claude-haiku-4-5-20251001'; if(d.config.key) $('apiKey').value = d.config.key; }
   pintarTodo();
 }
@@ -1591,6 +1594,10 @@ if(WEB){
   $('cargarCarpeta').classList.remove('oculto');
   $('elegirCarpeta').addEventListener('click', e => { e.preventDefault(); $('carpetaPdf').click(); });
   $('carpetaPdf').addEventListener('change', e => { const l = Array.from(e.target.files).filter(f => /\.pdf$/i.test(f.name)); e.target.value = ''; if(l.length) subirPDFs(l); else avisar('Esa carpeta no tiene PDF.', true); });
+  $('btnInstr').addEventListener('click', () => $('fileInstr').click());
+  $('fileInstr').addEventListener('change', async e => { const f = e.target.files[0]; if(!f) return; e.target.value = '';
+    try{ await api('/api/web/instrucciones', { method: 'POST', body: f }); avisar('Instrucciones del modelo guardadas, cifradas. Borrá el archivo de tu computadora: tiene datos de resoluciones reales sin cifrar.'); await cargarDesdeServidor(); }
+    catch(err){ avisar('No se pudieron guardar las instrucciones: ' + err.message, true); } });
   $('btnGuardarPendiente').addEventListener('click', async () => {
     if(cargando || window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
     if(await guardarPendienteWeb()) avisar('Listo: lo pendiente quedó guardado en GitHub.');
@@ -1707,8 +1714,11 @@ function aplicarPerfil(){
   document.querySelectorAll('.solo-admin').forEach(e => e.classList.toggle('oculto', !puede.administrar));
   if(WEB_VIEJA) avisar('El navegador tiene guardada una versión anterior del programa. Apretá Ctrl+F5 para recargar la página completa.', true);
   if(WEB){
-    // Lo que en la web todavía no existe: la lectura con el modelo, volver a leer todo y vaciar la base.
-    ['btnCompletar','btnReleer','btnVaciar','panelApp'].forEach(id => { const e = $(id); if(e) e.classList.add('sin-permiso'); });
+    // Lo que en la web todavía no existe: volver a leer todo y vaciar la base. El modelo es del administrador.
+    ['btnReleer','btnVaciar'].forEach(id => { const e = $(id); if(e) e.classList.add('sin-permiso'); });
+    $('panelApp').classList.toggle('sin-permiso', !puede.administrar);
+    $('filaInstr').classList.remove('oculto');
+    $('textoApp').innerHTML = 'Sin clave se lee solo por texto, gratis. El modelo se usa <b>solo cuando tocás "Completar incompletas con el modelo"</b>, y solo para las que el texto no resolvió y tienen su PDF guardado: antes de empezar te dice cuántas son. La clave queda guardada solo en esta computadora, cifrada con tu contraseña; no va al repositorio.';
     $('cargarSub').textContent = 'Se leen en esta computadora y se guardan cifrados en el repositorio, junto con el PDF original para poder verlo. Los ven todos los usuarios. Un archivo cargado dos veces se ignora. También entra acá el JSON que baja "Guardar JSON" en el kit.';
     $('panelToken').classList.toggle('oculto', !puede.administrar);
     $('subToken').textContent = YO.web_token ? 'cargado en esta computadora' : 'falta: sin él no se pueden guardar cambios';
@@ -1760,6 +1770,12 @@ if(SERVIDOR){
     try{ const r = await api('/api/padron?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Padrón cargado: ${r.filas} filas. Cruce: ${r.cruce.cruzados} cruzadas, ${r.cruce.ambiguos} ambiguas, ${r.cruce.no_figuran} no inscriptas, ${r.cruce.sin_nombre} sin nombre.`); await cargarDesdeServidor(); }
     catch(err){ avisar('No se pudo cargar el Padrón: ' + err.message, true); } });
   $('btnCompletar').addEventListener('click', async () => {
+    if(WEB){
+      if(cargando || window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
+      const inc = registros.filter(r => r.fuente === 'texto_incompleto' && !r.error), conPdf = inc.filter(r => r.pdf_web).length;
+      if(!conPdf){ avisar(inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en Cargar.` : 'No hay resoluciones sin leer del todo.'); return; }
+      if(!confirm(`Se van a leer con el modelo ${conPdf} resolución(es) que el texto no resolvió${inc.length > conPdf ? ` (otras ${inc.length - conPdf} no tienen el PDF guardado y quedan como están)` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
+    }
     const b = $('btnCompletar'); b.disabled = true;
     let hechas = 0, tokens = 0, vueltas = 0;
     try{
@@ -1769,7 +1785,7 @@ if(SERVIDOR){
         if(r.motivo === 'sin clave'){ avisar('Falta cargar la clave de API y guardarla. Sin clave no se pueden leer las que el texto no resolvió.', true); break; }
         hechas += r.completadas; tokens += r.tokens || 0;
         if(r.fallas && r.fallas.length && !r.completadas){ avisar('La lectura con el modelo está fallando: ' + r.fallas[0], true); break; }
-        if(!r.pendientes){ avisar(`Listo: ${hechas} resolución(es) completadas (${tokens.toLocaleString('es-AR')} tokens).`); break; }
+        if(!r.pendientes){ avisar(`Listo: ${hechas} resolución(es) completadas (${tokens.toLocaleString('es-AR')} tokens).` + (r.sin_pdf ? ` Otras ${r.sin_pdf} no tienen el PDF guardado en la web.` : '')); break; }
         if(!r.completadas){ avisar(`Quedan ${r.pendientes} que no se pudieron completar.`, true); break; }
       }
       await cargarDesdeServidor();

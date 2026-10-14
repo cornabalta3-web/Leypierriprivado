@@ -35,7 +35,7 @@ const MODULOS = ['pierri_texto.js', 'pierri_tomos.js', 'pierri_base.js'];
 // Lo único que se publica de web/vendor. Cualquier otro archivo ahí (una planilla o un PDF de prueba olvidado) corta el armado.
 const VENDOR = ['leaflet/leaflet.js', 'leaflet/leaflet.css', 'leaflet/LICENSE', 'leaflet/images/layers.png', 'leaflet/images/layers-2x.png',
   'leaflet/images/marker-icon.png', 'leaflet/images/marker-icon-2x.png', 'leaflet/images/marker-shadow.png',
-  'pdfjs/pdf.min.js', 'pdfjs/pdf.worker.min.js', 'pdfjs/LICENSE', 'xlsx/xlsx.full.min.js', 'xlsx/LICENSE'];
+  'pdfjs/pdf.min.js', 'pdfjs/pdf.worker.min.js', 'pdfjs/LICENSE', 'xlsx/xlsx.full.min.js', 'xlsx/LICENSE', 'pdflib/pdf-lib.min.js', 'pdflib/LICENSE.md'];
 
 // Números de muestra que el código usa a propósito (formatos, ejemplos inventados). Nada más pasa el barrido.
 const PERMITIDOS = new Set(['12.345.678', '12345678', '0535-123456/2020', '0535-123456-2020', '20251001', '86400000',
@@ -152,7 +152,21 @@ function listar(dir, base) {
   return out;
 }
 
+/**
+ * node armar_web.js --instrucciones <archivo>: escribe las instrucciones del modelo (citan resoluciones reales) para
+ * cargarlas UNA vez en la web, que las guarda cifradas. Ese archivo no se publica ni se commitea: después se borra.
+ */
+function instrucciones(destino) {
+  const P = require('./pierri_core.js');
+  const res = path.resolve(destino);
+  if (res.startsWith(path.resolve(__dirname) + path.sep)) throw new Error('las instrucciones no se escriben dentro del repositorio: elegí otra carpeta');
+  fs.writeFileSync(res, JSON.stringify({ tipo: 'instrucciones_modelo', version: new Date().toISOString().slice(0, 10), prompt_sistema: P.PROMPT_SISTEMA, prompt_usuario: P.PROMPT_USUARIO }, null, 1));
+  console.log(`Instrucciones del modelo en ${res}. Cargalas en la web (Configuración, Cargar instrucciones del modelo) y después borrá el archivo.`);
+}
+
 function main() {
+  const iInst = process.argv.indexOf('--instrucciones');
+  if (iInst > 0) return instrucciones(process.argv[iInst + 1] || 'instrucciones_modelo.json');
   const O = args();
   let html = fs.readFileSync(path.join(__dirname, 'tablero_pierri.html'), 'utf8');
   const web = fs.readFileSync(path.join(__dirname, 'web', 'pierri_web.js'), 'utf8');
@@ -177,12 +191,13 @@ function main() {
   if (/<script[^>]+src="https?:/i.test(html)) throw new Error('quedó algún script cargado de afuera del sitio');
 
   // Content-Security-Policy: solo corren los scripts propios (los del sitio y los que van adentro de la página, por su huella),
-  // las imágenes solo de los servidores de mapas que usa el Tablero, y la página solo habla con sí misma, con GitHub y con
-  // Catastro (las parcelas por número de cuenta). Las fuentes data: son las que pdf.js arma al dibujar un PDF.
+  // las imágenes solo de los servidores de mapas que usa el Tablero, y la página solo habla con sí misma, con GitHub, con
+  // Catastro (las parcelas por número de cuenta) y con Anthropic (solo cuando el administrador toca "Completar con el
+  // modelo"). Las fuentes data: son las que pdf.js arma al dibujar un PDF.
   const huellasScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => `'sha256-${crypto.createHash('sha256').update(m[1], 'utf8').digest('base64')}'`);
   const csp = `default-src 'self'; script-src 'self' ${huellasScripts.join(' ')}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ` +
     "font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://wms.ign.gob.ar https://server.arcgisonline.com https://idecor-ws.mapascordoba.gob.ar; " +
-    "connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://idecor-ws.mapascordoba.gob.ar; worker-src 'self'; " +
+    "connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://idecor-ws.mapascordoba.gob.ar https://api.anthropic.com; worker-src 'self'; " +
     "object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
   html = html.replace('<head>', `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">\n<meta name="robots" content="noindex, nofollow">`);
 

@@ -66,16 +66,9 @@ async function recortarPaginas(buf, desde, hasta) {
 
 // ───────────────────────────── Carril modelo ─────────────────────────────
 async function leerConModelo(buf, opciones) {
-  const { key, modelo = 'claude-haiku-4-5-20251001' } = opciones || {};
+  const { key, modelo = PierriTomos.MODELO_POR_DEFECTO } = opciones || {};
   if (!key) throw new Error('sin clave de API');
-  const cuerpo = {
-    model: modelo, max_tokens: 3000, temperature: 0,
-    system: [{ type: 'text', text: PierriCore.PROMPT_SISTEMA, cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: [
-      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } },
-      { type: 'text', text: PierriCore.PROMPT_USUARIO },
-    ] }],
-  };
+  const cuerpo = PierriTomos.cuerpoModelo(buf.toString('base64'), modelo, PierriCore.PROMPT_SISTEMA, PierriCore.PROMPT_USUARIO);
   let ultimo = 'sin respuesta';
   for (let intento = 0; intento < 5; intento++) {
     let resp;
@@ -85,42 +78,13 @@ async function leerConModelo(buf, opciones) {
     } catch (err) { ultimo = 'error de red: ' + err.message; await dormir(1500 * 2 ** intento); continue; }
     if (resp.status === 429 || resp.status >= 500) { ultimo = 'la API respondió ' + resp.status; await dormir(1500 * 2 ** intento); continue; }
     if (!resp.ok) throw new Error('la API respondió ' + resp.status + ': ' + (await resp.text()).slice(0, 300));
-    const data = await resp.json();
-    const texto = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n');
-    const extraido = PierriCore.parsearJSON(texto);
-    if (!extraido) { ultimo = 'el modelo no devolvió JSON válido'; continue; }
-    const u = data.usage || {};
-    extraido._fuente = 'modelo';
-    return { extraido, tokens: (u.input_tokens || 0) + (u.output_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) };
+    const leido = PierriTomos.respuestaModelo(await resp.json());
+    if (!leido) { ultimo = 'el modelo no devolvió JSON válido'; continue; }
+    return leido;
   }
   throw new Error(ultimo);
 }
-/** Convierte un error de la API en una frase que entienda cualquiera. `grave` = no tiene sentido seguir intentando. */
-function motivoModelo(err) {
-  const m = String((err && err.message) || err || '');
-  if (/401|authentication|invalid x-api-key|API key is invalid/i.test(m)) return { texto: 'la clave de API no es válida', grave: true };
-  if (/credit balance|billing|402|insufficient/i.test(m)) return { texto: 'la cuenta de Anthropic no tiene crédito', grave: true };
-  if (/403|permission/i.test(m)) return { texto: 'la clave no tiene permiso para usar el modelo', grave: true };
-  if (/429|rate/i.test(m)) return { texto: 'demasiados pedidos seguidos; reintentar en unos minutos', grave: false };
-  if (/red|fetch failed|ENOTFOUND|ECONN|network/i.test(m)) return { texto: 'no hay conexión a internet', grave: false };
-  return { texto: 'el modelo no respondió (' + m.slice(0, 120) + ')', grave: false };
-}
-function fusionar(deTexto, delModelo) {
-  const e = JSON.parse(JSON.stringify(delModelo));
-  e._fuente = 'mixto';
-  if (!e.expediente && deTexto.expediente) e.expediente = deTexto.expediente;
-  if (deTexto.dominio.afectados.length) {
-    for (const a of e.dominio.afectados || []) {
-      if (a.cuenta) continue;
-      const t = deTexto.dominio.afectados.find(x => x.matricula === a.matricula && x.cuenta);
-      if (t) a.cuenta = t.cuenta;
-    }
-    if (!(e.dominio.afectados || []).length) e.dominio.afectados = deTexto.dominio.afectados;
-  }
-  if (!e.posesion.antiguedad_anios && !e.posesion.fecha_inicio_declarada && (deTexto.posesion.antiguedad_anios || deTexto.posesion.fecha_inicio_declarada))
-    Object.assign(e.posesion, deTexto.posesion);
-  return e;
-}
+const { motivoModelo, fusionar } = PierriTomos;
 
 // ───────────────────────────── Un archivo → registros ─────────────────────────────
 /**
