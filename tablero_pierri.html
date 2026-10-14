@@ -151,6 +151,15 @@ td.exp{white-space:nowrap;font-weight:600}
 tr.fila.rev td:first-child{box-shadow:inset 3px 0 0 var(--verde)}
 .boton-ver{display:inline-block;font:600 13px "Public Sans",sans-serif;padding:9px 14px;border-radius:var(--r2);border:1px solid var(--marca);background:var(--marca);color:#fff;text-decoration:none}
 .boton-ver:hover{background:var(--marca2)}
+button.boton-ver{cursor:pointer}
+/* Visor de la resolución original (versión web): al costado, para corregir mirando el PDF */
+.visor{position:fixed;top:0;right:0;bottom:0;width:min(46vw,780px);background:var(--blanco);border-left:1px solid var(--linea2);box-shadow:-10px 0 28px rgba(0,0,0,.2);z-index:900;display:flex;flex-direction:column}
+.visor-cab{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--linea)}
+.visor-cab .t{flex:1;min-width:0;display:flex;flex-direction:column}
+.visor-cab b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.visor-cuerpo{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--fondo)}
+.visor-cuerpo canvas{width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+@media (max-width:900px){.visor{width:100vw}}
 .clicable{cursor:pointer;transition:box-shadow .12s,border-color .12s}
 tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 .clicable:hover{border-color:var(--acento);box-shadow:0 1px 6px rgba(22,67,110,.14)}
@@ -203,6 +212,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 </style>
 </head>
 <body>
+<aside class="visor oculto" id="visor" aria-label="Resolución original"><div class="visor-cab"><div class="t"><b id="visorTitulo"></b><span class="mini" id="visorSub"></span></div><button class="sec" id="visorCerrar">Cerrar</button></div><div class="visor-cuerpo" id="visorPaginas"></div></aside>
 <div class="ing-fondo oculto" id="ingreso"><div class="ing-caja">
   <h2>Relevamiento Ley Pierri</h2><p class="sub">Escribanía General de Gobierno de Córdoba</p>
   <div id="ingForm">
@@ -257,9 +267,11 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
       <strong id="cargarTitulo">Arrastrá acá los PDF o tocá para elegirlos</strong>
       <span id="cargarSub">Resoluciones sueltas, expedientes completos o tomos: de cada expediente se ubica la resolución que ordena la inscripción y se lee. Un archivo cargado dos veces se ignora.</span>
     </div>
+    <div class="acciones oculto" id="cargarCarpeta" style="margin-top:-4px"><span class="mini">¿Son muchos? <a href="#" id="elegirCarpeta">Elegí la carpeta entera</a>: se leen todos los PDF que tenga adentro. Los que ya estaban se saltean, así que si se corta, se vuelve a elegir la misma carpeta y sigue.</span></div>
     <input id="filePdf" type="file" accept="application/pdf,.pdf" multiple class="oculto">
+    <input id="carpetaPdf" type="file" webkitdirectory multiple class="oculto">
     <input id="file" type="file" accept=".jsonl,.json,application/json" class="oculto">
-    <div class="panel oculto" id="progreso"><div class="cabp"><h2>Últimas cargas</h2><span class="sub" id="progresoSub"></span></div><div class="msg oculto" id="balanceCarga" style="margin:12px 18px 0"></div><div class="cuerpo" id="progresoCuerpo" style="gap:0"></div></div>
+    <div class="panel oculto" id="progreso"><div class="cabp"><h2>Últimas cargas</h2><span class="sub" id="progresoSub"></span></div><div class="mini oculto" id="progresoWeb" style="margin:10px 18px 0"></div><div class="msg oculto" id="balanceCarga" style="margin:12px 18px 0"></div><div class="acciones oculto" id="pendienteWeb" style="margin:10px 18px 0"><button id="btnGuardarPendiente">Guardar lo pendiente</button><span class="mini">Hay PDF leídos que todavía no se guardaron en GitHub.</span></div><div class="cuerpo" id="progresoCuerpo" style="gap:0"></div></div>
     <div class="origen" id="origen"></div>
     <div class="panel oculto" id="panelArchivos"><div class="cabp"><h2>Qué aportó cada archivo</h2><span class="sub" id="subArchivos"></span></div>
       <div class="cuerpo" style="gap:6px"><div class="acciones" id="filtroArchivos">
@@ -1517,7 +1529,7 @@ async function subirPDFs(archivos){
       if(r.estado === 'ya_cargado') B.yaEstaban++;
       else if(r.estado === 'error') B.errores++;
       else { B.nuevos++; B.resoluciones += r.unidades || 0; if(!r.unidades) B.sinResolucion++; }
-      if(r.estado === 'ya_cargado') fila.lastElementChild.innerHTML = `<span class="tag p-g">ya estaba</span> <span class="mini">${esc(r.nombre_previo)}</span>`;
+      if(r.estado === 'ya_cargado') fila.lastElementChild.innerHTML = `<span class="tag p-g">ya estaba</span> <span class="mini">${esc(r.nombre_previo)}${r.pdf_guardado ? ' · leído en el kit: se guarda el PDF para verlo' : ''}</span>`;
       else if(r.estado === 'error') fila.lastElementChild.innerHTML = `<span class="tag p-r">error</span> <span class="mini">${esc(r.error)}</span>`;
       else fila.lastElementChild.innerHTML = (r.tipo === 'tomo' ? `<span class="tag p-m">${r.unidades > 1 ? 'tomo · ' + r.unidades + ' resoluciones' : 'expediente · 1 resolución'}</span> ` : '') +
         r.expedientes.map(e => `<span class="tag ${e.clasificacion.startsWith('ELEGIBLE') ? 'p-v' : e.clasificacion.startsWith('NO_ELEGIBLE') ? 'p-g' : 'p-r'}">${esc(e.expediente || '?')} · ${esc(e.clasificacion.replace(/_/g,' ').toLowerCase())}</span>`).join(' ') +
@@ -1532,6 +1544,7 @@ async function subirPDFs(archivos){
     n++; $('progresoSub').textContent = `${n} de ${lista.length}`;
   }
   $('progresoSub').textContent = `${n} archivo(s) cargados`;
+  if(WEB) await guardarPendienteWeb();
   await cargarDesdeServidor();
   const sumadas = registros.length - visiblesAntes, mismoExp = Math.max(0, ((resumenSrv && resumenSrv.repetidas) || 0) - repetidasAntes);
   const partes = [`<b>${lista.length}</b> archivo(s)`];
@@ -1552,12 +1565,34 @@ zona.addEventListener('click', () => SERVIDOR ? $('filePdf').click() : $('file')
 zona.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); zona.click(); } });
 ['dragenter','dragover'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('sobre'); }));
 ['dragleave','drop'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('sobre'); }));
-zona.addEventListener('drop', e => { if(WEB) importarWeb(e.dataTransfer.files[0]); else if(SERVIDOR) subirPDFs(e.dataTransfer.files); else if(e.dataTransfer.files[0]) cargarArchivo(e.dataTransfer.files[0]); });
-$('filePdf').addEventListener('change', e => { if(WEB) importarWeb(e.target.files[0]); else subirPDFs(e.target.files); e.target.value=''; });
-if(WEB) $('filePdf').accept = '.json,application/json';
+zona.addEventListener('drop', e => { if(WEB) cargarWeb(e.dataTransfer.files); else if(SERVIDOR) subirPDFs(e.dataTransfer.files); else if(e.dataTransfer.files[0]) cargarArchivo(e.dataTransfer.files[0]); });
+$('filePdf').addEventListener('change', e => { if(WEB) cargarWeb(e.target.files); else subirPDFs(e.target.files); e.target.value=''; });
+if(WEB){
+  $('filePdf').accept = 'application/pdf,.pdf,.json,application/json';
+  $('cargarCarpeta').classList.remove('oculto');
+  $('elegirCarpeta').addEventListener('click', e => { e.preventDefault(); $('carpetaPdf').click(); });
+  $('carpetaPdf').addEventListener('change', e => { const l = Array.from(e.target.files).filter(f => /\.pdf$/i.test(f.name)); e.target.value = ''; if(l.length) subirPDFs(l); else avisar('Esa carpeta no tiene PDF.', true); });
+  $('btnGuardarPendiente').addEventListener('click', async () => { await guardarPendienteWeb(); await cargarDesdeServidor(); });
+  // Cómo va lo largo (leer, subir, esperar a GitHub): una línea en el panel de la carga.
+  window.addEventListener('pierri-web-progreso', e => { const t = String(e.detail || ''); $('progresoWeb').textContent = t; $('progresoWeb').classList.toggle('oculto', !t); });
+}
+/** Versión web: en la carga entran los PDF (se leen en esta computadora y se guardan cifrados) o el JSON del kit, solo. */
+function cargarWeb(archivos){
+  const l = Array.from(archivos || []);
+  const json = l.filter(f => /\.json$/i.test(f.name));
+  if(json.length && (json.length > 1 || l.length > 1)){ avisar('El JSON del kit se sube solo, sin otros archivos al lado.', true); return; }
+  if(json.length) return importarWeb(json[0]);
+  subirPDFs(l);
+}
+/** Guarda en GitHub lo leído que quedó esperando. Si falla, queda el botón para reintentar sin volver a leer. */
+async function guardarPendienteWeb(){
+  if(!window.PIERRI_WEB.pendientes()){ $('pendienteWeb').classList.add('oculto'); return true; }
+  $('progresoSub').textContent = 'guardando en GitHub…';
+  try{ await api('/api/web/guardar', { method: 'POST' }); $('pendienteWeb').classList.add('oculto'); $('progresoSub').textContent = 'guardado en GitHub'; return true; }
+  catch(err){ avisar('Lo leído todavía no se guardó: ' + err.message + ' Tocá "Guardar lo pendiente" para reintentar (no hace falta volver a leer).', true); $('progreso').classList.remove('oculto'); $('pendienteWeb').classList.remove('oculto'); $('progresoSub').textContent = 'sin guardar'; return false; }
+}
 async function importarWeb(f){
   if(!f) return;
-  if(!/\.json$/i.test(f.name)){ avisar('En la versión web se sube el JSON que baja "Guardar JSON" en el kit. Los PDF se leen en el kit.', true); return; }
   avisar('Cifrando y guardando en el repositorio…');
   try{ const r = await api('/api/web/importar?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Listo: ${r.resoluciones} resoluciones guardadas. Los demás usuarios las ven en unos minutos.`); await cargarDesdeServidor(); ir('resumen'); }
   catch(err){ avisar('No se pudo guardar: ' + err.message, true); }
@@ -1602,7 +1637,9 @@ if(WEB){
   const LIMITE = 30 * 60 * 1000; let ultimoUso = Date.now();
   ['mousemove','keydown','click','scroll','touchstart'].forEach(ev => addEventListener(ev, () => { ultimoUso = Date.now(); }, { passive: true }));
   setInterval(async () => {
+    if(window.PIERRI_WEB.ocupado()){ ultimoUso = Date.now(); return; }   // leyendo o subiendo: la carga larga cuenta como uso
     if(!YO || Date.now() - ultimoUso < LIMITE) return;
+    if(window.PIERRI_WEB.pendientes()){ try{ await api('/api/web/guardar', { method: 'POST' }); }catch(e){} }
     try{ await api('/api/logout', { method: 'POST' }); }catch(e){}
     try{ sessionStorage.setItem('pierri_inactividad', '1'); }catch(e){}
     location.reload();
@@ -1626,7 +1663,9 @@ function errorIngreso(t){ const e = $('ingError'); e.textContent = t; e.classLis
 function aplicarPerfil(){
   $('pieUsuario').classList.remove('oculto');
   $('pieUsuario').innerHTML = `<b>${esc(YO.nombre || YO.usuario)}</b>${esc(YO.rol_nombre)}<br><button id="btnSalir">Cerrar sesión</button>`;
-  $('btnSalir').addEventListener('click', async () => { try{ await api('/api/logout', { method: 'POST' }); }catch(e){} location.reload(); });
+  $('btnSalir').addEventListener('click', async () => {
+    if(WEB && window.PIERRI_WEB.pendientes() && !(await guardarPendienteWeb()) && !confirm('Hay PDF leídos que no se pudieron guardar en GitHub. Si salís, se pierde esa lectura (los PDF siguen en tu computadora). ¿Salir igual?')) return;
+    try{ await api('/api/logout', { method: 'POST' }); }catch(e){} location.reload(); });
   // Los botones que el perfil no puede usar se ocultan; el servidor igual los rechaza.
   const puede = YO.permisos || {};
   [['btnPadron', 'cargar'], ['btnInventario', 'cargar'], ['btnUbicarInv', 'cargar'], ['btnCatastro', 'cargar'], ['btnCompletar', 'cargar'],
@@ -1636,12 +1675,9 @@ function aplicarPerfil(){
   if(!puede.cargar){ const c = document.querySelector('nav a.item[data-vista="cargar"]'); if(c) c.classList.add('sin-permiso'); }
   document.querySelectorAll('.solo-admin').forEach(e => e.classList.toggle('oculto', !puede.administrar));
   if(WEB){
-    // Lo que en la web todavía no existe: leer PDF y planillas, Catastro, el modelo. Se hace en el kit y se sube el JSON.
-    ['btnPadron','btnInventario','btnUbicarInv','btnCatastro','btnCompletar','btnReleer','btnVaciar','btnArchivos','panelApp'].forEach(id => { const e = $(id); if(e) e.classList.add('sin-permiso'); });
-    $('cargarTitulo').textContent = 'Subí acá el relevamiento del kit';
-    const cabCarga = document.querySelector('#v-cargar .cab p'); if(cabCarga) cabCarga.textContent = 'En la versión web se sube el relevamiento que leyó el kit: el JSON que baja "Guardar JSON". Los PDF, el Padrón y el inventario se cargan en el kit.';
-    const dosInv = $('mapaInv') && $('mapaInv').closest('.dos'); if(dosInv) dosInv.classList.add('sin-permiso');
-    $('cargarSub').textContent = 'El archivo que baja "Guardar JSON" en la aplicación del kit (Expedientes). Se guarda cifrado en el repositorio y lo ven todos los usuarios. Los PDF todavía se leen en el kit.';
+    // Lo que en la web todavía no existe: la lectura con el modelo, volver a leer todo y vaciar la base.
+    ['btnCompletar','btnReleer','btnVaciar','panelApp'].forEach(id => { const e = $(id); if(e) e.classList.add('sin-permiso'); });
+    $('cargarSub').textContent = 'Se leen en esta computadora y se guardan cifrados en el repositorio, junto con el PDF original para poder verlo. Los ven todos los usuarios. Un archivo cargado dos veces se ignora. También entra acá el JSON que baja "Guardar JSON" en el kit.';
     $('panelToken').classList.toggle('oculto', !puede.administrar);
     $('subToken').textContent = YO.web_token ? 'cargado en esta computadora' : 'falta: sin él no se pueden guardar cambios';
     const optAdmin = document.querySelector('#nuRol option[value="admin"]'); if(optAdmin) optAdmin.remove();
@@ -2080,6 +2116,8 @@ function pintarPaginacion(total){
   $('pagNums').querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => { pagina = Number(b.dataset.p); pintarTabla(); window.scrollTo(0, 0); }));
 }
 $('filas').addEventListener('click', e => {
+  const vp = e.target.closest('[data-verpdf]');
+  if(vp){ abrirVisor(vp.dataset); return; }
   const caja = e.target.closest('.revision');
   if(caja){ if(e.target.classList.contains('rv-guardar')) guardarRevision(caja); return; }
   const tr = e.target.closest('tr.fila'); if(!tr) return;
@@ -2103,8 +2141,10 @@ $('filas').addEventListener('click', e => {
     <dt>Revisar</dt><dd>${esc((d.motivos_revision || []).join(' · ') || 'no')}</dd>
     <dt>Archivo</dt><dd>${esc(r.archivo || '')}${r.tomo ? ` <span class="mini">(páginas ${(Number(r.tomo.desde) || 0) + 1}–${(Number(r.tomo.hasta) || 0) + 1} de ${esc(r.tomo.archivo)})</span>` : ''}</dd>
   </dl>
-  ${SERVIDOR && !WEB ? `<div class="acciones" style="margin-top:12px"><a class="boton-ver" href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">Ver la resolución original</a><span class="mini">se abre el PDF tal como lo leyó el sistema, para controlarlo</span></div>
-  <div class="revision" data-id="${encodeURIComponent(r.hash)}">
+  ${SERVIDOR && !WEB ? `<div class="acciones" style="margin-top:12px"><a class="boton-ver" href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">Ver la resolución original</a><span class="mini">se abre el PDF tal como lo leyó el sistema, para controlarlo</span></div>` : ''}
+  ${WEB ? (r.pdf_web ? `<div class="acciones" style="margin-top:12px"><button class="boton-ver" data-verpdf="${esc(r.hash_archivo)}" data-desde="${r.tomo ? Number(r.tomo.desde) || 0 : ''}" data-hasta="${r.tomo ? Number(r.tomo.hasta) || 0 : ''}" data-nombre="${esc(r.archivo || '')}">Ver la resolución original</button><span class="mini">se abre al costado el PDF tal como lo leyó el sistema, para controlarlo</span></div>`
+    : '<p class="mini" style="margin:12px 0 0">El PDF de esta resolución todavía no está guardado en la web. Subilo en Cargar: si ya estaba leído, se guarda sin volver a leerlo y queda para verlo acá.</p>') : ''}
+  ${SERVIDOR && (!WEB || (YO && YO.permisos && YO.permisos.revisar)) ? `<div class="revision" data-id="${encodeURIComponent(r.hash)}">
     <label class="tilde"><input type="checkbox" class="rv-ok" ${rev.revisado ? 'checked' : ''}> <b>Revisada</b> contra el documento</label>
     <div class="controles">
       <div class="grupo"><label>Corregir el tipo</label><select class="rv-tipo">
@@ -2116,13 +2156,42 @@ $('filas').addEventListener('click', e => {
         <option value="RESOLUCION_TRAMITE" ${rev.tipo_documento === 'RESOLUCION_TRAMITE' ? 'selected' : ''}>de trámite (aprueba, emplaza, suspende)</option>
       </select></div>
       <div class="grupo"><label>Corregir la fecha de posesión</label><input type="date" class="rv-fecha" value="${esc(rev.posee_desde || '')}"></div>
-      <div class="grupo"><label>Quién revisó</label><input type="text" class="rv-quien" value="${esc(rev.revisor || '')}" placeholder="nombre o iniciales" style="width:150px"></div>
+      <div class="grupo"><label>Quién revisó</label><input type="text" class="rv-quien" value="${esc(rev.revisor || (WEB && YO ? YO.nombre || YO.usuario : ''))}" placeholder="nombre o iniciales" style="width:150px"></div>
       <div class="grupo" style="flex:1;min-width:190px"><label>Observación</label><input type="text" class="rv-nota" value="${esc(rev.nota || '')}" placeholder="qué hubo que corregir"></div>
       <button class="rv-guardar">Guardar revisión</button>
     </div>
     <span class="mini rv-estado">${rev.en ? 'Revisada el ' + new Date(rev.en).toLocaleString('es-AR') + (rev.revisor ? ' por ' + esc(rev.revisor) : '') : 'Sin revisar'}</span>
   </div>` : ''}<details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ extraido: e2, derivado: d }, null, 1))}</pre></details></td></tr>`);
 });
+
+/** Versión web: muestra al costado el PDF guardado (cifrado en el repositorio), solo las páginas de esta resolución. */
+let visorTarea = 0;
+async function abrirVisor(ds){
+  const yo = ++visorTarea;
+  $('visor').classList.remove('oculto'); $('visorTitulo').textContent = ds.nombre || 'Resolución original';
+  $('visorSub').textContent = 'trayendo el PDF y descifrándolo…'; $('visorPaginas').innerHTML = '';
+  try{
+    const r = await api('/api/web/pdf?h=' + encodeURIComponent(ds.verpdf));
+    if(yo !== visorTarea) return;
+    const lib = await window.PIERRI_WEB.pdfjs();
+    const doc = await lib.getDocument({ data: r.bytes, isEvalSupported: false, verbosity: 0 }).promise;
+    try{
+      const desde = ds.desde !== '' && ds.desde != null ? Number(ds.desde) + 1 : 1;
+      const hasta = Math.min(ds.hasta !== '' && ds.hasta != null ? Number(ds.hasta) + 1 : doc.numPages, doc.numPages);
+      $('visorSub').textContent = desde > 1 || hasta < doc.numPages ? `páginas ${desde} a ${hasta} de ${doc.numPages} del archivo` : `${doc.numPages} página${doc.numPages === 1 ? '' : 's'}`;
+      const ancho = Math.max(300, $('visorPaginas').clientWidth - 24) * (window.devicePixelRatio || 1);
+      for(let i = desde; i <= hasta && yo === visorTarea; i++){
+        const pg = await doc.getPage(i), escala = Math.min(3, ancho / pg.getViewport({ scale: 1 }).width), vp = pg.getViewport({ scale: escala });
+        const cv = document.createElement('canvas'); cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height); cv.setAttribute('aria-label', 'página ' + i);
+        $('visorPaginas').appendChild(cv);
+        await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      }
+    } finally { await doc.destroy(); }
+  }catch(err){ if(yo === visorTarea) $('visorSub').textContent = 'No se pudo abrir: ' + err.message; }
+}
+function cerrarVisor(){ visorTarea++; $('visor').classList.add('oculto'); $('visorPaginas').innerHTML = ''; }
+$('visorCerrar').addEventListener('click', cerrarVisor);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('visor').classList.contains('oculto')) cerrarVisor(); });
 
 /** Guarda la revisión manual de una resolución: tilde, corrección de fecha, quién y observación. */
 async function guardarRevision(caja){
@@ -2137,8 +2206,14 @@ async function guardarRevision(caja){
       revisor: caja.querySelector('.rv-quien').value,
       nota: caja.querySelector('.rv-nota').value,
     }) });
-    est.textContent = 'Guardada · queda como ' + String(r.clasificacion || '').replace(/_/g, ' ').toLowerCase();
+    const texto = 'Guardada · queda como ' + String(r.clasificacion || '').replace(/_/g, ' ').toLowerCase();
+    est.textContent = texto;
     await cargarDesdeServidor();
+    // Al recargar se redibuja la tabla: se vuelve a abrir la misma ficha para seguir trabajando sobre ella.
+    const id = decodeURIComponent(caja.dataset.id), i = registros.findIndex(x => x.hash === id);
+    const tr = i >= 0 && document.querySelector(`#filas tr.fila[data-i="${i}"]`);
+    if(tr){ tr.click(); const est2 = document.querySelector('tr.det .rv-estado'); if(est2) est2.textContent = texto; }
+    return;
   }catch(err){ est.textContent = 'No se pudo guardar: ' + err.message; }
   btn.disabled = false;
 }

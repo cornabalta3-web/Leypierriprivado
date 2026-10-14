@@ -14,22 +14,30 @@
  *   - después se barre todo lo que se publica buscando cualquier cosa con forma de DNI, CUIL, expediente, cuenta o
  *     matrícula, y cualquier rastro de los ejemplos. Si aparece algo que no está en la lista de números inventados,
  *     el armado se corta;
- *   - Leaflet (el mapa) se sirve desde el propio sitio, no desde un CDN, y la página declara que solo puede hablar con
- *     sí misma y con la API de GitHub (Content-Security-Policy).
+ *   - Leaflet (el mapa), pdf.js (leer y mostrar los PDF) y SheetJS (leer el Padrón) se sirven desde el propio sitio,
+ *     no desde un CDN, y la página declara con quién puede hablar (Content-Security-Policy): sí misma, GitHub (la API y
+ *     los PDF cifrados) y Catastro.
+ *   - Las reglas de lectura van tal cual las usa el kit (pierri_texto.js, pierri_tomos.js, pierri_base.js; el motor
+ *     pierri_core.js ya viene adentro del Tablero): la web y el kit leen igual.
  *
  * Uso:
  *   node armar_web.js --salida ../relevamiento-pierri [--owner cornabalta3-web] [--repo relevamiento-pierri] [--rama main]
- * Escribe index.html, pierri_web.js, vendor/leaflet/, robots.txt y .nojekyll. No toca la carpeta datos/ de la salida.
+ * Escribe index.html, los .js, localidades_cordoba.json, vendor/, robots.txt y .nojekyll. No toca la carpeta datos/.
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// Las reglas de lectura que la web usa tal cual las usa el kit. Se cargan antes de pierri_web.js.
+const MODULOS = ['pierri_texto.js', 'pierri_tomos.js', 'pierri_base.js'];
+
 // Números de muestra que el código usa a propósito (formatos, ejemplos inventados). Nada más pasa el barrido.
 const PERMITIDOS = new Set(['12.345.678', '12345678', '0535-123456/2020', '0535-123456-2020', '20251001', '86400000',
   // Palabras del propio código que tienen la forma "APELLIDO, NOMBRE" (constantes y comentarios, no personas).
-  'IDECOR, WFS', 'CSV, COLUMNAS', 'PLANILLA, CATASTRO', 'VACIO, EJEMPLOS', 'SISTEMA, PROMPT', 'DEK, AES', 'TOKEN, JSON']);
+  'IDECOR, WFS', 'CSV, COLUMNAS', 'PLANILLA, CATASTRO', 'VACIO, EJEMPLOS', 'SISTEMA, PROMPT', 'DEK, AES', 'TOKEN, JSON',
+  // Las columnas del Padrón del Registro, en el mensaje que avisa si faltan.
+  'NROUNICO, DIARIO', 'PROCESO, NOMBREPERSONA']);
 
 function args() {
   const a = process.argv.slice(2), o = { salida: path.join(__dirname, 'sitio'), owner: 'cornabalta3-web', repo: 'relevamiento-pierri', rama: 'main' };
@@ -117,6 +125,15 @@ function barrer(nombre, texto, huellas) {
   if (problemas.length) throw new Error(`en ${nombre} quedó algo con forma de dato personal:\n  - ` + [...new Set(problemas)].join('\n  - '));
 }
 
+/**
+ * Los comentarios de las reglas de lectura citan casos reales (números de expediente, de cuenta, fechas) para que quien
+ * mantiene el código sepa de dónde salió cada regla. En lo que se publica, las líneas de comentario salen con los dígitos
+ * tapados. Solo se tocan líneas que son enteras de comentario: el código queda igual.
+ */
+function taparComentarios(txt) {
+  return txt.split('\n').map(l => /^\s*(\/\/|\/\*|\*)/.test(l) ? l.replace(/\d/g, '#') : l).join('\n');
+}
+
 function copiarDir(de, a) {
   fs.mkdirSync(a, { recursive: true });
   for (const f of fs.readdirSync(de, { withFileTypes: true })) {
@@ -135,7 +152,8 @@ function main() {
   const anclaMain = "<script>\n(function(){\n'use strict';\nconst P = window.PierriCore;";
   if (html.split(anclaMain).length !== 2) throw new Error('no encuentro el script principal del Tablero (¿cambió?)');
   const repo = JSON.stringify({ owner: O.owner, repo: O.repo, rama: O.rama });
-  html = html.replace(anclaMain, () => `<script>window.PIERRI_WEB_REPO = ${repo};</script>\n<script src="pierri_web.js"></script>\n` + anclaMain);
+  const scripts = MODULOS.concat(['pierri_web.js']).map(f => `<script src="${f}"></script>`).join('\n');
+  html = html.replace(anclaMain, () => `<script>window.PIERRI_WEB_REPO = ${repo};</script>\n${scripts}\n` + anclaMain);
 
   const cssCDN = '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">';
   const jsCDN = '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>';
@@ -144,23 +162,30 @@ function main() {
   if (/<script[^>]+src="https?:/i.test(html)) throw new Error('quedó algún script cargado de afuera del sitio');
 
   // Content-Security-Policy: solo corren los scripts propios (los del sitio y los que van adentro de la página, por su huella),
-  // las imágenes solo de los servidores de mapas que usa el Tablero, y la página solo habla con sí misma y con la API de GitHub.
+  // las imágenes solo de los servidores de mapas que usa el Tablero, y la página solo habla con sí misma, con GitHub y con
+  // Catastro (las parcelas por número de cuenta). Las fuentes data: son las que pdf.js arma al dibujar un PDF.
   const huellasScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => `'sha256-${crypto.createHash('sha256').update(m[1], 'utf8').digest('base64')}'`);
   const csp = `default-src 'self'; script-src 'self' ${huellasScripts.join(' ')}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ` +
-    "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://wms.ign.gob.ar https://server.arcgisonline.com https://idecor-ws.mapascordoba.gob.ar; " +
-    "connect-src 'self' https://api.github.com https://raw.githubusercontent.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
+    "font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://wms.ign.gob.ar https://server.arcgisonline.com https://idecor-ws.mapascordoba.gob.ar; " +
+    "connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://idecor-ws.mapascordoba.gob.ar; worker-src 'self'; " +
+    "object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
   html = html.replace('<head>', `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">\n<meta name="robots" content="noindex, nofollow">`);
 
   barrer('index.html', html, s.huellas);
   barrer('pierri_web.js', web, s.huellas);
+  const modulos = MODULOS.map(f => [f, taparComentarios(fs.readFileSync(path.join(__dirname, f), 'utf8'))]);
+  for (const [f, txt] of modulos) barrer(f, txt, s.huellas);
 
   fs.mkdirSync(O.salida, { recursive: true });
   fs.writeFileSync(path.join(O.salida, 'index.html'), html);
   fs.writeFileSync(path.join(O.salida, 'pierri_web.js'), web);
+  for (const [f, txt] of modulos) fs.writeFileSync(path.join(O.salida, f), txt);
+  // Puntos de las localidades de Catastro (datos geográficos públicos): ubican por localidad lo que no trae cuenta.
+  fs.copyFileSync(path.join(__dirname, 'localidades_cordoba.json'), path.join(O.salida, 'localidades_cordoba.json'));
   copiarDir(path.join(__dirname, 'web', 'vendor'), path.join(O.salida, 'vendor'));
   fs.writeFileSync(path.join(O.salida, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
   fs.writeFileSync(path.join(O.salida, '.nojekyll'), '');
-  console.log(`Listo en ${O.salida}: index.html, pierri_web.js, vendor/leaflet, robots.txt, .nojekyll (barrido de datos personales sin hallazgos; ${s.huellas.size} huellas de los ejemplos verificadas afuera).`);
+  console.log(`Listo en ${O.salida}: index.html, pierri_web.js, ${MODULOS.join(', ')}, localidades_cordoba.json, vendor/, robots.txt, .nojekyll (barrido de datos personales sin hallazgos; ${s.huellas.size} huellas de los ejemplos verificadas afuera).`);
 }
 
 try { main(); } catch (e) { console.error('No se pudo armar la web: ' + e.message); process.exit(1); }

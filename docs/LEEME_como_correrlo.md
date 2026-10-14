@@ -90,11 +90,11 @@ Sirve para guardar versiones y trabajarlo con Claude Code, no para que la gente 
 
 El sistema también anda desde **https://cornabalta3-web.github.io/relevamiento-pierri/**, sin instalar nada. Cada persona entra con su usuario y su contraseña. Los datos se guardan cifrados en el repositorio público `relevamiento-pierri`: sin una contraseña válida no se pueden leer.
 
-Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventario y Catastro todavía se hacen en el kit, y lo leído se sube a la web con el JSON.
+En la web se hace todo lo del kit salvo dos cosas: la lectura con el modelo (para las resoluciones escaneadas sin capa de texto) y "Volver a leer todo". Se leen los PDF, se guardan cifrados junto con el original, se ven, se corrigen, y se cargan el Padrón, el inventario y Catastro. El kit queda para esas dos cosas.
 
 **Puesta en marcha (una sola vez)**
 1. En GitHub: botón **+**, **New repository**, nombre `relevamiento-pierri`, **Public**, **Create repository**.
-2. Subir los archivos del sitio: `index.html`, `pierri_web.js`, la carpeta `vendor/` (el mapa), `robots.txt` y `.nojekyll`. Los arma `node armar_web.js --salida <carpeta>`; normalmente los sube Claude.
+2. Subir los archivos del sitio: `index.html`, los `.js`, `localidades_cordoba.json`, la carpeta `vendor/` (el mapa, el lector de PDF y el de planillas), `robots.txt` y `.nojekyll`. Los arma `node armar_web.js --salida <carpeta>`; normalmente los sube Claude.
 3. En el repositorio: **Settings**, **Pages**, *Branch* `main` y `/ (root)`, **Save**.
 4. Crear el permiso para escribir (token): en GitHub, tu foto, **Settings**, **Developer settings**, **Personal access tokens**, **Fine-grained tokens**, **Generate new token**.
    - Nombre: `relevamiento-pierri`. Vencimiento: un año.
@@ -112,10 +112,22 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
 
 **El permiso de GitHub (token)** queda guardado solo en tu computadora, cifrado con tu contraseña, nunca en el repositorio: adivinar tu contraseña permitiría leer, pero no escribir. Para usar otra computadora, o cuando el token vence: **Configuración**, **Permiso de GitHub**, pegarlo y **Guardar en esta computadora**. En una computadora prestada, al terminar: **Olvidar** y **Cerrar sesión**.
 
-**Subir lo leído en el kit**
-1. En el kit: **Expedientes**, **Guardar JSON**.
-2. En la web, entrando como administrador: **Embudo**, arrastrar ese JSON. Se guarda cifrado; los demás lo ven en unos minutos.
-3. Borrar el JSON de Descargas: ese está sin cifrar.
+**Cargar resoluciones desde la web** (solo el administrador)
+1. **Cargar** (el Embudo): arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
+2. Cada PDF se lee en tu computadora, igual que en el kit sin clave de API: tomos, expedientes completos y sueltas. Se guarda en GitHub cifrado, el PDF original incluido, cada 150 archivos (o 30 MB) y al terminar. Lo que ya estaba se saltea: si se corta, se vuelve a elegir la misma carpeta y sigue.
+3. Con miles de PDF tarda (más o menos un segundo por archivo, según la conexión): la pestaña tiene que quedar abierta, pero la sesión no se cierra mientras trabaja. Si GitHub pide una pausa por la cantidad de pedidos, espera solo y sigue.
+4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo": hoy se completan en el kit, con el modelo.
+
+**Ver y corregir**
+- En **Expedientes**, al abrir una resolución: **Ver la resolución original** la muestra al costado, solo sus páginas. La ven todos los usuarios.
+- La caja **Revisada** (solo el administrador): tilde, fecha de posesión corregida, tipo, quién y observación. Se guarda al instante y queda en la auditoría.
+
+**Padrón, inventario y Catastro**: los mismos botones que en el kit (**Padrón**, **Inventario**, **Reintentar Catastro** en el Mapa). Se guardan cifrados y el cruce se calcula al mirar, así que una carga nueva de resoluciones ya sale cruzada.
+
+**Si algo ya está en el kit**
+- **Subir el relevamiento del kit**: en el kit, **Expedientes**, **Guardar JSON**; en la web, **Cargar**, arrastrar ese JSON solo. Después borrar el JSON de Descargas: está sin cifrar.
+- Subir el JSON del kit reemplaza lo que vino del kit, pero no toca lo leído en la web ni las correcciones hechas en la web: se aplican encima (si una misma resolución se corrigió en los dos lados, manda la corrección más nueva).
+- Para ver en la web los PDF de lo que leyó el kit, subí esos PDF en **Cargar**: se reconocen, no se vuelven a leer y se guardan para verlos.
 
 **Lo que hay que saber**
 - La contraseña de cada uno es la única protección de la lectura: 12 caracteres o más, mejor una frase larga. No hay bloqueo por intentos fallidos, porque cualquiera puede bajarse los archivos cifrados y probar contraseñas en su propia computadora.
@@ -125,7 +137,9 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
 - La sesión se cierra sola después de 30 minutos sin uso.
 - El botón **Modo oscuro** (abajo en el menú) cambia los colores; sin tocarlo, sigue la configuración de la computadora. Vale igual en el kit.
 - Todos los sitios de GitHub Pages de la cuenta `cornabalta3-web` comparten la dirección `cornabalta3-web.github.io`, y con ella el almacenamiento del navegador. Por eso el token va cifrado. Aun así, conviene no publicar en esa cuenta páginas con código de terceros.
-- Cada carga y cada cambio de llave agregan al historial una copia entera del relevamiento cifrado. Con unos pocos MB por carga alcanza para años; si algún día el repositorio pesa demasiado, se recrea.
+- Los PDF van en una rama aparte del repositorio (`pdf`), que no se publica en la página: cada uno cifrado con su propia llave, y esas llaves viajan dentro de las lecturas cifradas. Al desactivar a alguien no se vuelven a cifrar los PDF (pesan gigas); sí todo lo demás, con las llaves adentro. Lo que esa persona ya pudo ver, lo pudo ver.
+- GitHub recomienda repositorios de menos de 1 GB y pide con fuerza no pasar de 5 GB. Unos 7.500 PDF de 300 KB cada uno son unos 2,3 GB: entra, pero no sobra. Si algún día GitHub pide achicarlo, los PDF se pueden mover a otro repositorio sin tocar el resto.
+- Cada carga y cada cambio de llave agregan al historial una copia del relevamiento cifrado. Con unos pocos MB por carga alcanza para años; si algún día el repositorio pesa demasiado, se recrea.
 
 ## Cargar miles de resoluciones de una vez
 

@@ -78,9 +78,11 @@ El sistema trata datos personales de miles de ciudadanos: nombre, DNI, domicilio
 | `pierri_core.js` | el criterio de elegibilidad, departamentos y localidades, comparación de lecturas |
 | `pierri_texto.js` | reglas de extracción sobre la capa de texto del PDF |
 | `pierri_lector.js` | lectura de un PDF: carril texto y carril modelo |
+| `pierri_tomos.js` | tomos y carril texto, compartido entre el kit y la web |
+| `pierri_base.js` | Padrón, inventario y repetidos para la web, con las reglas del kit |
 | `procesar_lote.js` | el motor de línea de comandos para carpetas grandes |
 | `cruzar_padron.js` | cruce con el padrón del Registro General |
-| `web/pierri_web.js` | la versión web: el sistema desde un link, con usuarios y datos cifrados en GitHub |
+| `web/pierri_web.js` | la versión web: el sistema desde un link; lee los PDF en el navegador y guarda todo cifrado en GitHub |
 | `armar_web.js` | arma los archivos del sitio público |
 | `evaluar_motor.js` | mide la exactitud del motor contra resoluciones verificadas a mano |
 | `tablero_pierri.html` | el tablero completo, en un solo archivo |
