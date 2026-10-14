@@ -1442,6 +1442,8 @@ const $ = id => document.getElementById(id);
 let registros = [], vista = [], localidadSel = null, agrupacion = 'localidad', orden = { k: 'localidad', asc: true }, pagina = 0, POR_PAG = 100, mapa = null, capa = null, origenNombre = '', resumenSrv = {};
 // Versión web (GitHub Pages): pierri_web.js hace en el navegador lo que en el kit hace pierri.js. El Tablero la trata como servidor.
 const WEB = !!window.PIERRI_WEB;
+// Página nueva con el programa viejo guardado en el navegador: no anda la carga de PDF. Se pide recargar.
+const WEB_VIEJA = WEB && (Number(window.PIERRI_WEB.version) || 0) < 3;
 // Una página con los datos adentro (demo) nunca habla con pierri.js, aunque se sirva por https.
 const SERVIDOR = WEB || (/^https?:/.test(location.protocol) && !window.DEMO_DATOS);
 const HASH_INICIAL = location.hash.slice(1);   // antes de que ir() la reescriba al arrancar
@@ -1703,6 +1705,7 @@ function aplicarPerfil(){
   });
   if(!puede.cargar){ const c = document.querySelector('nav a.item[data-vista="cargar"]'); if(c) c.classList.add('sin-permiso'); }
   document.querySelectorAll('.solo-admin').forEach(e => e.classList.toggle('oculto', !puede.administrar));
+  if(WEB_VIEJA) avisar('El navegador tiene guardada una versión anterior del programa. Apretá Ctrl+F5 para recargar la página completa.', true);
   if(WEB){
     // Lo que en la web todavía no existe: la lectura con el modelo, volver a leer todo y vaciar la base.
     ['btnCompletar','btnReleer','btnVaciar','panelApp'].forEach(id => { const e = $(id); if(e) e.classList.add('sin-permiso'); });

@@ -162,7 +162,12 @@ function main() {
   const anclaMain = "<script>\n(function(){\n'use strict';\nconst P = window.PierriCore;";
   if (html.split(anclaMain).length !== 2) throw new Error('no encuentro el script principal del Tablero (¿cambió?)');
   const repo = JSON.stringify({ owner: O.owner, repo: O.repo, rama: O.rama });
-  const scripts = MODULOS.concat(['pierri_web.js']).map(f => `<script src="${f}"></script>`).join('\n');
+  // Cada script lleva la huella de su contenido en la dirección: el navegador no puede mezclar una página nueva con un
+  // script viejo guardado de antes (GitHub Pages deja guardar los archivos hasta 10 minutos).
+  // (en letras: una tira de dígitos parecería un número de documento para el barrido)
+  const huellaDe = txt => crypto.createHash('sha256').update(txt).digest('hex').slice(0, 12).replace(/\d/g, d => 'ghijklmnop'[d]);
+  const scripts = MODULOS.map(f => `<script src="${f}?v=${huellaDe(fs.readFileSync(path.join(__dirname, f), 'utf8'))}"></script>`)
+    .concat([`<script src="pierri_web.js?v=${huellaDe(web)}"></script>`]).join('\n');
   html = html.replace(anclaMain, () => `<script>window.PIERRI_WEB_REPO = ${repo};</script>\n${scripts}\n` + anclaMain);
 
   const cssCDN = '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">';
