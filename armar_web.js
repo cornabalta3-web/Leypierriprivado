@@ -24,9 +24,12 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 // Números de muestra que el código usa a propósito (formatos, ejemplos inventados). Nada más pasa el barrido.
-const PERMITIDOS = new Set(['12.345.678', '12345678', '0535-123456/2020', '0535-123456-2020', '20251001', '86400000']);
+const PERMITIDOS = new Set(['12.345.678', '12345678', '0535-123456/2020', '0535-123456-2020', '20251001', '86400000',
+  // Palabras del propio código que tienen la forma "APELLIDO, NOMBRE" (constantes y comentarios, no personas).
+  'IDECOR, WFS', 'CSV, COLUMNAS', 'PLANILLA, CATASTRO', 'VACIO, EJEMPLOS', 'SISTEMA, PROMPT', 'DEK, AES', 'TOKEN, JSON']);
 
 function args() {
   const a = process.argv.slice(2), o = { salida: path.join(__dirname, 'sitio'), owner: 'cornabalta3-web', repo: 'relevamiento-pierri', rama: 'main' };
@@ -75,6 +78,8 @@ function sacarDatosDelModelo(html) {
     const v = m[1], solo = v.replace(/\D/g, '');
     if (solo.length < 5) continue;
     huellas.add(v); huellas.add(solo);
+    const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (iso) huellas.add(`${iso[3]}/${iso[2]}/${iso[1]}`);
+    for (const f of v.match(/\d{2}\/\d{2}\/\d{4}/g) || []) huellas.add(f);
     for (const d of v.match(/\d{5,}/g) || []) huellas.add(d);
   }
   for (const m of quitado.matchAll(/(?:apellido_nombre|nombre|profesional|titular_registral|calle):\s*'([^']+)'/g)) {
@@ -89,14 +94,19 @@ function sacarDatosDelModelo(html) {
 /** Corta si en lo publicado aparece algo con forma de dato personal o alguna huella de los ejemplos. */
 function barrer(nombre, texto, huellas) {
   const problemas = [];
+  const N = '(?<![\\d.])', F = '(?![\\d])';   // sin \\b: el guion bajo de "documento_0535…" es letra para \\b
   const patrones = [
-    [/\b\d{1,2}\.\d{3}\.\d{3}\b/g, 'DNI con puntos'],
-    [/\b(?:20|23|24|27|30|33|34)-?\d{8}-?\d\b/g, 'CUIL/CUIT'],
-    [/\b\d{4}-\d{5,7}[/-]\d{4}\b/g, 'expediente'],
-    [/\b\d{2}-\d{2}-?\d{3}-?\d{4,5}\/\d\b|\b\d{2}-\d{9}\/\d\b/g, 'cuenta'],
-    [/\b\d{7,8}\b/g, 'número de 7 u 8 cifras'],
+    [new RegExp(N + '\\d{1,2}\\.\\d{3}\\.\\d{3}' + F, 'g'), 'DNI con puntos'],
+    [new RegExp(N + '(?:20|23|24|27|30|33|34)-?\\d{8}-?\\d' + F, 'g'), 'CUIL/CUIT'],
+    [new RegExp(N + '\\d{3,4}\\D?-[\\d.]{5,9}\\s*[/-]\\s*\\d{2,4}' + F, 'g'), 'expediente'],
+    [new RegExp('(?<![\\d.\\-/])\\d{5,7}/(?:19|20)\\d{2}' + F, 'g'), 'expediente sin prefijo'],
+    [new RegExp(N + '\\d{2}-\\d{2}-?\\d{3}-?\\d{4,5}/\\d' + F + '|' + N + '\\d{2}-\\d{9}' + F + '|' + N + '\\d{12}' + F, 'g'), 'cuenta'],
+    [new RegExp(N + '\\d{2}(?:-\\d{2}){4}-\\d{3}-\\d{3}' + F, 'g'), 'nomenclatura'],
+    [/(?:\bL\.?C\.?|\bL\.?E\.?|\bMFR|matr[ií]cula|\bDNI|\bCUIL|\bCUIT)\s*(?:N[°º]?\.?\s*)?\d[\d.]{4,}/gi, 'documento o matrícula'],
+    [new RegExp(N + '\\d{7,8}' + F, 'g'), 'número de 7 u 8 cifras'],
+    [/(?<![A-ZÁÉÍÓÚÑ])[A-ZÁÉÍÓÚÑ]{3,}, [A-ZÁÉÍÓÚÑ]{3,}(?: [A-ZÁÉÍÓÚÑ]{3,})*/g, 'nombre APELLIDO, NOMBRE'],
   ];
-  for (const [re, que] of patrones) for (const m of texto.match(re) || []) if (!PERMITIDOS.has(m)) problemas.push(`${que}: ${m.replace(/\d(?=\d{2})/g, '•')}`);
+  for (const [re, que] of patrones) for (const m of texto.match(re) || []) if (!PERMITIDOS.has(m.trim())) problemas.push(`${que}: ${m.replace(/\d(?=\d{2})/g, '•')}`);
   const plano = normalizar(texto);
   for (const h of huellas) {
     if (/^\d+$/.test(h)) { if (new RegExp('(?<!\\d)' + h + '(?!\\d)').test(texto) && !PERMITIDOS.has(h)) problemas.push('número de los ejemplos: ' + h.replace(/\d(?=\d{2})/g, '•')); }
@@ -133,9 +143,12 @@ function main() {
   html = html.replace(cssCDN, '<link rel="stylesheet" href="vendor/leaflet/leaflet.css">').replace(jsCDN, '<script src="vendor/leaflet/leaflet.js"></script>');
   if (/<script[^>]+src="https?:/i.test(html)) throw new Error('quedó algún script cargado de afuera del sitio');
 
-  const csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com; " +
-    "object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
+  // Content-Security-Policy: solo corren los scripts propios (los del sitio y los que van adentro de la página, por su huella),
+  // las imágenes solo de los servidores de mapas que usa el Tablero, y la página solo habla con sí misma y con la API de GitHub.
+  const huellasScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => `'sha256-${crypto.createHash('sha256').update(m[1], 'utf8').digest('base64')}'`);
+  const csp = `default-src 'self'; script-src 'self' ${huellasScripts.join(' ')}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ` +
+    "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://wms.ign.gob.ar https://server.arcgisonline.com https://idecor-ws.mapascordoba.gob.ar; " +
+    "connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
   html = html.replace('<head>', `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">\n<meta name="robots" content="noindex, nofollow">`);
 
   barrer('index.html', html, s.huellas);

@@ -94,7 +94,7 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
 
 **Puesta en marcha (una sola vez)**
 1. En GitHub: botón **+**, **New repository**, nombre `relevamiento-pierri`, **Public**, **Create repository**.
-2. Subir los archivos del sitio (`index.html`, `pierri_web.js`, `robots.txt`, `.nojekyll`). Los arma `node armar_web.js --salida <carpeta>`.
+2. Subir los archivos del sitio: `index.html`, `pierri_web.js`, la carpeta `vendor/` (el mapa), `robots.txt` y `.nojekyll`. Los arma `node armar_web.js --salida <carpeta>`; normalmente los sube Claude.
 3. En el repositorio: **Settings**, **Pages**, *Branch* `main` y `/ (root)`, **Save**.
 4. Crear el permiso para escribir (token): en GitHub, tu foto, **Settings**, **Developer settings**, **Personal access tokens**, **Fine-grained tokens**, **Generate new token**.
    - Nombre: `relevamiento-pierri`. Vencimiento: un año.
@@ -110,7 +110,7 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
 - *activar*: pide una contraseña nueva; la vieja no vuelve a servir.
 - Después de cada cambio, GitHub tarda unos minutos en publicarlo: recién ahí vale para la persona. Hacé los cambios de a varios juntos si podés, porque GitHub limita las publicaciones a unas diez por hora.
 
-**El permiso de GitHub (token)** queda guardado solo en tu computadora, nunca en el repositorio: adivinar tu contraseña permitiría leer, pero no escribir. Para usar otra computadora, o cuando el token vence: **Configuración**, **Permiso de GitHub**, pegarlo y **Guardar en esta computadora**. En una computadora prestada, al terminar, **Olvidar**.
+**El permiso de GitHub (token)** queda guardado solo en tu computadora, cifrado con tu contraseña, nunca en el repositorio: adivinar tu contraseña permitiría leer, pero no escribir. Para usar otra computadora, o cuando el token vence: **Configuración**, **Permiso de GitHub**, pegarlo y **Guardar en esta computadora**. En una computadora prestada, al terminar: **Olvidar** y **Cerrar sesión**.
 
 **Subir lo leído en el kit**
 1. En el kit: **Expedientes**, **Guardar JSON**.
@@ -121,7 +121,9 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
 - La contraseña de cada uno es la única protección de la lectura: 12 caracteres o más, mejor una frase larga. No hay bloqueo por intentos fallidos, porque cualquiera puede bajarse los archivos cifrados y probar contraseñas en su propia computadora.
 - Desactivar a alguien, cambiarle la contraseña o cambiar la tuya le corta el acceso a todo lo que se guarde desde ese momento. Las versiones anteriores siguen en el historial del repositorio, cifradas con la llave vieja: con la contraseña vieja se podrían abrir. Para borrar el historial hay que borrar el repositorio, crearlo de nuevo y repetir la puesta en marcha.
 - En el repositorio público no aparece ningún nombre de usuario: la lista de usuarios está cifrada y solo la abre el administrador.
-- La sesión dura lo que la pestaña: al cerrarla, hay que volver a ingresar.
+- La sesión vive solo en la página abierta: al recargar o cerrar la pestaña hay que volver a ingresar. No queda nada guardado en el navegador salvo el token, cifrado.
+- Todos los sitios de GitHub Pages de la cuenta `cornabalta3-web` comparten la dirección `cornabalta3-web.github.io`, y con ella el almacenamiento del navegador. Por eso el token va cifrado. Aun así, conviene no publicar en esa cuenta páginas con código de terceros.
+- Cada carga y cada cambio de llave agregan al historial una copia entera del relevamiento cifrado. Con unos pocos MB por carga alcanza para años; si algún día el repositorio pesa demasiado, se recrea.
 
 ## Cargar miles de resoluciones de una vez
 

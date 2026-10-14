@@ -357,7 +357,7 @@ tr.rc-resalte td{background:#fdf3dc!important;transition:background .4s}
       <div class="cuerpo">
         <div class="controles">
           <div class="grupo"><label for="nuUsuario">Usuario</label><input id="nuUsuario" placeholder="nombre.apellido"></div>
-          <div class="grupo"><label for="nuNombre">Nombre y organismo</label><input id="nuNombre" placeholder="Irene · Unidad Ejecutora"></div>
+          <div class="grupo"><label for="nuNombre">Nombre y organismo</label><input id="nuNombre" placeholder="Nombre Apellido · Organismo"></div>
           <div class="grupo"><label for="nuRol">Perfil</label><select id="nuRol"><option value="veedor">Consulta</option><option value="editor">Revisión</option><option value="admin">Administración</option></select></div>
           <div class="grupo"><label for="nuClave">Contraseña inicial</label><input id="nuClave" type="text" placeholder="mínimo 12 caracteres"></div>
           <button id="btnCrearUsuario">Crear usuario</button>
@@ -502,9 +502,9 @@ tr.rc-resalte td{background:#fdf3dc!important;transition:background .4s}
   /**
    * Control cruzado independiente del modelo: lee la frase de antigüedad en texto plano (capa de texto del PDF o texto_original).
    * Variantes vistas en resoluciones reales:
-   *   "es de 25 años al 18/07/2025"
-   *   "es sesenta años al 06/04/2018" / "es de sesenta años y tres meses al 06/04/2018"
-   *   "data del 06/09/2018 (fs. 7)"
+   *   "es de 20 años al 01/02/2024"
+   *   "es cincuenta años al 03/03/2017" / "es de cincuenta años y dos meses al 03/03/2017"
+   *   "data del 05/05/2017 (fs. 9)"
    *   "desde el año 1998" / "desde el 15/03/2001"
    * @returns {{ antiguedad_anios, antiguedad_meses, fecha_referencia, fecha_inicio_declarada, criterio, frase }|null}
    */
@@ -1414,7 +1414,7 @@ async function cargarDesdeServidor(){
   registros = (d.registros || []).filter(r => r && r.derivado && !r.repetido_de);
   resumenSrv = d.resumen || {};
   const res = resumenSrv;
-  $('origen').innerHTML = `<span><b>${res.archivos || 0}</b> archivos cargados</span><span><b>${res.resoluciones || 0}</b> resoluciones válidas</span><span>${res.repetidas || 0} repetidas · ${res.incompletas || 0} incompletas · ${res.errores || 0} con error</span><span>tokens ${Number(res.tokens || 0).toLocaleString('es-AR')}</span>`;
+  $('origen').innerHTML = `<span><b>${Number(res.archivos) || 0}</b> archivos cargados</span><span><b>${Number(res.resoluciones) || 0}</b> resoluciones válidas</span><span>${Number(res.repetidas) || 0} repetidas · ${Number(res.incompletas) || 0} incompletas · ${Number(res.errores) || 0} con error</span><span>tokens ${Number(res.tokens || 0).toLocaleString('es-AR')}</span>`;
   $('subApp').textContent = d.config && d.config.key ? `clave cargada (${d.config.key}) · ${d.config.modelo}` : 'sin clave: se lee solo por texto';
   if(d.config){ $('regla').value = d.config.regla || 'CORTE_FIJO'; $('corte').value = d.config.fechaCorte || '2006-01-01'; $('margen').value = d.config.margenBordeMeses ?? 12; $('modelo').value = d.config.modelo || 'claude-haiku-4-5-20251001'; if(d.config.key) $('apiKey').value = d.config.key; }
   pintarTodo();
@@ -1549,7 +1549,8 @@ if(WEB) $('btnInicial').addEventListener('click', async () => {
   errorIngreso('');
   if($('iniClave').value !== $('iniClave2').value) return errorIngreso('Las dos contraseñas no coinciden.');
   const b = $('btnInicial'); b.disabled = true; b.textContent = 'Creando…';
-  try{ await api('/api/web/inicial', { method: 'POST', body: JSON.stringify({ usuario: $('iniUsuario').value, nombre: $('iniNombre').value, clave: $('iniClave').value, token: $('iniToken').value }) }); location.reload(); }
+  try{ await api('/api/web/inicial', { method: 'POST', body: JSON.stringify({ usuario: $('iniUsuario').value, nombre: $('iniNombre').value, clave: $('iniClave').value, token: $('iniToken').value }) });
+    ['iniClave','iniClave2','iniToken'].forEach(id => $(id).value = ''); $('ingreso').classList.add('oculto'); window.__arrancar(); }
   catch(err){ errorIngreso(err.message); b.disabled = false; b.textContent = 'Crear y entrar'; }
 });
 function errorIngreso(t){ const e = $('ingError'); e.textContent = t; e.classList.toggle('oculto', !t); }
@@ -1591,6 +1592,7 @@ $('btnIngresar').addEventListener('click', async () => {
   try{
     const r = await api('/api/login', { method: 'POST', body: JSON.stringify({ usuario: $('ingUsuario').value, clave: $('ingClave').value }) });
     if(r.debe_cambiar){ YO = r; mostrarIngreso(true); return; }
+    if(WEB){ $('ingClave').value = ''; $('ingreso').classList.add('oculto'); window.__arrancar(); return; }
     location.reload();
   }catch(err){ errorIngreso(err.message); }
 });
@@ -1611,7 +1613,7 @@ async function pintarUsuarios(lista){
 }
 async function usuariosAccion(cuerpo){
   try{ const r = await api('/api/usuarios', { method: 'POST', body: JSON.stringify(cuerpo) }); pintarUsuarios(r.usuarios); avisar(WEB ? 'Listo. GitHub tarda unos minutos en publicarlo: recién ahí vale para la persona.' : 'Listo.'); }
-  catch(err){ avisar(err.message, true); }
+  catch(err){ avisar(err.message, true); if(WEB) api('/api/usuarios').then(r => pintarUsuarios(r.usuarios)).catch(() => {}); }
 }
 if(SERVIDOR){
   $('btnPadron').addEventListener('click', () => $('filePadron').click());
@@ -1649,8 +1651,12 @@ if(SERVIDOR){
       let clave;
       if(WEB && a.dataset.valor === '1'){ clave = prompt(`Para volver a activar a ${a.dataset.activo} hace falta una contraseña nueva (mínimo 12 caracteres). Pasásela por un medio seguro.`); if(!clave) return; }
       usuariosAccion({ accion: 'activo', usuario: a.dataset.activo, activo: a.dataset.valor === '1', clave }); }
-    if(c){ e.preventDefault(); const nueva = prompt(`Nueva contraseña para ${c.dataset.clave} (mínimo 12 caracteres). ${WEB ? 'Pasásela a la persona por un medio seguro.' : 'Va a tener que cambiarla al entrar.'}`);
-      if(nueva) usuariosAccion({ accion: 'reiniciar_clave', usuario: c.dataset.clave, clave: nueva }); }
+    if(c){ e.preventDefault();
+      const propia = WEB && YO && c.dataset.clave === YO.usuario;
+      const nueva = prompt(propia ? 'Tu contraseña nueva (mínimo 12 caracteres). Si la perdés, nadie puede recuperarla.' : `Nueva contraseña para ${c.dataset.clave} (mínimo 12 caracteres). ${WEB ? 'Pasásela a la persona por un medio seguro.' : 'Va a tener que cambiarla al entrar.'}`);
+      if(!nueva) return;
+      if(propia && prompt('Repetí tu contraseña nueva:') !== nueva){ avisar('Las dos contraseñas no coinciden: no se cambió nada.', true); return; }
+      usuariosAccion({ accion: 'reiniciar_clave', usuario: c.dataset.clave, clave: nueva }); }
   });
   $('btnAuditoria').addEventListener('click', async () => {
     try{ const r = await api('/api/auditoria?n=300');
@@ -1694,11 +1700,12 @@ if(SERVIDOR){
     await cargarDesdeServidor(); }catch(err){ avisar('Error: ' + err.message, true); } });
   ['regla','corte','margen'].forEach(id => $(id).addEventListener('change', async () => { try{ await api('/api/config', { method: 'POST', body: JSON.stringify({ regla: $('regla').value, fechaCorte: $('corte').value, margenBordeMeses: $('margen').value }) }); await cargarDesdeServidor(); }catch(err){ avisar('Error: ' + err.message, true); } }));
   $('expCsv').addEventListener('click', () => { if(WEB) descargar('\ufeff' + P.aCSV(vista), 'planilla_ley_pierri.csv', 'text/csv;charset=utf-8'); else location.href = '/api/planilla.csv'; });
-  arrancarConSesion().then(ok => {
+  window.__arrancar = () => arrancarConSesion().then(ok => {
     if(!ok) return;                                   // hay que ingresar primero
     cargarDesdeServidor().then(() => ir(location.hash.slice(1) || (registros.length ? 'resumen' : 'cargar'))).catch(err => { avisar((WEB ? 'No se pudieron abrir los datos: ' : 'No se pudo conectar con pierri.js: ') + err.message, true); ir('cargar'); });
     if(YO && (YO.permisos || {}).administrar) api('/api/usuarios').then(r => pintarUsuarios(r.usuarios)).catch(() => {});
   });
+  window.__arrancar();
 } else {
   $('cargarTitulo').textContent = 'Arrastrá acá el archivo resultados.jsonl';
   $('cargarSub').textContent = 'Modo archivo: abriste el Tablero sin pierri.js. Para cargar PDF y guardar en la base, corré node pierri.js.';
@@ -1968,7 +1975,7 @@ $('filas').addEventListener('click', e => {
     <dt>Inventario UEST</dt><dd>${r.inventario ? esc(`${r.inventario.estado_digitalizacion || ''} · cuenta ${r.inventario.cuenta || 'sin'}${r.inventario.cuenta_coincide === false ? ' (NO coincide con la leída)' : r.inventario.cuenta_coincide ? ' (coincide)' : ''} · resolución N° ${r.inventario.nro_resolucion || 'sin'}${r.inventario.resolucion_coincide === false ? ' (NO coincide)' : r.inventario.resolucion_coincide ? ' (coincide)' : ''}${r.inventario.iniciador ? ' · SUAC: ' + r.inventario.iniciador + (r.inventario.dni ? ' DNI ' + r.inventario.dni : '') + (r.inventario.dni_coincide === false ? ' (DNI NO coincide)' : r.inventario.dni_coincide ? ' (DNI coincide)' : '') : ''}`) : 'no está en el inventario cargado'}</dd>
     <dt>Señales</dt><dd>${esc((d.senales || []).join(', ') || '—')}</dd>
     <dt>Revisar</dt><dd>${esc((d.motivos_revision || []).join(' · ') || 'no')}</dd>
-    <dt>Archivo</dt><dd>${esc(r.archivo || '')}${r.tomo ? ` <span class="mini">(páginas ${r.tomo.desde + 1}–${r.tomo.hasta + 1} de ${esc(r.tomo.archivo)})</span>` : ''}</dd>
+    <dt>Archivo</dt><dd>${esc(r.archivo || '')}${r.tomo ? ` <span class="mini">(páginas ${(Number(r.tomo.desde) || 0) + 1}–${(Number(r.tomo.hasta) || 0) + 1} de ${esc(r.tomo.archivo)})</span>` : ''}</dd>
   </dl>
   ${SERVIDOR && !WEB ? `<div class="acciones" style="margin-top:12px"><a class="boton-ver" href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">Ver la resolución original</a><span class="mini">se abre el PDF tal como lo leyó el sistema, para controlarlo</span></div>
   <div class="revision" data-id="${encodeURIComponent(r.hash)}">
@@ -2032,7 +2039,7 @@ function pintarPadron(){
   const cruzados = cuenta('INSCRIPTA') + cuenta('PROVISORIA') + cuenta('OBSERVADA');
   $('subRegistro').textContent = p.filas ? `Padrón ${p.archivo || ''} · ${p.filas} filas` : 'Padrón sin cargar';
   const tarjetas = [['Inscriptas', cuenta('INSCRIPTA'), 'c-m', 'INSCRIPTA'], ['Provisorias u observadas', cuenta('PROVISORIA') + cuenta('OBSERVADA'), 'c-a', 'TRABADA'], ['No inscriptas', cuenta('NO_FIGURA_EN_PADRON'), 'c-r', 'NO_FIGURA_EN_PADRON'], ['Ambiguas', cuenta('AMBIGUO'), 'c-g', 'AMBIGUO'], ['Sin nombre para cruzar', cuenta('SIN_NOMBRE_PARA_CRUZAR'), 'c-g', 'SIN']];
-  $('padronTarjetas').innerHTML = (p.filas ? `<div class="tarjeta"><div class="t"><span>Padrón cargado</span></div><span class="n c-m" style="font-size:20px">${esc(p.archivo || '')}</span><span class="mini">${p.filas} filas · ${p.cargado_en ? new Date(p.cargado_en).toLocaleString('es-AR') : ''}</span></div>` : `<div class="tarjeta"><div class="t"><span>Padrón</span></div><span class="n c-g" style="font-size:20px">sin cargar</span><span class="mini">cargá el .xls del Registro para cruzar</span></div>`)
+  $('padronTarjetas').innerHTML = (p.filas ? `<div class="tarjeta"><div class="t"><span>Padrón cargado</span></div><span class="n c-m" style="font-size:20px">${esc(p.archivo || '')}</span><span class="mini">${Number(p.filas) || 0} filas · ${p.cargado_en ? new Date(p.cargado_en).toLocaleString('es-AR') : ''}</span></div>` : `<div class="tarjeta"><div class="t"><span>Padrón</span></div><span class="n c-g" style="font-size:20px">sin cargar</span><span class="mini">cargá el .xls del Registro para cruzar</span></div>`)
     + tarjetas.map(([t, n, c, f]) => `<div class="tarjeta ${n ? 'clicable' : ''}" ${n ? `data-verinsc="${f}" role="button" tabindex="0"` : ''}><div class="t"><span>${t}</span></div><span class="n ${c}">${n}</span>${n ? '<span class="mini">tocá para ver cuáles</span>' : ''}</div>`).join('');
   $('padronTarjetas').querySelectorAll('[data-verinsc]').forEach(el => el.addEventListener('click', () => verInscripcion(el.dataset.verinsc)));
   $('registroResumen').innerHTML = p.filas || cruzados ? `<div class="tarjetas" style="grid-template-columns:repeat(3,minmax(0,1fr))">
@@ -2051,7 +2058,7 @@ async function cargarInventarioVista(){
   if(!inv.cargado){ $('invTarjetas').innerHTML = `<div class="tarjeta"><div class="t"><span>Inventario</span></div><span class="n c-g" style="font-size:20px">sin cargar</span><span class="mini">cargá el CSV de expedientes digitalizados de la UEST</span></div>`; $('invLocalidades').innerHTML = ''; $('invSubLoc').textContent = ''; return; }
   const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
   $('invTarjetas').innerHTML = `
-    <div class="tarjeta"><div class="t"><span>Expedientes en el inventario</span></div><span class="n c-m">${inv.total.toLocaleString('es-AR')}</span><span class="mini">${(inv.total - (inv.sin_digitalizar || 0)).toLocaleString('es-AR')} digitalizados · ${(inv.sin_digitalizar || 0).toLocaleString('es-AR')} sin digitalizar</span></div>
+    <div class="tarjeta"><div class="t"><span>Expedientes en el inventario</span></div><span class="n c-m">${(Number(inv.total) || 0).toLocaleString('es-AR')}</span><span class="mini">${(inv.total - (inv.sin_digitalizar || 0)).toLocaleString('es-AR')} digitalizados · ${(inv.sin_digitalizar || 0).toLocaleString('es-AR')} sin digitalizar</span></div>
     <div class="tarjeta"><div class="t"><span>Con resolución escaneada</span><span class="pill p-v">${pct(inv.con_resolucion, inv.total)} %</span></div><span class="n c-v">${inv.con_resolucion.toLocaleString('es-AR')}</span><span class="mini">las que el Lector puede clasificar</span></div>
     <div class="tarjeta"><div class="t"><span>Ya leídas por el Lector</span><span class="pill p-m">${pct(inv.leidas, inv.con_resolucion)} %</span></div><span class="n c-m">${inv.leidas.toLocaleString('es-AR')}</span><span class="mini">de ${inv.con_resolucion.toLocaleString('es-AR')} con resolución</span></div>
     <div class="tarjeta"><div class="t"><span>Con cuenta válida</span><span class="pill p-g">${pct(inv.con_cuenta, inv.total)} %</span></div><span class="n c-g">${inv.con_cuenta.toLocaleString('es-AR')}</span><span class="mini">ubicables sin abrir el PDF</span></div>

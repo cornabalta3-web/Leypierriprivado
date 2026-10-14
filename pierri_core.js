@@ -108,9 +108,9 @@
   /**
    * Control cruzado independiente del modelo: lee la frase de antigüedad en texto plano (capa de texto del PDF o texto_original).
    * Variantes vistas en resoluciones reales:
-   *   "es de 25 años al 18/07/2025"
-   *   "es sesenta años al 06/04/2018" / "es de sesenta años y tres meses al 06/04/2018"
-   *   "data del 06/09/2018 (fs. 7)"
+   *   "es de 20 años al 01/02/2024"
+   *   "es cincuenta años al 03/03/2017" / "es de cincuenta años y dos meses al 03/03/2017"
+   *   "data del 05/05/2017 (fs. 9)"
    *   "desde el año 1998" / "desde el 15/03/2001"
    * @returns {{ antiguedad_anios, antiguedad_meses, fecha_referencia, fecha_inicio_declarada, criterio, frase }|null}
    */

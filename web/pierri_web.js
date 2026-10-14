@@ -28,7 +28,10 @@
  *   - Desactivar a alguien, cambiarle la contraseña o cambiar la del administrador cambia la DEK y vuelve a cifrar
  *     todo: las contraseñas viejas no abren nada de lo que se guarde después. Lo anterior queda en el historial.
  *
- * La sesión dura lo que la pestaña (sessionStorage).
+ * La sesión vive solo en la memoria de la página: no se guarda en el navegador. Al recargar o cerrar, hay que volver a
+ * ingresar. La llave privada se importa como no extraíble. El token de GitHub se guarda en esta computadora pero
+ * cifrado con una llave que sale de la contraseña del administrador: los demás sitios de la cuenta en github.io (que
+ * comparten el almacenamiento del navegador) no pueden usarlo.
  */
 (function () {
   'use strict';
@@ -39,9 +42,10 @@
   // En la web solo el administrador escribe. Los perfiles de los demás quedan guardados para cuando haya más funciones.
   const PERMISOS = { ver: ['veedor', 'editor', 'admin'], revisar: [], cargar: ['admin'], administrar: ['admin'] };
   const RUTAS = { usuarios: 'datos/usuarios.json', datos: 'datos/relevamiento.enc', admin: 'datos/admin.enc' };
-  const CLAVE_SESION = 'pierri_web_sesion', CLAVE_TOKEN = 'pierri_web_token';
+  const CLAVE_TOKEN = 'pierri_web_token';
   const REPO = window.PIERRI_WEB_REPO || repoDesdeDireccion();
   const AVISO_DEMORA = 'Si te acaban de crear el usuario o cambiar la contraseña, esperá unos minutos: GitHub tarda en publicar los cambios.';
+  const FECHA_CORTE = '2006-01-01';
 
   function repoDesdeDireccion() {
     const m = location.hostname.match(/^([^.]+)\.github\.io$/i);
@@ -60,12 +64,12 @@
     return new Uint8Array(await S.deriveBits({ name: 'PBKDF2', salt: sal, iterations: ITER, hash: 'SHA-256' }, base, 256));
   }
   const llaveAES = raw => S.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
-  async function cifrar(raw, bytes) {
+  async function cifrar(raw, bytes, llave) {
     const iv = azar(12);
-    return { iv: b64(iv), datos: b64(new Uint8Array(await S.encrypt({ name: 'AES-GCM', iv }, await llaveAES(raw), bytes))) };
+    return { iv: b64(iv), datos: b64(new Uint8Array(await S.encrypt({ name: 'AES-GCM', iv }, llave || await llaveAES(raw), bytes))) };
   }
-  async function descifrar(raw, sobre) {
-    return new Uint8Array(await S.decrypt({ name: 'AES-GCM', iv: desb64(sobre.iv) }, await llaveAES(raw), desb64(sobre.datos)));
+  async function descifrar(raw, sobre, llave) {
+    return new Uint8Array(await S.decrypt({ name: 'AES-GCM', iv: desb64(sobre.iv) }, llave || await llaveAES(raw), desb64(sobre.datos)));
   }
   async function parNuevo() {
     const k = await S.generateKey(EC, true, ['deriveBits']);
@@ -82,9 +86,15 @@
     const k = await llaveCompartida(eph.privateKey, await S.importKey('raw', pubRaw, EC, false, []));
     return Object.assign({ e: b64(new Uint8Array(await S.exportKey('raw', eph.publicKey))) }, await cifrar(k, bytes));
   }
-  async function abrirCon(privPkcs8, sobre) {
-    const priv = await S.importKey('pkcs8', privPkcs8, EC, false, ['deriveBits']);
+  /** Abre lo sellado para una llave privada (CryptoKey no extraíble). */
+  async function abrirCon(priv, sobre) {
     return descifrar(await llaveCompartida(priv, await S.importKey('raw', desb64(sobre.e), EC, false, [])), sobre);
+  }
+  const importarPriv = bytes => S.importKey('pkcs8', bytes, EC, false, ['deriveBits']);
+  /** Llave para guardar el token en esta computadora: sale de la llave de la contraseña del administrador. */
+  async function llaveToken(kek) {
+    const base = await S.importKey('raw', kek, 'HKDF', false, ['deriveKey']);
+    return S.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: te.encode('relevamiento-pierri:token') }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
   }
   function rellenar(texto, n) {
     const b = te.encode(texto);
@@ -94,6 +104,13 @@
   const flujo = (bytes, t) => new Response(new Blob([bytes]).stream().pipeThrough(t));
   const comprimir = async texto => new Uint8Array(await flujo(te.encode(texto), new CompressionStream('gzip')).arrayBuffer());
   const descomprimir = bytes => flujo(bytes, new DecompressionStream('gzip')).text();
+  /** Ningún texto de los datos puede formar etiquetas HTML: < y > se cambian por ‹ ›. Es una red de seguridad además del escape del Tablero. */
+  function limpiar(v) {
+    if (typeof v === 'string') return /[<>]/.test(v) ? v.replace(/</g, '‹').replace(/>/g, '›') : v;
+    if (Array.isArray(v)) { for (let i = 0; i < v.length; i++) v[i] = limpiar(v[i]); return v; }
+    if (v && typeof v === 'object') { for (const k of Object.keys(v)) v[k] = limpiar(v[k]); return v; }
+    return v;
+  }
   function mezclar(a) { for (let i = a.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   const normUsuario = u => String(u || '').trim().toLowerCase();
   function validarUsuario(u) { if (!/^[a-z0-9._-]{3,40}$/.test(u)) throw new Error('El usuario va en minúsculas, sin espacios, de 3 a 40 caracteres (letras, números, punto, guion).'); }
@@ -110,8 +127,12 @@
     if (status === 404) return 'GitHub no encuentra el repositorio con ese token: revisá que el token incluya este repositorio.';
     return 'GitHub respondió ' + status + '.';
   }
+  async function red(url, opciones) {
+    try { return await fetch(url, opciones); }
+    catch (e) { const x = new Error('No hay conexión con GitHub. Revisá internet y volvé a intentar.'); x.red = true; throw x; }
+  }
   async function gh(token, metodo, ruta, cuerpo) {
-    const r = await fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}${ruta}`, {
+    const r = await red(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}${ruta}`, {
       method: metodo, cache: 'no-store',
       headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
       body: cuerpo ? JSON.stringify(cuerpo) : undefined,
@@ -122,7 +143,7 @@
   }
   /** Lee un archivo en un commit dado por la API (lo último de verdad). Devuelve null si no existe. */
   async function leerEn(token, ruta, ref) {
-    const r = await fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/contents/${ruta}?ref=${encodeURIComponent(ref)}`,
+    const r = await red(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/contents/${ruta}?ref=${encodeURIComponent(ref)}`,
       { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' }, cache: 'no-store' });
     if (r.status === 404) return null;
     if (!r.ok) throw new Error(errorGitHub(r.status));
@@ -130,7 +151,7 @@
   }
   /** Lee un archivo de la página publicada. Lo nuevo puede tardar unos minutos en aparecer. */
   async function leerPublicado(ruta) {
-    const r = await fetch(ruta + '?v=' + Date.now(), { cache: 'no-store' });
+    const r = await red(ruta + '?v=' + Date.now(), { cache: 'no-store' });
     if (r.status === 404) return null;
     if (!r.ok) throw new Error('No se pudo leer ' + ruta + ' (respuesta ' + r.status + ').');
     return r.text();
@@ -143,7 +164,7 @@
     const token = tokenGuardado();
     if (!token) throw new Error('Falta el permiso de GitHub para guardar: cargalo en Configuración.');
     for (let intento = 0; intento < 3; intento++) {
-      const head = (await gh(token, 'GET', `/git/ref/heads/${encodeURIComponent(REPO.rama)}`)).object.sha;
+      const head = await punta(token);
       const base = await gh(token, 'GET', `/git/commits/${head}`);
       const estado = { token, head, leer: ruta => leerEn(token, ruta, head) };
       const archivos = await construir(estado);
@@ -155,18 +176,37 @@
       const t = await gh(token, 'POST', '/git/trees', { base_tree: base.tree.sha, tree: arbol });
       const c = await gh(token, 'POST', '/git/commits', { message: mensaje, tree: t.sha, parents: [head] });
       try { await gh(token, 'PATCH', `/git/refs/heads/${encodeURIComponent(REPO.rama)}`, { sha: c.sha, force: false }); return estado; }
-      catch (e) { if (e.status === 422 || e.status === 409) continue; throw e; }
+      catch (e) {
+        if (e.red) throw new Error('Se cortó la conexión justo al guardar: no se sabe si quedó guardado. Volvé a ingresar y fijate antes de repetirlo.');
+        if (e.status === 422 || e.status === 409) continue;
+        throw e;
+      }
     }
-    throw new Error('El sistema cambió varias veces mientras guardabas. Recargá la página y volvé a intentar.');
+    throw new Error('GitHub no aceptó el cambio: o el sistema cambió varias veces mientras guardabas, o la rama tiene reglas de protección. Volvé a ingresar y probá de nuevo.');
+  }
+  /** El último commit de la rama. */
+  async function punta(token) {
+    try { return (await gh(token, 'GET', `/git/ref/heads/${encodeURIComponent(REPO.rama)}`)).object.sha; }
+    catch (e) { if (e.status === 404) throw new Error(`No encuentro la rama "${REPO.rama}" en el repositorio (o el token no incluye este repositorio).`); throw e; }
   }
 
-  // ───────────── Token y sesión ─────────────
-  function tokenGuardado() { try { return localStorage.getItem(CLAVE_TOKEN) || ''; } catch (e) { return MEM_TOKEN; } }
-  let MEM_TOKEN = '';
-  function guardarToken(t) { MEM_TOKEN = t || ''; try { if (t) localStorage.setItem(CLAVE_TOKEN, t); else localStorage.removeItem(CLAVE_TOKEN); } catch (e) { /* queda en memoria */ } }
-  let MEMORIA = null;
-  function sesion() { try { return JSON.parse(sessionStorage.getItem(CLAVE_SESION) || 'null') || MEMORIA; } catch (e) { return MEMORIA; } }
-  function guardarSesion(s) { MEMORIA = s; try { if (s) sessionStorage.setItem(CLAVE_SESION, JSON.stringify(s)); else sessionStorage.removeItem(CLAVE_SESION); } catch (e) { /* queda en memoria */ } }
+  // ───────────── Token y sesión (solo en memoria) ─────────────
+  let SESION = null;
+  const sesion = () => SESION;
+  function guardarSesion(s) { SESION = s; }
+  const tokenGuardado = () => (SESION && SESION.token) || '';
+  /** Guarda el token cifrado en esta computadora (y lo deja en la sesión). Con '' lo borra. */
+  async function guardarToken(s, t) {
+    s.token = t || '';
+    try {
+      if (!t) { localStorage.removeItem(CLAVE_TOKEN); return; }
+      localStorage.setItem(CLAVE_TOKEN, JSON.stringify(await cifrar(null, te.encode(t), s.llaveToken)));
+    } catch (e) { /* sin almacenamiento: queda solo en la sesión */ }
+  }
+  async function leerToken(llave) {
+    try { const t = localStorage.getItem(CLAVE_TOKEN); return t ? td.decode(await descifrar(null, JSON.parse(t), llave)) : ''; }
+    catch (e) { return ''; }   // de otra contraseña u otro usuario: no sirve
+  }
   const puede = (s, p) => !!s && (PERMISOS[p] || []).includes(s.rol);
   function exigir(p) {
     const s = sesion();
@@ -185,7 +225,7 @@
   async function abrirEstado(estado, s) {
     const txtU = await estado.leer(RUTAS.usuarios), txtA = await estado.leer(RUTAS.admin);
     if (!txtU || !txtA) throw new Error('El repositorio no tiene el sistema armado.');
-    const lista = JSON.parse(txtU), adm = JSON.parse(txtA), priv = desb64(s.priv);
+    const lista = JSON.parse(txtU), adm = JSON.parse(txtA), priv = s.priv;
     let carga = null;
     for (const e of lista.usuarios) {
       try { const c = JSON.parse(td.decode(await abrirCon(priv, e.dek)).trim()); if (c.u === s.usuario) { carga = c; break; } } catch (err) { /* no es la suya */ }
@@ -195,6 +235,8 @@
     const boveda = JSON.parse(td.decode(await descifrar(ak, adm)));
     return { lista, dek: desb64(carga.k), ak, boveda };
   }
+  /** El estado del último commit, leído por la API (lo usa el administrador para no depender de la demora de Pages). */
+  async function estadoFresco(token) { const head = await punta(token); return { leer: r => leerEn(token, r, head) }; }
   async function cargaPara(info, u, dek) {
     return sellarPara(desb64(info.pub), rellenar(JSON.stringify({ k: b64(dek), u, n: info.nombre, r: info.rol }), LARGO_CARGA));
   }
@@ -225,7 +267,9 @@
   /** Llaves nuevas para un usuario a partir de la contraseña que le pone el administrador. */
   async function llavesPara(u, clave, sal) {
     const par = await parNuevo(), kek = await derivar(u, clave, sal);
-    return { pub: b64(par.pub), priv: await cifrar(kek, par.priv), privRaw: par.priv };
+    const r = { pub: b64(par.pub), priv: await cifrar(kek, par.priv), privKey: await importarPriv(par.priv), kek };
+    par.priv.fill(0);
+    return r;
   }
 
   /**
@@ -252,6 +296,10 @@
       nuevaSesion = Object.assign({}, s, { dek: b64(dek) }, r.sesion || {});
       return archivos;
     }, mensaje);
+    if (nuevaSesion.kekNueva) {   // cambió la contraseña del administrador: el token se vuelve a cifrar con la llave nueva
+      nuevaSesion.llaveToken = await llaveToken(nuevaSesion.kekNueva); delete nuevaSesion.kekNueva;
+      await guardarToken(nuevaSesion, s.token);
+    }
     guardarSesion(nuevaSesion); CACHE = null;
   }
 
@@ -262,15 +310,15 @@
     if (!token) throw new Error('Falta el token de GitHub.');
     const repo = await gh(token, 'GET', '');
     if (repo.permissions && repo.permissions.push === false) throw new Error('Con ese token no se puede escribir en este repositorio.');
-    guardarToken(token);
-    let sesionNueva;
+    let sesionNueva, kekAdmin;
+    guardarSesion({ token });   // provisoria: solo para que la transacción tenga el token
     try {
       await transaccion(async estado => {
-        if (await estado.leer(RUTAS.usuarios)) throw new Error('El sistema ya tiene administrador. Ingresá con tu usuario.');
+        if (await estado.leer(RUTAS.usuarios)) throw new Error('El sistema ya tiene administrador. Si lo acabás de crear, esperá unos minutos a que GitHub lo publique e ingresá con tu usuario.');
         const sal = azar(16), dek = azar(32), ak = azar(32), ahora = new Date().toISOString();
         const ll = await llavesPara(u, c.clave, sal);
         const boveda = { v: 2, usuarios: { [u]: { nombre: String(c.nombre || u).trim(), rol: 'admin', pub: ll.pub, priv: ll.priv, activo: true, creado: ahora } }, cambios: [] };
-        sesionNueva = { usuario: u, nombre: boveda.usuarios[u].nombre, rol: 'admin', dek: b64(dek), priv: b64(ll.privRaw) };
+        sesionNueva = { usuario: u, nombre: boveda.usuarios[u].nombre, rol: 'admin', dek: b64(dek), priv: ll.privKey, token }; kekAdmin = ll.kek;
         anotar(boveda, sesionNueva, 'inicio', 'se creó el administrador');
         return {
           [RUTAS.usuarios]: await armarLista(boveda, b64(sal), dek),
@@ -278,25 +326,36 @@
           [RUTAS.datos]: await sellarDatos(dek, { fecha: ahora, origen: null, resumen: {}, config: {}, resultados: [] }),
         };
       }, 'Puesta en marcha');
-    } catch (e) { if (/ya tiene administrador/.test(e.message)) guardarToken(''); throw e; }
+    } catch (e) { guardarSesion(null); throw e; }
+    sesionNueva.llaveToken = await llaveToken(kekAdmin);
+    await guardarToken(sesionNueva, token);
     guardarSesion(sesionNueva);
     return { ok: true };
   }
 
   async function login(c) {
     const txt = await leerPublicado(RUTAS.usuarios);
-    if (!txt) throw new Error('El sistema todavía no tiene usuarios.');
+    if (!txt) throw new Error('El sistema todavía no tiene usuarios. Si lo acabás de crear, esperá unos minutos a que GitHub lo publique.');
     const lista = JSON.parse(txt), u = normUsuario(c.usuario);
     const kek = await derivar(u, c.clave || '', desb64(lista.sal));
-    let priv = null, carga = null;
+    let priv = null, privKey = null, carga = null;
     for (const e of lista.usuarios) {
       try { priv = await descifrar(kek, e.priv); } catch (err) { continue; }
-      try { carga = JSON.parse(td.decode(await abrirCon(priv, e.dek)).trim()); } catch (err) { carga = null; }
+      privKey = await importarPriv(priv);
+      try { carga = JSON.parse(td.decode(await abrirCon(privKey, e.dek)).trim()); } catch (err) { carga = null; }
       break;
     }
     if (!carga || carga.u !== u) throw new Error('Usuario o contraseña incorrectos. ' + AVISO_DEMORA);
     const s = { usuario: u, nombre: carga.n, rol: carga.r, dek: carga.k };
-    if (carga.r === 'admin') s.priv = b64(priv);
+    if (carga.r === 'admin') {
+      s.priv = privKey;
+      s.llaveToken = await llaveToken(kek);
+      s.token = await leerToken(s.llaveToken);
+      if (s.token) {   // lo último de verdad, aunque Pages todavía no haya publicado el último cambio
+        try { s.dek = b64((await abrirEstado(await estadoFresco(s.token), s)).dek); } catch (e) { if (/cambió en otra sesión/.test(e.message)) throw new Error('Usuario o contraseña incorrectos. ' + AVISO_DEMORA); }
+      }
+    }
+    if (priv) priv.fill(0);
     guardarSesion(s); CACHE = null;
     return { ok: true };
   }
@@ -311,7 +370,7 @@
       const ll = await llavesPara(s.usuario, c.nueva, desb64(ab.lista.sal));
       Object.assign(yo, { pub: ll.pub, priv: ll.priv, actualizado: new Date().toISOString() });
       anotar(boveda, s, 'cambio_clave', s.usuario);
-      return { rotar: true, rotarAdmin: true, sesion: { priv: b64(ll.privRaw) } };
+      return { rotar: true, rotarAdmin: true, sesion: { priv: ll.privKey, kekNueva: ll.kek } };
     }, 'Actualización de usuarios');
     return { ok: true };
   }
@@ -319,7 +378,7 @@
   async function verUsuarios(s) {
     const token = tokenGuardado();
     let estado;
-    if (token) { const head = (await gh(token, 'GET', `/git/ref/heads/${encodeURIComponent(REPO.rama)}`)).object.sha; estado = { leer: r => leerEn(token, r, head) }; }
+    if (token) estado = await estadoFresco(token);
     else estado = { leer: leerPublicado };
     return (await abrirEstado(estado, s)).boveda;
   }
@@ -351,6 +410,7 @@
         } else if (c.accion === 'activo') {
           if (u === s.usuario) throw new Error('No podés desactivar tu propia cuenta.');
           if (c.activo) {
+            if (info.activo) throw new Error('Ese usuario ya está activo. Para cambiarle la contraseña usá "nueva contraseña".');
             // Volver a activar pide contraseña nueva: la vieja no vuelve a servir.
             validarClave(c.clave);
             const ll = await llavesPara(u, c.clave, sal);
@@ -362,12 +422,13 @@
             r = { rotar: true };
           }
         } else if (c.accion === 'reiniciar_clave') {
+          if (!info.activo) throw new Error('Ese usuario está desactivado: para habilitarlo usá "activar", que pide la contraseña nueva.');
           validarClave(c.clave);
           const ll = await llavesPara(u, c.clave, sal);
           Object.assign(info, { pub: ll.pub, priv: ll.priv, actualizado: ahora });
           anotar(boveda, s, 'usuario_clave_reiniciada', u);
           // La contraseña vieja pudo filtrarse: se cambia la llave de los datos (y la de la bóveda, si es la del administrador).
-          r = u === s.usuario ? { rotar: true, rotarAdmin: true, sesion: { priv: b64(ll.privRaw) } } : { rotar: true };
+          r = u === s.usuario ? { rotar: true, rotarAdmin: true, sesion: { priv: ll.privKey, kekNueva: ll.kek } } : { rotar: true };
         } else throw new Error('Acción desconocida.');
       }
       lista = listaUsuarios(boveda);
@@ -383,7 +444,7 @@
     try { d = JSON.parse(texto.replace(/^﻿/, '')); } catch (e) { throw new Error('El archivo no es un JSON válido.'); }
     if (!d || !Array.isArray(d.resultados)) throw new Error('Ese JSON no es el que baja "Guardar JSON" del kit: no tiene "resultados".');
     const validas = d.resultados.filter(r => r && r.derivado && !r.repetido_de).length;
-    const contenido = { fecha: new Date().toISOString(), origen: nombre || 'relevamiento', fecha_kit: d.fecha || null, resumen: d.resumen || {}, config: d.config || {}, resultados: d.resultados };
+    const contenido = limpiar({ fecha: new Date().toISOString(), origen: nombre || 'relevamiento', fecha_kit: d.fecha || null, resumen: d.resumen || {}, config: d.config || {}, resultados: d.resultados });
     let dekUsada = null;
     await transaccion(async estado => {
       const ab = await abrirEstado(estado, s);
@@ -404,8 +465,11 @@
     if (!CACHE || CACHE.dek !== s.dek) {
       const token = s.rol === 'admin' ? tokenGuardado() : '';
       let texto;
-      if (token) { const head = (await gh(token, 'GET', `/git/ref/heads/${encodeURIComponent(REPO.rama)}`)).object.sha; texto = await leerEn(token, RUTAS.datos, head); }
-      else texto = await leerPublicado(RUTAS.datos);
+      if (token) {
+        const estado = await estadoFresco(token);
+        s.dek = b64((await abrirEstado(estado, s)).dek);
+        texto = await estado.leer(RUTAS.datos);
+      } else texto = await leerPublicado(RUTAS.datos);
       let contenido;
       try { contenido = await abrirDatosTexto(desb64(s.dek), texto); }
       catch (e) {
@@ -413,10 +477,12 @@
         // El administrador cambió la llave de los datos: hay que volver a ingresar para recibir la nueva.
         throw cortarSesion('Los datos se volvieron a cifrar. Volvé a ingresar con tu usuario.');
       }
-      CACHE = { dek: s.dek, contenido };
+      CACHE = { dek: s.dek, contenido: limpiar(contenido) };
     }
     const c = CACHE.contenido;
-    const cfg = Object.assign({ regla: 'CORTE_FIJO', fechaCorte: '2006-01-01', margenBordeMeses: 12 }, c.config || {}, s.config || {});
+    const cfg = Object.assign({ regla: 'CORTE_FIJO', fechaCorte: FECHA_CORTE, margenBordeMeses: 12 }, c.config || {}, s.config || {});
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(cfg.fechaCorte)) || isNaN(Date.parse(cfg.fechaCorte))) cfg.fechaCorte = FECHA_CORTE;
+    cfg.margenBordeMeses = Math.max(0, Number(cfg.margenBordeMeses) || 0);
     const P = window.PierriCore;
     const registros = (c.resultados || []).filter(r => r && r.derivado);
     for (const r of registros) {   // mismo cálculo que el Tablero en modo archivo: el corte se puede cambiar en pantalla
@@ -439,13 +505,14 @@
   }
 
   async function token(metodo, c) {
-    exigir('administrar');
-    if (metodo === 'DELETE') { guardarToken(''); return { ok: true, token: false }; }
+    const s = exigir('administrar');
+    if (metodo === 'DELETE') { await guardarToken(s, ''); return { ok: true, token: false }; }
     const t = String(c.token || '').trim();
     if (!t) throw new Error('Pegá el token.');
     const repo = await gh(t, 'GET', '');
     if (repo.permissions && repo.permissions.push === false) throw new Error('Con ese token no se puede escribir en este repositorio.');
-    guardarToken(t);
+    await guardarToken(s, t);
+    CACHE = null;
     return { ok: true, token: true };
   }
 
@@ -472,7 +539,7 @@
       case '/api/datos': return datos();
       case '/api/config': {
         const s = exigir('ver'), c = cuerpoJSON();
-        guardarSesion(Object.assign({}, s, { config: { regla: c.regla, fechaCorte: c.fechaCorte, margenBordeMeses: Number(c.margenBordeMeses) || 0 } }));
+        s.config = { regla: c.regla === 'PLAZO_MOVIL' ? 'PLAZO_MOVIL' : 'CORTE_FIJO', fechaCorte: c.fechaCorte, margenBordeMeses: Number(c.margenBordeMeses) || 0 };
         return { ok: true };
       }
       case '/api/auditoria': return auditoria();
