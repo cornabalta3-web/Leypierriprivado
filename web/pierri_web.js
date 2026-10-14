@@ -64,9 +64,11 @@
   const AVISO_DEMORA = 'Si te acaban de crear el usuario o cambiar la contraseña, esperá unos minutos: GitHub tarda en publicar los cambios.';
   const FECHA_CORTE = '2006-01-01';
   const PDF_MAXIMO = 60 * 1024 * 1024;       // un PDF cifrado tiene que entrar en un solo envío a GitHub (100 MB en base64)
-  const PAQUETE = 20 * 1024 * 1024;          // los PDF se suben en paquetes de hasta 20 MB
-  const TANDA_BYTES = 30 * 1024 * 1024;      // se guarda en GitHub cada 30 MB de PDF leídos…
-  const TANDA_ARCHIVOS = 150;                // …o cada 150 archivos, lo que llegue primero: lo leído no espera al final
+  const PAQUETE = 30 * 1024 * 1024;          // los PDF se suben en paquetes de hasta 30 MB (40 MB en base64)
+  // Se guarda en GitHub cada 60 MB de PDF leídos o cada 250 archivos, lo que llegue primero: lo leído no espera al final.
+  // Cada tanda son unas 12 escrituras; GitHub permite 500 por hora, así que 7.000 PDF (unos 35 tandas) entran holgados.
+  const TANDA_BYTES = 60 * 1024 * 1024;
+  const TANDA_ARCHIVOS = 250;
   const LECTURA_MAXIMA = 1500 * 1024;        // una lectura cifrada que pasa este tamaño se cierra y se empieza otra
   const TIPOS = ['RESOLUCION_INSCRIPCION', 'RESOLUCION_RECTIFICA', 'RESOLUCION_DESESTIMA', 'RESOLUCION_CANCELA', 'RESOLUCION_TRAMITE', 'CEDULA_NOTIFICACION'];
 
@@ -317,7 +319,7 @@
   }
   function exigirToken() { if (!tokenGuardado()) throw new Error('Falta el permiso de GitHub para guardar: cargalo en Configuración.'); }
   function cortarSesion(texto) {
-    guardarSesion(null); CACHE = null; PEND = pendienteNuevo();
+    guardarSesion(null); CACHE = null; perderPendiente();
     setTimeout(() => location.reload(), 2500);
     return new Error(texto);
   }
@@ -473,7 +475,7 @@
       }
     }
     if (priv) priv.fill(0);
-    guardarSesion(s); CACHE = null; PEND = pendienteNuevo();
+    guardarSesion(s); CACHE = null; perderPendiente();
     return { ok: true };
   }
 
@@ -614,7 +616,11 @@
   function indices(c) {
     if (!c._ix) {
       const kit = new Map();
-      for (const r of c.kit.resultados || []) if (r && r.hash_archivo && !kit.has(r.hash_archivo)) kit.set(r.hash_archivo, r);
+      for (const r of c.kit.resultados || []) {
+        if (!r) continue;
+        // La huella del PDF está en hash_archivo y al principio del id; en un lote importado sin los PDF, solo en el id.
+        for (const h of [r.hash_archivo, String(r.hash || '').split('#')[0]]) if (h && !kit.has(h)) kit.set(h, r);
+      }
       c._ix = { archivos: lecturasWeb(c).archivos, kit };
     }
     return c._ix;
@@ -678,10 +684,15 @@
       // Ubicada por la parcela: deja de ser la ubicación aproximada por localidad que pudo traer del kit.
       if (cta && !(g.catastro && g.catastro.encontrada) && cat[cta] && P.enriquecerConCatastro(d, cat[cta].p || null, T)) delete g.ubicacion_aproximada;
       if (loc) P.ubicarPorLocalidad(d, loc);
-      const a = web.archivos[r.hash_archivo];
-      r.pdf_web = !!(a && a.pdf);
+      // Dónde está su PDF (la clave para pedirlo), si se guardó en la web.
+      const clave = [r.hash_archivo, String(r.hash || '').split('#')[0]].find(h => h && web.archivos[h] && web.archivos[h].pdf);
+      r.pdf_web = clave || null;
     }
     B.marcarRepetidos(todos);
+    // El cruce con el Padrón y el inventario se hace acá, con lo cargado en la web. Lo que traía el JSON del kit se saca:
+    // mezclado con lo leído en la web daría resoluciones sin cruzar y conteos que no cierran.
+    if (!c.padron) for (const r of todos) { delete r.inscripcion; if (r.derivado) delete r.derivado.inscripcion; }
+    if (!c.inventario) for (const r of todos) delete r.inventario;
     let indiceInv = null;
     if (c.inventario) { indiceInv = B.indicePorExpediente(c.inventario.filas || []); B.anexarInventario(todos, indiceInv); }
     const cruce = c.padron ? B.cruzarConPadron(todos, c.padron.filas || [], indiceInv || new Map()) : null;
@@ -691,17 +702,19 @@
     const kr = c.kit.resumen || {};
     const archivosKit = new Set(deKit.map(r => r.hash_archivo).filter(Boolean));
     const leidosWeb = Object.keys(web.archivos).filter(h => web.archivos[h].tipo !== 'kit' && !archivosKit.has(h)).length;
+    // El JSON del kit trae solo las resoluciones válidas: sus repetidas y sus errores se suman de su resumen.
     const resumen = Object.assign({}, kr, {
       archivos: (Number(kr.archivos) || archivosKit.size) + leidosWeb,
       resoluciones: validos.length,
-      repetidas: todos.filter(r => r.repetido_de).length,
-      errores: todos.filter(r => r.error).length,
+      repetidas: (Number(kr.repetidas) || 0) + todos.filter(r => r.repetido_de).length,
+      errores: (Number(kr.errores) || 0) + todos.filter(r => r.error).length,
       incompletas: validos.filter(r => r.fuente === 'texto_incompleto').length,
-      tokens: todos.reduce((a, r) => a + (Number(r.tokens) || 0), 0),
+      tokens: Math.max(Number(kr.tokens) || 0, todos.reduce((a, r) => a + (Number(r.tokens) || 0), 0)),
       cargado_web: c.kit.fecha || null,
       pdf_guardados: Object.values(web.archivos).filter(a => a.pdf).length,
     });
-    if (c.padron) resumen.padron = { archivo: c.padron.archivo || null, cargado_en: c.padron.cargado_en || null, filas: (c.padron.filas || []).length };
+    resumen.padron = c.padron ? { archivo: c.padron.archivo || null, cargado_en: c.padron.cargado_en || null, filas: (c.padron.filas || []).length } : {};
+    resumen.inventario = { cargado: false };
     if (c.inventario) resumen.inventario = B.resumenInventario(c.inventario.filas || [], parcelasDe(cat), todos, { archivo: c.inventario.archivo || null, cargado_en: c.inventario.cargado_en || null });
     VISTA = { todos, archivos: web.archivos, cruce };
     return { config: Object.assign({ key: '', modelo: '' }, cfg), resumen, registros: todos.filter(r => r.derivado) };
@@ -760,104 +773,136 @@
   }
 
   /** Lo leído y todavía no guardado en GitHub. Se guarda solo cada tanto y al terminar la carga. */
-  function pendienteNuevo() { return { registros: [], archivos: {}, pdfs: [], bytes: 0, resoluciones: 0 }; }
+  function pendienteNuevo() { return { registros: [], archivos: {}, pdfs: [], bytes: 0, resoluciones: 0, fallo: null }; }
   let PEND = pendienteNuevo();
   const hayPendiente = () => PEND.pdfs.length > 0 || Object.keys(PEND.archivos).length > 0;
+  const cuantosPendientes = () => Object.keys(PEND.archivos).length;
+  /** Lo que estaba esperando, delante de lo que llegó después (si un guardado falló y hay que reintentar). */
+  function juntarPendientes(a, b) {
+    return { registros: a.registros.concat(b.registros), archivos: Object.assign({}, a.archivos, b.archivos), pdfs: a.pdfs.concat(b.pdfs),
+      bytes: a.bytes + b.bytes, resoluciones: a.resoluciones + b.resoluciones, fallo: b.fallo || a.fallo };
+  }
+  /**
+   * Si la sesión se corta con lectura sin guardar, se pierde (los PDF siguen en la computadora). Queda anotado cuántos
+   * eran, para avisarlo al volver a ingresar.
+   */
+  function perderPendiente() {
+    const n = cuantosPendientes();
+    if (n) { try { sessionStorage.setItem('pierri_pendientes', String(n)); } catch (e) { /* sin almacenamiento */ } }
+    PEND = pendienteNuevo();
+  }
+  // Una sola cosa por vez con lo leído sin guardar, como la cola `procesando` del kit: leer un PDF, guardar una tanda.
+  let COLA = Promise.resolve();
+  function enCola(fn) { const p = COLA.then(fn, fn); COLA = p.then(() => {}, () => {}); return p; }
 
   /** Un PDF que llega desde el Tablero: se lee por texto (como el kit sin clave) y queda esperando para guardarse. */
-  async function recibirPDF(cuerpo, nombreCrudo) {
+  function recibirPDF(cuerpo, nombreCrudo) {
     const s = exigir('cargar'); exigirToken();
-    return ocupado(async () => {
-      const nombre = limpiar(String(nombreCrudo || 'archivo.pdf')).slice(0, 200);
-      const bytes = new Uint8Array(await cuerpo.arrayBuffer());
-      if (!bytes.length) return { estado: 'error', error: 'archivo vacío' };
-      if (bytes.length > PDF_MAXIMO) return { estado: 'error', error: `El archivo pesa ${mb(bytes.length)}: en la web entran PDF de hasta ${mb(PDF_MAXIMO)}.` };
-      if (td.decode(bytes.subarray(0, 5)) !== '%PDF-') return { estado: 'error', error: 'El archivo no es un PDF.' };
-      const h = await huella(bytes);
-      const c = await cacheDatos(s), ix = indices(c);
-      const previo = (ix.archivos[h] && ix.archivos[h].pdf) ? ix.archivos[h] : PEND.archivos[h];
-      if (previo) return { estado: 'ya_cargado', hash: h, nombre_previo: previo.nombre };
-      const t = ahora();
-      // Leído antes por el kit: no se vuelve a leer (manda la lectura del kit); solo se guarda el PDF para poder verlo.
-      const delKit = ix.kit.get(h);
-      if (delKit) {
-        PEND.archivos[h] = { nombre, tipo: 'kit', paginas: null, unidades: null, cargado_en: t };
-        PEND.pdfs.push({ h, bytes }); PEND.bytes += bytes.length;
-        await guardarSiHaceFalta();
-        return { estado: 'ya_cargado', hash: h, nombre_previo: (delKit.tomo && delKit.tomo.archivo) || delKit.archivo || nombre, pdf_guardado: true };
-      }
-      progreso(`Leyendo ${nombre}…`);
-      const T = window.PierriTomos, X = window.PierriTexto, P = window.PierriCore;
-      let pags;
-      try { pags = await textoPorPagina(bytes); }
-      catch (e) { return { estado: 'error', error: 'No se pudo abrir el PDF: ' + (e.message || e) }; }
-      const a = T.unidadesDe(pags, nombre, h);
-      const cfg = cfgDe(c, s), vistos = new Set(), registros = [];
-      for (const u of a.unidades) {
-        const base = { archivo: u.nombre, hash: u.id, hash_archivo: h, paginas: u.paginas, tomo: u.tomo, tokens: 0 };
-        try {
-          const lect = X.extraerDeTexto(u.texto, u.nombreControl);
-          registros.push(lect.suficiente ? T.registroPorTexto(base, u, lect, cfg, tabla(), vistos)
-            : T.registroIncompleto(base, u, lect, cfg, tabla(), vistos, ' (en la web se lee solo por texto: falta leerla con el modelo)', null));
-        } catch (err) { registros.push(Object.assign(base, { error: String(err.message || err) })); }
-      }
-      // La ubicación (Catastro y, si no hay parcela, la localidad) se calcula al mirar, en el mismo orden que el kit.
-      for (const r of registros) { r.cargado_en = t; r.origen = 'web'; }
-      limpiar(registros);
-      PEND.registros.push(...registros);
-      PEND.archivos[h] = { nombre, tipo: a.tipo, paginas: pags.length, unidades: registros.length, sueltas: a.sueltas.map(p => p + 1), cargado_en: t };
-      PEND.pdfs.push({ h, bytes }); PEND.bytes += bytes.length; PEND.resoluciones += registros.filter(r => r.derivado).length;
-      const resp = { estado: 'procesado', hash: h, tipo: a.tipo, paginas: pags.length, unidades: registros.length, sueltas: a.sueltas.map(p => p + 1),
-        paginas_cuerpo: a.paginasCuerpo || 0, bloques_descartados: a.bloquesDescartados || 0, resoluciones_tramite: a.resolucionesTramite || 0,
-        por_texto: registros.filter(r => r.fuente === 'texto').length, por_modelo: 0,
-        incompletas: registros.filter(r => r.fuente === 'texto_incompleto').length, errores: registros.filter(r => r.error).length,
-        errores_detalle: registros.filter(r => r.error).map(r => r.error).slice(0, 2), falla_modelo: null, tokens: 0,
-        expedientes: registros.filter(r => r.derivado).map(r => ({ expediente: r.derivado.expediente, clasificacion: P.clasificar(r.derivado), rogante: r.derivado.rogante_principal })) };
-      await guardarSiHaceFalta();
-      return resp;
-    });
+    return enCola(() => ocupado(() => recibirPDFAhora(s, cuerpo, nombreCrudo)));
   }
+  async function recibirPDFAhora(s, cuerpo, nombreCrudo) {
+    const nombre = limpiar(String(nombreCrudo || 'archivo.pdf')).slice(0, 200);
+    // Si un guardado falló, no se sigue juntando en memoria sin límite: primero hay que guardar lo pendiente.
+    if (PEND.fallo && PEND.bytes >= TANDA_BYTES) return { estado: 'error', error: 'Hay PDF leídos que todavía no se guardaron en GitHub. Tocá "Guardar lo pendiente" y después seguí.', sin_guardar: PEND.fallo };
+    const bytes = new Uint8Array(await cuerpo.arrayBuffer());
+    if (!bytes.length) return { estado: 'error', error: 'archivo vacío' };
+    if (bytes.length > PDF_MAXIMO) return { estado: 'error', error: `El archivo pesa ${mb(bytes.length)}: en la web entran PDF de hasta ${mb(PDF_MAXIMO)}.` };
+    if (td.decode(bytes.subarray(0, 5)) !== '%PDF-') return { estado: 'error', error: 'El archivo no es un PDF.' };
+    const h = await huella(bytes);
+    const c = await cacheDatos(s), ix = indices(c);
+    const previo = (ix.archivos[h] && ix.archivos[h].pdf) ? ix.archivos[h] : PEND.archivos[h];
+    if (previo) return { estado: 'ya_cargado', hash: h, nombre_previo: previo.nombre };
+    const t = ahora();
+    // Leído antes por el kit: no se vuelve a leer (manda la lectura del kit); solo se guarda el PDF para poder verlo.
+    const delKit = ix.kit.get(h);
+    if (delKit) {
+      PEND.archivos[h] = { nombre, tipo: 'kit', paginas: null, unidades: null, cargado_en: t };
+      PEND.pdfs.push({ h, bytes }); PEND.bytes += bytes.length;
+      return Object.assign({ estado: 'ya_cargado', hash: h, nombre_previo: (delKit.tomo && delKit.tomo.archivo) || delKit.archivo || nombre, pdf_guardado: true }, await guardarSiHaceFalta());
+    }
+    progreso(`Leyendo ${nombre}…`);
+    const T = window.PierriTomos, X = window.PierriTexto, P = window.PierriCore;
+    let pags;
+    try { pags = await textoPorPagina(bytes); }
+    catch (e) { return { estado: 'error', error: 'No se pudo abrir el PDF: ' + (e.message || e) }; }
+    const a = T.unidadesDe(pags, nombre, h);
+    const cfg = cfgDe(c, s), vistos = new Set(), registros = [];
+    for (const u of a.unidades) {
+      const base = T.registroBase(u, h);
+      try {
+        const lect = X.extraerDeTexto(u.texto, u.nombreControl);
+        registros.push(lect.suficiente ? T.registroPorTexto(base, u, lect, cfg, tabla(), vistos)
+          : T.registroIncompleto(base, u, lect, cfg, tabla(), vistos, ' (en la web se lee solo por texto: falta leerla con el modelo)', null));
+      } catch (err) { registros.push(Object.assign(base, { error: String(err.message || err) })); }
+    }
+    // La ubicación (Catastro y, si no hay parcela, la localidad) se calcula al mirar, en el mismo orden que el kit.
+    for (const r of registros) { r.cargado_en = t; r.origen = 'web'; }
+    limpiar(registros);
+    PEND.registros.push(...registros);
+    PEND.archivos[h] = { nombre, tipo: a.tipo, paginas: pags.length, unidades: registros.length, sueltas: a.sueltas.map(p => p + 1), cargado_en: t };
+    PEND.pdfs.push({ h, bytes }); PEND.bytes += bytes.length; PEND.resoluciones += registros.filter(r => r.derivado).length;
+    const resp = { estado: 'procesado', hash: h, tipo: a.tipo, paginas: pags.length, unidades: registros.length, sueltas: a.sueltas.map(p => p + 1),
+      paginas_cuerpo: a.paginasCuerpo || 0, bloques_descartados: a.bloquesDescartados || 0, resoluciones_tramite: a.resolucionesTramite || 0,
+      por_texto: registros.filter(r => r.fuente === 'texto').length, por_modelo: 0,
+      incompletas: registros.filter(r => r.fuente === 'texto_incompleto').length, errores: registros.filter(r => r.error).length,
+      errores_detalle: registros.filter(r => r.error).map(r => r.error).slice(0, 2), falla_modelo: null, tokens: 0,
+      expedientes: registros.filter(r => r.derivado).map(r => ({ expediente: r.derivado.expediente, clasificacion: P.clasificar(r.derivado), rogante: r.derivado.rogante_principal })) };
+    return Object.assign(resp, await guardarSiHaceFalta());
+  }
+  /**
+   * Guarda la tanda si ya llegó al tope. El archivo ya se leyó: si el guardado falla, no se informa como error del
+   * archivo sino como "sin guardar", y no se reintenta solo con cada archivo (hasta que se toque "Guardar lo pendiente").
+   */
   async function guardarSiHaceFalta() {
-    if (PEND.bytes >= TANDA_BYTES || Object.keys(PEND.archivos).length >= TANDA_ARCHIVOS) await guardarPendiente();
+    if (PEND.fallo || (PEND.bytes < TANDA_BYTES && cuantosPendientes() < TANDA_ARCHIVOS)) return {};
+    try { await guardarAhora(); return {}; }
+    catch (e) { return { sin_guardar: e.message }; }
   }
-  /** Cifra cada PDF con su propia llave y los junta en paquetes. Deja en cada uno dónde quedó y con qué llave se abre. */
+  /** Cifra cada PDF con su propia llave y los junta en paquetes. Devuelve los paquetes y dónde quedó cada PDF. */
   async function armarPaquetes(pdfs) {
-    const paquetes = []; let actual = null;
+    const paquetes = [], ubic = new Map(); let actual = null;
     for (const p of pdfs) {
       const k = azar(32), iv = azar(12);
       const ct = new Uint8Array(await S.encrypt({ name: 'AES-GCM', iv }, await llaveAES(k), p.bytes));
       if (!actual || (actual.largo + ct.length > PAQUETE && actual.partes.length)) { actual = { ruta: `p/${hex(azar(12))}.bin`, partes: [], largo: 0, n: 0 }; paquetes.push(actual); }
-      p.ubic = { pack: actual.ruta, off: actual.largo, len: ct.length, iv: b64(iv), k: b64(k) };
+      ubic.set(p.h, { pack: actual.ruta, off: actual.largo, len: ct.length, iv: b64(iv), k: b64(k) });
       actual.partes.push(ct); actual.largo += ct.length; actual.n++;
     }
     for (const q of paquetes) { const u = new Uint8Array(q.largo); let o = 0; for (const c of q.partes) { u.set(c, o); o += c.length; } q.bytes = u; delete q.partes; }
-    return paquetes;
+    return { paquetes, ubic };
+  }
+  /** "Guardar lo pendiente" y el final de una carga: en la cola, después de lo que se esté leyendo. */
+  function guardarPendiente() {
+    exigir('cargar'); exigirToken();
+    return enCola(() => { PEND.fallo = null; return guardarAhora(); });
   }
   /**
    * Guarda en GitHub lo leído: primero los PDF cifrados (en su rama), después las resoluciones y dónde quedó cada PDF
-   * (en la principal), en un solo commit. Si se corta en el medio, lo que falta queda esperando y se reintenta.
+   * (en la principal), en un solo commit. Trabaja sobre la tanda que había al empezar; si se corta en el medio, la tanda
+   * vuelve a quedar esperando (con los PDF que ya subió anotados) y se reintenta.
    */
-  async function guardarPendiente() {
+  async function guardarAhora() {
     const s = exigir('cargar'); exigirToken();
     if (!hayPendiente()) return { ok: true, archivos: 0, resoluciones: 0 };
+    const lote = PEND; PEND = pendienteNuevo();
     return ocupado(async () => {
       RITMO.minimo = 1000;
       try {
-        if (PEND.pdfs.length) {
-          const paquetes = await armarPaquetes(PEND.pdfs);
+        if (lote.pdfs.length) {
+          const { paquetes, ubic } = await armarPaquetes(lote.pdfs);
           const commit = await subirPaquetes(tokenGuardado(), paquetes);
-          for (const p of PEND.pdfs) PEND.archivos[p.h].pdf = Object.assign({ commit }, p.ubic);
-          PEND.pdfs = []; PEND.bytes = 0;   // ya están en GitHub: se libera la memoria
+          for (const p of lote.pdfs) lote.archivos[p.h].pdf = Object.assign({ commit }, ubic.get(p.h));
+          lote.pdfs = []; lote.bytes = 0;   // ya están en GitHub: se libera la memoria
         }
         // Catastro de lo nuevo, si responde. Si no, queda para el botón "Catastro".
         let parcelas = null;
-        const cuentas = [...new Set(PEND.registros.map(r => r.derivado && r.derivado.geo && r.derivado.geo.cuenta_normalizada).filter(Boolean).map(x => x.replace(/\D/g, '')))]
+        const cuentas = [...new Set(lote.registros.map(r => r.derivado && r.derivado.geo && r.derivado.geo.cuenta_normalizada).filter(Boolean).map(x => x.replace(/\D/g, '')))]
           .filter(x => x.length === 12 && !(CACHE && CACHE.catastro && CACHE.catastro[x]));
         if (cuentas.length) {
           try { progreso('Consultando Catastro…'); parcelas = await consultarParcelas(cuentas); } catch (e) { parcelas = null; }
         }
         progreso('Guardando las resoluciones leídas…');
-        const n = Object.keys(PEND.archivos).length, m = PEND.resoluciones;
+        const n = Object.keys(lote.archivos).length, m = lote.resoluciones;
         let escrito = null;
         await transaccion(async estado => {
           const ab = await abrirEstado(estado, s);
@@ -871,7 +916,7 @@
             indice.lecturas = indice.lecturas.concat([ruta]);
           }
           const antes = previo ? previo.registros || [] : [], ya = new Set(antes.map(r => r.hash));
-          const contenido = { v: 1, registros: antes.concat(PEND.registros.filter(r => !ya.has(r.hash))), archivos: Object.assign({}, previo ? previo.archivos : {}, PEND.archivos) };
+          const contenido = { v: 1, registros: antes.concat(lote.registros.filter(r => !ya.has(r.hash))), archivos: Object.assign({}, previo ? previo.archivos : {}, lote.archivos) };
           const archivos = { [ruta]: await sellarDatos(ab.dek, contenido), [RUTAS.indice]: JSON.stringify(indice, null, 1) };
           escrito = { dek: ab.dek, ruta, contenido, indice };
           if (parcelas && Object.keys(parcelas).length) {
@@ -883,13 +928,16 @@
           archivos[RUTAS.admin] = await sellarBovedaDe(ab, s);
           return archivos;
         }, 'Actualización del relevamiento');
-        PEND = pendienteNuevo();
         const cambios = { indice: escrito.indice, ruta: escrito.ruta, contenido: limpiar(escrito.contenido) };
         if (escrito.catastro) cambios.catastro = escrito.catastro;
         alGuardar(s, escrito.dek, cambios);
-        progreso('');
         return { ok: true, archivos: n, resoluciones: m };
-      } finally { RITMO.minimo = 0; }
+      } catch (e) {
+        // Si la sesión se cortó en el medio (otra contraseña), lo leído se da por perdido; si no, vuelve a esperar.
+        if (SESION) { PEND = juntarPendientes(lote, PEND); PEND.fallo = e.message; }
+        else { PEND = lote; perderPendiente(); }
+        throw e;
+      } finally { RITMO.minimo = 0; progreso(''); }
     });
   }
 
@@ -929,10 +977,20 @@
   }
 
   // ───────────── Padrón, inventario y Catastro ─────────────
-  function cargarScript(src) {
-    return new Promise((ok, mal) => { const e = document.createElement('script'); e.src = src; e.onload = ok; e.onerror = () => mal(new Error('No se pudo cargar ' + src + '.')); document.head.appendChild(e); });
+  /**
+   * Lee la planilla del Padrón en un proceso aparte (leer_planilla.js, con SheetJS): si el archivo viniera armado para
+   * atacar la librería, no alcanza la página, que es donde están las llaves y el token. Vuelven solo las filas.
+   */
+  function leerPlanilla(bytes) {
+    return new Promise((ok, mal) => {
+      const w = new Worker('leer_planilla.js');
+      const fin = (f, x) => { clearTimeout(t); w.terminate(); f(x); };
+      const t = setTimeout(() => fin(mal, new Error('la planilla tardó demasiado en leerse')), 120000);
+      w.onmessage = e => (e.data && e.data.error) ? fin(mal, new Error(e.data.error)) : fin(ok, (e.data && e.data.filas) || []);
+      w.onerror = e => { e.preventDefault(); fin(mal, new Error(e.message || 'no se pudo leer')); };
+      w.postMessage(bytes.buffer, [bytes.buffer]);
+    });
   }
-  async function xlsx() { if (!window.XLSX) await cargarScript('vendor/xlsx/xlsx.full.min.js'); return window.XLSX; }
   /** Guarda un archivo cifrado con la DEK, leyendo el último estado. cambiar(actual) devuelve el contenido nuevo. */
   async function guardarUno(s, clave, cambiar, accion, detalle) {
     let escrito = null;
@@ -950,9 +1008,8 @@
   async function cargarPadron(cuerpo, nombreCrudo) {
     const s = exigir('cargar'); exigirToken();
     const nombre = limpiar(String(nombreCrudo || 'padron.xls')).slice(0, 200);
-    const X = await xlsx();
     let filasHoja;
-    try { const wb = X.read(new Uint8Array(await cuerpo.arrayBuffer()), { type: 'array' }); filasHoja = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null }); }
+    try { filasHoja = await leerPlanilla(new Uint8Array(await cuerpo.arrayBuffer())); }
     catch (e) { throw new Error('no se pudo leer la planilla del Padrón: ' + (e.message || e)); }
     if (!filasHoja.length) throw new Error('la planilla está vacía');
     const filas = window.PierriBase.filasPadron(filasHoja);
@@ -1057,7 +1114,7 @@
           permisos: Object.fromEntries(Object.keys(PERMISOS).map(k => [k, puede(s, k)])) };
       }
       case '/api/login': return login(cuerpoJSON());
-      case '/api/logout': guardarSesion(null); CACHE = null; PEND = pendienteNuevo(); return { ok: true };
+      case '/api/logout': guardarSesion(null); CACHE = null; perderPendiente(); return { ok: true };
       case '/api/clave': return cambiarClavePropia(cuerpoJSON());
       case '/api/usuarios': return usuarios(metodo, cuerpoJSON());
       case '/api/datos': return datos();
@@ -1085,5 +1142,5 @@
     }
   }
 
-  window.PIERRI_WEB = { api, repo: REPO, version: 3, pdfjs, ocupado: () => OCUPADO > 0, pendientes: hayPendiente };
+  window.PIERRI_WEB = { api, repo: REPO, version: 3, pdfjs, ocupado: () => OCUPADO > 0, pendientes: hayPendiente, cuantosPendientes };
 })();

@@ -28,9 +28,14 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const vm = require('vm');
 
 // Las reglas de lectura que la web usa tal cual las usa el kit. Se cargan antes de pierri_web.js.
 const MODULOS = ['pierri_texto.js', 'pierri_tomos.js', 'pierri_base.js'];
+// Lo único que se publica de web/vendor. Cualquier otro archivo ahí (una planilla o un PDF de prueba olvidado) corta el armado.
+const VENDOR = ['leaflet/leaflet.js', 'leaflet/leaflet.css', 'leaflet/LICENSE', 'leaflet/images/layers.png', 'leaflet/images/layers-2x.png',
+  'leaflet/images/marker-icon.png', 'leaflet/images/marker-icon-2x.png', 'leaflet/images/marker-shadow.png',
+  'pdfjs/pdf.min.js', 'pdfjs/pdf.worker.min.js', 'pdfjs/LICENSE', 'xlsx/xlsx.full.min.js', 'xlsx/LICENSE'];
 
 // Números de muestra que el código usa a propósito (formatos, ejemplos inventados). Nada más pasa el barrido.
 const PERMITIDOS = new Set(['12.345.678', '12345678', '0535-123456/2020', '0535-123456-2020', '20251001', '86400000',
@@ -126,20 +131,25 @@ function barrer(nombre, texto, huellas) {
 }
 
 /**
- * Los comentarios de las reglas de lectura citan casos reales (números de expediente, de cuenta, fechas) para que quien
- * mantiene el código sepa de dónde salió cada regla. En lo que se publica, las líneas de comentario salen con los dígitos
- * tapados. Solo se tocan líneas que son enteras de comentario: el código queda igual.
+ * Los comentarios de las reglas de lectura citan casos reales (números de expediente, de cuenta, fechas, nombres) para
+ * que quien mantiene el código sepa de dónde salió cada regla. La web no los necesita: se publican sin las líneas que
+ * son enteras de comentario, y lo que queda se barre igual. Se comprueba que el código siga compilando.
  */
-function taparComentarios(txt) {
-  return txt.split('\n').map(l => /^\s*(\/\/|\/\*|\*)/.test(l) ? l.replace(/\d/g, '#') : l).join('\n');
+function sinComentarios(nombre, txt) {
+  const fuera = l => { const t = l.trim(); return t.startsWith('//') || ((t.startsWith('/*') || t.startsWith('*')) && (!t.includes('*/') || t.endsWith('*/'))); };
+  const salida = txt.split('\n').filter(l => !fuera(l)).join('\n');
+  try { new vm.Script(salida, { filename: nombre }); } catch (e) { throw new Error(`${nombre} sin comentarios no compila (${e.message}): revisá un comentario de bloque raro`); }
+  return salida;
 }
 
-function copiarDir(de, a) {
-  fs.mkdirSync(a, { recursive: true });
-  for (const f of fs.readdirSync(de, { withFileTypes: true })) {
-    if (f.isDirectory()) copiarDir(path.join(de, f.name), path.join(a, f.name));
-    else fs.copyFileSync(path.join(de, f.name), path.join(a, f.name));
+/** Los archivos de una carpeta, con su ruta relativa (con /). */
+function listar(dir, base) {
+  const out = [];
+  for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+    const rel = base ? base + '/' + f.name : f.name;
+    if (f.isDirectory()) out.push(...listar(path.join(dir, f.name), rel)); else out.push(rel);
   }
+  return out;
 }
 
 function main() {
@@ -173,16 +183,22 @@ function main() {
 
   barrer('index.html', html, s.huellas);
   barrer('pierri_web.js', web, s.huellas);
-  const modulos = MODULOS.map(f => [f, taparComentarios(fs.readFileSync(path.join(__dirname, f), 'utf8'))]);
+  const modulos = MODULOS.map(f => [f, sinComentarios(f, fs.readFileSync(path.join(__dirname, f), 'utf8'))]);
+  const planilla = fs.readFileSync(path.join(__dirname, 'web', 'leer_planilla.js'), 'utf8');
+  barrer('leer_planilla.js', planilla, s.huellas);
+  const enVendor = listar(path.join(__dirname, 'web', 'vendor')).sort();
+  const sobran = enVendor.filter(f => !VENDOR.includes(f)), faltan = VENDOR.filter(f => !enVendor.includes(f));
+  if (sobran.length || faltan.length) throw new Error('web/vendor no tiene exactamente lo que se publica.' + (sobran.length ? ' Sobra: ' + sobran.join(', ') + '.' : '') + (faltan.length ? ' Falta: ' + faltan.join(', ') + '.' : ''));
   for (const [f, txt] of modulos) barrer(f, txt, s.huellas);
 
   fs.mkdirSync(O.salida, { recursive: true });
   fs.writeFileSync(path.join(O.salida, 'index.html'), html);
   fs.writeFileSync(path.join(O.salida, 'pierri_web.js'), web);
   for (const [f, txt] of modulos) fs.writeFileSync(path.join(O.salida, f), txt);
+  fs.writeFileSync(path.join(O.salida, 'leer_planilla.js'), planilla);
   // Puntos de las localidades de Catastro (datos geográficos públicos): ubican por localidad lo que no trae cuenta.
   fs.copyFileSync(path.join(__dirname, 'localidades_cordoba.json'), path.join(O.salida, 'localidades_cordoba.json'));
-  copiarDir(path.join(__dirname, 'web', 'vendor'), path.join(O.salida, 'vendor'));
+  for (const f of VENDOR) { fs.mkdirSync(path.dirname(path.join(O.salida, 'vendor', f)), { recursive: true }); fs.copyFileSync(path.join(__dirname, 'web', 'vendor', f), path.join(O.salida, 'vendor', f)); }
   fs.writeFileSync(path.join(O.salida, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
   fs.writeFileSync(path.join(O.salida, '.nojekyll'), '');
   console.log(`Listo en ${O.salida}: index.html, pierri_web.js, ${MODULOS.join(', ')}, localidades_cordoba.json, vendor/, robots.txt, .nojekyll (barrido de datos personales sin hallazgos; ${s.huellas.size} huellas de los ejemplos verificadas afuera).`);

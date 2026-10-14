@@ -91,7 +91,7 @@ Sirve para guardar versiones y trabajarlo con Claude Code, no para que la gente 
 
 El sistema también anda desde **https://cornabalta3-web.github.io/relevamiento-pierri/**, sin instalar nada. Cada persona entra con su usuario y su contraseña. Los datos se guardan cifrados en el repositorio público `relevamiento-pierri`: sin una contraseña válida no se pueden leer.
 
-En la web se hace todo lo del kit salvo dos cosas: la lectura con el modelo (para las resoluciones escaneadas sin capa de texto) y "Volver a leer todo". Se leen los PDF, se guardan cifrados junto con el original, se ven, se corrigen, y se cargan el Padrón, el inventario y Catastro. El kit queda para esas dos cosas.
+En la web se hace todo lo del kit salvo tres cosas: la lectura con el modelo (para las resoluciones escaneadas sin capa de texto), "Volver a leer todo" y "Vaciar la base". Se leen los PDF, se guardan cifrados junto con el original, se ven, se corrigen, y se cargan el Padrón, el inventario y Catastro. El kit queda para esas tres cosas.
 
 **Puesta en marcha (una sola vez)**
 1. En GitHub: botón **+**, **New repository**, nombre `relevamiento-pierri`, **Public**, **Create repository**.
@@ -115,7 +115,7 @@ En la web se hace todo lo del kit salvo dos cosas: la lectura con el modelo (par
 
 **Cargar resoluciones desde la web** (solo el administrador)
 1. **Cargar** (el Embudo): arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
-2. Cada PDF se lee en tu computadora, igual que en el kit sin clave de API: tomos, expedientes completos y sueltas. Se guarda en GitHub cifrado, el PDF original incluido, cada 150 archivos (o 30 MB) y al terminar. Lo que ya estaba se saltea: si se corta, se vuelve a elegir la misma carpeta y sigue.
+2. Cada PDF se lee en tu computadora, igual que en el kit sin clave de API: tomos, expedientes completos y sueltas. Se guarda en GitHub cifrado, el PDF original incluido, cada 250 archivos (o 60 MB) y al terminar. Lo que ya estaba se saltea: si se corta, se vuelve a elegir la misma carpeta y sigue.
 3. Con miles de PDF tarda (más o menos un segundo por archivo, según la conexión): la pestaña tiene que quedar abierta, pero la sesión no se cierra mientras trabaja. Si GitHub pide una pausa por la cantidad de pedidos, espera solo y sigue.
 4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo": hoy se completan en el kit, con el modelo.
 
