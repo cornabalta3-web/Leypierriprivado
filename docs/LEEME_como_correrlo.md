@@ -122,6 +122,8 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
 - Desactivar a alguien, cambiarle la contraseña o cambiar la tuya le corta el acceso a todo lo que se guarde desde ese momento. Las versiones anteriores siguen en el historial del repositorio, cifradas con la llave vieja: con la contraseña vieja se podrían abrir. Para borrar el historial hay que borrar el repositorio, crearlo de nuevo y repetir la puesta en marcha.
 - En el repositorio público no aparece ningún nombre de usuario: la lista de usuarios está cifrada y solo la abre el administrador.
 - La sesión vive solo en la página abierta: al recargar o cerrar la pestaña hay que volver a ingresar. No queda nada guardado en el navegador salvo el token, cifrado.
+- La sesión se cierra sola después de 30 minutos sin uso.
+- El botón **Modo oscuro** (abajo en el menú) cambia los colores; sin tocarlo, sigue la configuración de la computadora. Vale igual en el kit.
 - Todos los sitios de GitHub Pages de la cuenta `cornabalta3-web` comparten la dirección `cornabalta3-web.github.io`, y con ella el almacenamiento del navegador. Por eso el token va cifrado. Aun así, conviene no publicar en esa cuenta páginas con código de terceros.
 - Cada carga y cada cambio de llave agregan al historial una copia entera del relevamiento cifrado. Con unos pocos MB por carga alcanza para años; si algún día el repositorio pesa demasiado, se recrea.
 
