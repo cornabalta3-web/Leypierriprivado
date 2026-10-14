@@ -344,6 +344,15 @@ tr.rc-resalte td{background:#fdf3dc!important;transition:background .4s}
 
   <section class="vista oculto" id="v-config">
     <div class="cab"><div><h1>Configuración</h1><p>El criterio se puede cambiar cuando quieras: recalcula todo al instante sin volver a leer los PDF.</p></div></div>
+    <div class="panel oculto" id="panelToken"><div class="cabp"><h2>Permiso de GitHub</h2><span class="sub" id="subToken"></span></div>
+      <div class="cuerpo">
+        <div class="controles">
+          <div class="grupo" style="flex:1;min-width:240px"><label for="tokenWeb">Token (empieza con github_pat_)</label><input id="tokenWeb" type="password" autocomplete="off"></div>
+          <button id="btnToken">Guardar en esta computadora</button><button id="btnOlvidarToken" class="sec">Olvidar</button>
+        </div>
+        <p class="mini" style="margin:6px 0 0">Hace falta para guardar cambios (usuarios y datos). Queda solo en esta computadora: no se sube a ningún lado. Si vence o se filtra, revocalo en GitHub y cargá uno nuevo acá.</p>
+      </div>
+    </div>
     <div class="panel solo-admin oculto" id="panelUsuarios"><div class="cabp"><h2>Usuarios y perfiles</h2><span class="sub">consulta ve y exporta · revisión corrige · administración configura</span></div>
       <div class="cuerpo">
         <div class="controles">
@@ -398,7 +407,7 @@ tr.rc-resalte td{background:#fdf3dc!important;transition:background .4s}
  * Contenido:
  *   CONFIG_DEFAULT                 parámetros de elegibilidad
  *   parseFecha / fmtFecha          fechas ISO, DD/MM/AAAA y sello "14 ABR 2026", siempre en UTC
- *   expedienteDesdeNombreArchivo   "documento_0535-105743-2018_018df2ff.pdf" → "0535-105743/2018"
+ *   expedienteDesdeNombreArchivo   "documento_0535-123456-2020_abcdef12.pdf" → "0535-123456/2020"
  *   parsearAntiguedad              lee la frase de antigüedad (números en cifras o en palabras) — control cruzado
  *   calcularPoseeDesde             fecha de inicio de posesión a partir de lo declarado (precisión fecha/mes/año)
  *   evaluarElegibilidad            CORTE_FIJO (Ley 24.374 vigente) o PLAZO_MOVIL (proyecto PE-13/26)
@@ -1529,6 +1538,13 @@ function mostrarInicial(){
   $('ingForm').classList.add('oculto'); $('ingCambio').classList.add('oculto'); $('ingInicial').classList.remove('oculto');
   setTimeout(() => $('iniUsuario').focus(), 60);
 }
+if(WEB){
+  $('btnToken').addEventListener('click', async () => {
+    try{ await api('/api/web/token', { method: 'POST', body: JSON.stringify({ token: $('tokenWeb').value }) }); $('tokenWeb').value = ''; $('subToken').textContent = 'cargado en esta computadora'; avisar('Permiso de GitHub guardado en esta computadora.'); }
+    catch(err){ avisar(err.message, true); }
+  });
+  $('btnOlvidarToken').addEventListener('click', async () => { await api('/api/web/token', { method: 'DELETE' }); $('subToken').textContent = 'falta: sin él no se pueden guardar cambios'; avisar('Esta computadora ya no guarda el permiso de GitHub.'); });
+}
 if(WEB) $('btnInicial').addEventListener('click', async () => {
   errorIngreso('');
   if($('iniClave').value !== $('iniClave2').value) return errorIngreso('Las dos contraseñas no coinciden.');
@@ -1554,6 +1570,9 @@ function aplicarPerfil(){
     ['btnPadron','btnInventario','btnUbicarInv','btnCatastro','btnCompletar','btnReleer','btnVaciar','btnArchivos','panelApp'].forEach(id => { const e = $(id); if(e) e.classList.add('sin-permiso'); });
     $('cargarTitulo').textContent = 'Subí acá el relevamiento del kit';
     $('cargarSub').textContent = 'El archivo que baja "Guardar JSON" en la aplicación del kit (Expedientes). Se guarda cifrado en el repositorio y lo ven todos los usuarios. Los PDF todavía se leen en el kit.';
+    $('panelToken').classList.toggle('oculto', !puede.administrar);
+    $('subToken').textContent = YO.web_token ? 'cargado en esta computadora' : 'falta: sin él no se pueden guardar cambios';
+    const optAdmin = document.querySelector('#nuRol option[value="admin"]'); if(optAdmin) optAdmin.remove();
     const aviso = document.querySelector('#panelUsuarios p.mini'); if(aviso) aviso.textContent = 'En la versión web la contraseña la definís vos: pasásela a la persona por un medio seguro. Para cambiarla, "nueva contraseña". Desactivar a alguien cambia la llave de los datos: su contraseña deja de servir.';
   }
 }
@@ -1591,7 +1610,7 @@ async function pintarUsuarios(lista){
     <td class="mini"><a href="#" data-activo="${esc(u.usuario)}" data-valor="${u.activo ? 0 : 1}">${u.activo ? 'desactivar' : 'activar'}</a> · <a href="#" data-clave="${esc(u.usuario)}">nueva contraseña</a></td></tr>`).join('');
 }
 async function usuariosAccion(cuerpo){
-  try{ const r = await api('/api/usuarios', { method: 'POST', body: JSON.stringify(cuerpo) }); pintarUsuarios(r.usuarios); avisar('Listo.'); }
+  try{ const r = await api('/api/usuarios', { method: 'POST', body: JSON.stringify(cuerpo) }); pintarUsuarios(r.usuarios); avisar(WEB ? 'Listo. GitHub tarda unos minutos en publicarlo: recién ahí vale para la persona.' : 'Listo.'); }
   catch(err){ avisar(err.message, true); }
 }
 if(SERVIDOR){
@@ -1627,7 +1646,9 @@ if(SERVIDOR){
     const a = e.target.closest('[data-activo]'), c = e.target.closest('[data-clave]');
     if(a){ e.preventDefault();
       if(WEB && a.dataset.valor !== '1' && !confirm(`Desactivar a ${a.dataset.activo}: su contraseña deja de abrir el sistema y los datos se vuelven a cifrar. ¿Seguir?`)) return;
-      usuariosAccion({ accion: 'activo', usuario: a.dataset.activo, activo: a.dataset.valor === '1' }); }
+      let clave;
+      if(WEB && a.dataset.valor === '1'){ clave = prompt(`Para volver a activar a ${a.dataset.activo} hace falta una contraseña nueva (mínimo 12 caracteres). Pasásela por un medio seguro.`); if(!clave) return; }
+      usuariosAccion({ accion: 'activo', usuario: a.dataset.activo, activo: a.dataset.valor === '1', clave }); }
     if(c){ e.preventDefault(); const nueva = prompt(`Nueva contraseña para ${c.dataset.clave} (mínimo 12 caracteres). ${WEB ? 'Pasásela a la persona por un medio seguro.' : 'Va a tener que cambiarla al entrar.'}`);
       if(nueva) usuariosAccion({ accion: 'reiniciar_clave', usuario: c.dataset.clave, clave: nueva }); }
   });
@@ -2208,7 +2229,7 @@ if(!SERVIDOR && window.DEMO_DATOS){
   registros = window.DEMO_DATOS.filter(r => r && r.derivado && !r.repetido_de);
   origenNombre = info.origen || 'demo';
   $('cargarTitulo').textContent = info.titulo || 'Demostración con datos de prueba';
-  $('cargarSub').textContent = info.sub || 'Resoluciones reales de Villa de Soto + resoluciones de prueba con la plantilla real. En la versión completa acá se tiran los PDF.';
+  $('cargarSub').textContent = info.sub || 'Resoluciones de prueba armadas con la plantilla real. En la versión completa acá se tiran los PDF.';
   $('origen').innerHTML = `<span><b>${registros.length}</b> resoluciones cargadas (${esc(info.etiqueta || 'demo')})</span>`;
   resumenSrv = info.resumen || { padron: { archivo: 'POS_al_16-09-2026.xls', filas: 8021, cargado_en: new Date().toISOString() } };
   recalcularLocal(); ir(HASH_INICIAL || 'resumen');

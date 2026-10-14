@@ -101,12 +101,16 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
    - *Repository access*: **Only select repositories**, `relevamiento-pierri`.
    - *Permissions*, *Repository permissions*, **Contents: Read and write**.
    - **Generate token** y copiarlo (empieza con `github_pat_`).
-5. Abrir el link. Como está vacío, pide crear el administrador: usuario, nombre, contraseña y el token.
+5. Abrir el link. Como está vacío, pide crear el administrador: usuario, nombre, contraseña y el token. El token queda guardado en esa computadora.
 
-**Usuarios** (solo el administrador): **Configuración**, **Usuarios y perfiles**.
-- *Crear usuario*: usuario, nombre, perfil y contraseña. La contraseña la definís vos y se la pasás a la persona por un medio seguro.
-- *nueva contraseña*: se la cambia.
+**Usuarios** (solo el administrador; hay uno solo): **Configuración**, **Usuarios y perfiles**.
+- *Crear usuario*: usuario, nombre, perfil (Consulta o Revisión) y contraseña. La contraseña la definís vos y se la pasás a la persona por un medio seguro.
+- *nueva contraseña*: se la cambia. En tu propia fila, te cambia la tuya.
 - *desactivar*: su contraseña deja de servir. Los datos se vuelven a cifrar con una llave nueva y, si la persona tenía la sesión abierta, queda afuera.
+- *activar*: pide una contraseña nueva; la vieja no vuelve a servir.
+- Después de cada cambio, GitHub tarda unos minutos en publicarlo: recién ahí vale para la persona. Hacé los cambios de a varios juntos si podés, porque GitHub limita las publicaciones a unas diez por hora.
+
+**El permiso de GitHub (token)** queda guardado solo en tu computadora, nunca en el repositorio: adivinar tu contraseña permitiría leer, pero no escribir. Para usar otra computadora, o cuando el token vence: **Configuración**, **Permiso de GitHub**, pegarlo y **Guardar en esta computadora**. En una computadora prestada, al terminar, **Olvidar**.
 
 **Subir lo leído en el kit**
 1. En el kit: **Expedientes**, **Guardar JSON**.
@@ -114,9 +118,9 @@ Por ahora, en la web se mira y se administra. Leer PDF, el Padrón, el inventari
 3. Borrar el JSON de Descargas: ese está sin cifrar.
 
 **Lo que hay que saber**
-- La contraseña de cada uno es la única protección: 12 caracteres o más, mejor una frase larga. No hay bloqueo por intentos fallidos, porque cualquiera puede bajarse los archivos cifrados y probar contraseñas en su propia computadora.
-- Desactivar a alguien le corta el acceso a todo lo que se guarde desde ese momento. Las versiones anteriores siguen en el historial del repositorio, cifradas con la llave vieja: con la contraseña vieja se podrían abrir. Para borrar el historial hay que borrar el repositorio, crearlo de nuevo y repetir la puesta en marcha.
-- El token queda guardado adentro de la bóveda cifrada con la contraseña del administrador. Si vence o se sospecha que se filtró: revocarlo en GitHub, crear uno nuevo y cargarlo en **Configuración**.
+- La contraseña de cada uno es la única protección de la lectura: 12 caracteres o más, mejor una frase larga. No hay bloqueo por intentos fallidos, porque cualquiera puede bajarse los archivos cifrados y probar contraseñas en su propia computadora.
+- Desactivar a alguien, cambiarle la contraseña o cambiar la tuya le corta el acceso a todo lo que se guarde desde ese momento. Las versiones anteriores siguen en el historial del repositorio, cifradas con la llave vieja: con la contraseña vieja se podrían abrir. Para borrar el historial hay que borrar el repositorio, crearlo de nuevo y repetir la puesta en marcha.
+- En el repositorio público no aparece ningún nombre de usuario: la lista de usuarios está cifrada y solo la abre el administrador.
 - La sesión dura lo que la pestaña: al cerrarla, hay que volver a ingresar.
 
 ## Cargar miles de resoluciones de una vez

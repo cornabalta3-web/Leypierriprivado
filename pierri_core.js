@@ -13,7 +13,7 @@
  * Contenido:
  *   CONFIG_DEFAULT                 parámetros de elegibilidad
  *   parseFecha / fmtFecha          fechas ISO, DD/MM/AAAA y sello "14 ABR 2026", siempre en UTC
- *   expedienteDesdeNombreArchivo   "documento_0535-105743-2018_018df2ff.pdf" → "0535-105743/2018"
+ *   expedienteDesdeNombreArchivo   "documento_0535-123456-2020_abcdef12.pdf" → "0535-123456/2020"
  *   parsearAntiguedad              lee la frase de antigüedad (números en cifras o en palabras) — control cruzado
  *   calcularPoseeDesde             fecha de inicio de posesión a partir de lo declarado (precisión fecha/mes/año)
  *   evaluarElegibilidad            CORTE_FIJO (Ley 24.374 vigente) o PLAZO_MOVIL (proyecto PE-13/26)

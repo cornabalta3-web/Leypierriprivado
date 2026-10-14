@@ -7,17 +7,26 @@
 /**
  * armar_web.js — arma los archivos del sitio público (GitHub Pages) a partir del Tablero y de web/pierri_web.js.
  *
- * El sitio no lleva datos: los datos los guarda el propio sitio, cifrados, en la carpeta datos/ del repositorio público.
- * Lo que sí haría falta cuidar es el código: el Tablero trae adentro tres resoluciones reales como ejemplo para el
- * modelo (EJEMPLOS). Acá se sacan, y el armado se corta si queda en la salida algún nombre o número de ellas.
+ * El sitio no lleva datos: los guarda el propio sitio, cifrados, en la carpeta datos/ del repositorio público.
+ * Lo que hay que cuidar es el código, que queda a la vista:
+ *   - el Tablero trae tres resoluciones reales como ejemplo para el modelo (EJEMPLOS) y las instrucciones del modelo
+ *     (PROMPT_SISTEMA) citan frases de ellas. La web no usa el modelo: se sacan las dos cosas;
+ *   - después se barre todo lo que se publica buscando cualquier cosa con forma de DNI, CUIL, expediente, cuenta o
+ *     matrícula, y cualquier rastro de los ejemplos. Si aparece algo que no está en la lista de números inventados,
+ *     el armado se corta;
+ *   - Leaflet (el mapa) se sirve desde el propio sitio, no desde un CDN, y la página declara que solo puede hablar con
+ *     sí misma y con la API de GitHub (Content-Security-Policy).
  *
  * Uso:
  *   node armar_web.js --salida ../relevamiento-pierri [--owner cornabalta3-web] [--repo relevamiento-pierri] [--rama main]
- * Escribe index.html, pierri_web.js, robots.txt y .nojekyll. No toca la carpeta datos/ de la salida.
+ * Escribe index.html, pierri_web.js, vendor/leaflet/, robots.txt y .nojekyll. No toca la carpeta datos/ de la salida.
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
+
+// Números de muestra que el código usa a propósito (formatos, ejemplos inventados). Nada más pasa el barrido.
+const PERMITIDOS = new Set(['12.345.678', '12345678', '0535-123456/2020', '0535-123456-2020', '20251001', '86400000']);
 
 function args() {
   const a = process.argv.slice(2), o = { salida: path.join(__dirname, 'sitio'), owner: 'cornabalta3-web', repo: 'relevamiento-pierri', rama: 'main' };
@@ -28,7 +37,7 @@ function args() {
   return o;
 }
 
-/** Devuelve [inicio, fin) del arreglo literal que empieza en `desde` (el "["), saltando strings y comentarios. */
+/** Devuelve el fin del arreglo literal que empieza en `desde` (el "["), saltando strings y comentarios. */
 function finDelArreglo(txt, desde) {
   let prof = 0;
   for (let i = desde; i < txt.length; i++) {
@@ -45,35 +54,100 @@ function finDelArreglo(txt, desde) {
   throw new Error('no encuentro el final de EJEMPLOS');
 }
 
-function sacarEjemplos(html) {
+const normalizar = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+
+/** Saca EJEMPLOS y PROMPT_SISTEMA. Devuelve el html y las huellas de los ejemplos (nombres y números) para el barrido. */
+function sacarDatosDelModelo(html) {
   const ancla = 'const EJEMPLOS = [';
   if (html.split(ancla).length !== 2) throw new Error('no encuentro EJEMPLOS en el Tablero (¿cambió?)');
   const ini = html.indexOf(ancla) + ancla.length - 1, fin = finDelArreglo(html, ini);
   const quitado = html.slice(ini, fin);
-  // Lo que identifica a las personas de los ejemplos: nombres en mayúscula con coma y números de 7 u 8 cifras.
-  const huellas = new Set([...(quitado.match(/\b\d{7,8}\b/g) || []), ...(quitado.match(/[A-ZÁÉÍÓÚÑ]{3,}, [A-ZÁÉÍÓÚÑ ]{3,}/g) || [])]);
-  const limpio = html.slice(0, ini) + '[]; // la versión web no publica los ejemplos reales que usa el modelo' + html.slice(fin).replace(/^;/, '');
-  for (const h of huellas) if (limpio.includes(h)) throw new Error('quedó un dato de los ejemplos en el Tablero: ' + h.replace(/\d(?=\d{2})/g, '•'));
-  return { html: limpio, huellas: huellas.size };
+  html = html.slice(0, ini) + '[]; // la versión web no publica los ejemplos reales que usa el modelo' + html.slice(fin).replace(/^;/, '');
+
+  const p0 = html.indexOf('const PROMPT_SISTEMA = `'), p1 = html.indexOf('const PROMPT_USUARIO');
+  if (p0 < 0 || p1 < p0 || p1 - p0 > 20000) throw new Error('no encuentro PROMPT_SISTEMA en el Tablero (¿cambió?)');
+  html = html.slice(0, p0) + "const PROMPT_SISTEMA = ''; // la web no usa el modelo; las instrucciones citan resoluciones reales\n  " + html.slice(p1);
+
+  // Huellas: cada valor de texto de los ejemplos con 5 dígitos o más (expedientes, cuentas, DNI, matrículas…) y esos
+  // dígitos solos; cada nombre completo (con y sin coma) y cada apellido de 6 letras o más; las calles completas.
+  const huellas = new Set();
+  for (const m of quitado.matchAll(/'([^']*)'/g)) {
+    const v = m[1], solo = v.replace(/\D/g, '');
+    if (solo.length < 5) continue;
+    huellas.add(v); huellas.add(solo);
+    for (const d of v.match(/\d{5,}/g) || []) huellas.add(d);
+  }
+  for (const m of quitado.matchAll(/(?:apellido_nombre|nombre|profesional|titular_registral|calle):\s*'([^']+)'/g)) {
+    const n = normalizar(m[1]).replace(/\s*\(.*\)\s*/g, '').trim();
+    if (n.length >= 8) { huellas.add('#' + n); huellas.add('#' + n.replace(/,/g, '')); }
+    const apellido = n.split(',')[0].trim();
+    if (n.includes(',') && /^[A-Z ]{6,}$/.test(apellido)) huellas.add(apellido);
+  }
+  return { html, huellas };
+}
+
+/** Corta si en lo publicado aparece algo con forma de dato personal o alguna huella de los ejemplos. */
+function barrer(nombre, texto, huellas) {
+  const problemas = [];
+  const patrones = [
+    [/\b\d{1,2}\.\d{3}\.\d{3}\b/g, 'DNI con puntos'],
+    [/\b(?:20|23|24|27|30|33|34)-?\d{8}-?\d\b/g, 'CUIL/CUIT'],
+    [/\b\d{4}-\d{5,7}[/-]\d{4}\b/g, 'expediente'],
+    [/\b\d{2}-\d{2}-?\d{3}-?\d{4,5}\/\d\b|\b\d{2}-\d{9}\/\d\b/g, 'cuenta'],
+    [/\b\d{7,8}\b/g, 'número de 7 u 8 cifras'],
+  ];
+  for (const [re, que] of patrones) for (const m of texto.match(re) || []) if (!PERMITIDOS.has(m)) problemas.push(`${que}: ${m.replace(/\d(?=\d{2})/g, '•')}`);
+  const plano = normalizar(texto);
+  for (const h of huellas) {
+    if (/^\d+$/.test(h)) { if (new RegExp('(?<!\\d)' + h + '(?!\\d)').test(texto) && !PERMITIDOS.has(h)) problemas.push('número de los ejemplos: ' + h.replace(/\d(?=\d{2})/g, '•')); }
+    else if (h.startsWith('#')) { if (plano.includes(h.slice(1))) problemas.push('nombre de los ejemplos'); }
+    else if (/^[A-Z ]+$/.test(h)) { if (new RegExp('\\b' + h + '\\b').test(plano)) problemas.push('apellido de los ejemplos: ' + h); }
+    else if (texto.includes(h)) problemas.push('valor de los ejemplos: ' + h.replace(/\d(?=\d{2})/g, '•'));
+  }
+  if (problemas.length) throw new Error(`en ${nombre} quedó algo con forma de dato personal:\n  - ` + [...new Set(problemas)].join('\n  - '));
+}
+
+function copiarDir(de, a) {
+  fs.mkdirSync(a, { recursive: true });
+  for (const f of fs.readdirSync(de, { withFileTypes: true })) {
+    if (f.isDirectory()) copiarDir(path.join(de, f.name), path.join(a, f.name));
+    else fs.copyFileSync(path.join(de, f.name), path.join(a, f.name));
+  }
 }
 
 function main() {
   const O = args();
   let html = fs.readFileSync(path.join(__dirname, 'tablero_pierri.html'), 'utf8');
   const web = fs.readFileSync(path.join(__dirname, 'web', 'pierri_web.js'), 'utf8');
-  const s = sacarEjemplos(html);
+  const s = sacarDatosDelModelo(html);
   html = s.html;
+
   const anclaMain = "<script>\n(function(){\n'use strict';\nconst P = window.PierriCore;";
   if (html.split(anclaMain).length !== 2) throw new Error('no encuentro el script principal del Tablero (¿cambió?)');
   const repo = JSON.stringify({ owner: O.owner, repo: O.repo, rama: O.rama });
-  html = html.replace(anclaMain, () => `<script>window.PIERRI_WEB_REPO = ${repo};</script>\n<script src="pierri_web.js"></script>\n` + anclaMain)
-    .replace('<head>', '<head>\n<meta name="robots" content="noindex, nofollow">');
+  html = html.replace(anclaMain, () => `<script>window.PIERRI_WEB_REPO = ${repo};</script>\n<script src="pierri_web.js"></script>\n` + anclaMain);
+
+  const cssCDN = '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">';
+  const jsCDN = '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>';
+  if (!html.includes(cssCDN) || !html.includes(jsCDN)) throw new Error('no encuentro Leaflet en el Tablero (¿cambió la versión?)');
+  html = html.replace(cssCDN, '<link rel="stylesheet" href="vendor/leaflet/leaflet.css">').replace(jsCDN, '<script src="vendor/leaflet/leaflet.js"></script>');
+  if (/<script[^>]+src="https?:/i.test(html)) throw new Error('quedó algún script cargado de afuera del sitio');
+
+  const csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com; " +
+    "object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'";
+  html = html.replace('<head>', `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">\n<meta name="robots" content="noindex, nofollow">`);
+
+  barrer('index.html', html, s.huellas);
+  barrer('pierri_web.js', web, s.huellas);
+
   fs.mkdirSync(O.salida, { recursive: true });
   fs.writeFileSync(path.join(O.salida, 'index.html'), html);
   fs.writeFileSync(path.join(O.salida, 'pierri_web.js'), web);
+  copiarDir(path.join(__dirname, 'web', 'vendor'), path.join(O.salida, 'vendor'));
   fs.writeFileSync(path.join(O.salida, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
   fs.writeFileSync(path.join(O.salida, '.nojekyll'), '');
-  console.log(`Listo en ${O.salida}: index.html, pierri_web.js, robots.txt, .nojekyll (${s.huellas} datos de ejemplo verificados afuera).`);
+  console.log(`Listo en ${O.salida}: index.html, pierri_web.js, vendor/leaflet, robots.txt, .nojekyll (barrido de datos personales sin hallazgos; ${s.huellas.size} huellas de los ejemplos verificadas afuera).`);
 }
 
 try { main(); } catch (e) { console.error('No se pudo armar la web: ' + e.message); process.exit(1); }
