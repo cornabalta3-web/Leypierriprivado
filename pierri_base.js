@@ -475,11 +475,12 @@
     const unidas = (inventario || []).map(i => ({ i, p: parcelaEncontrada(parcelas, i.cuenta) }));   // LEFT JOIN parcelas p ON … AND p.encontrada = 1
     const grupos = agrupar(unidas, ({ i, p }) => [coalesce(p && p.localidad, '(sin ubicar)'), coalesce(p && p.departamento, i.departamento, '(sin departamento)')]);
     const salida = grupos.map(g => {
-      const fs = g.filas, ultima = fs[fs.length - 1];
+      const fs = g.filas, primera = fs[0];
       return { fila: { localidad: g.clave[0], departamento: g.clave[1], total: fs.length, con_resolucion: sumaSQL(fs, x => x.i.tiene_resolucion),
         baldias: fs.filter(x => x.p && empiezaConBaldio(x.p.estado)).length, lat: promedioSQL(fs.map(x => x.p && x.p.lat)), lon: promedioSQL(fs.map(x => x.p && x.p.lon)) },
-        // ORDER BY (p.localidad IS NULL): una columna suelta en un GROUP BY vale lo de la última fila del grupo
-        sinUbicar: !ultima.p || esNulo(ultima.p.localidad) ? 1 : 0 };
+        // ORDER BY (p.localidad IS NULL): una columna suelta en un GROUP BY vale lo de la primera fila del grupo
+        // (medido con el SQLite que trae Node 22)
+        sinUbicar: !primera.p || esNulo(primera.p.localidad) ? 1 : 0 };
     });
     salida.sort((a, b) => a.sinUbicar - b.sinUbicar || compararSQL(b.fila.con_resolucion, a.fila.con_resolucion) || compararSQL(b.fila.total, a.fila.total));
     return salida.map(x => x.fila);

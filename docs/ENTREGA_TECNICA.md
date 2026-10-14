@@ -37,7 +37,8 @@ Estado: probado con 70 resoluciones reales. El relevamiento completo (7.083 reso
 
 ```
 pierri.js          servidor HTTP, base de datos y endpoints
-pierri_lector.js   lectura de PDF, corte de tomos y expedientes, consulta a Catastro
+pierri_lector.js   lectura de PDF, carril modelo, consulta a Catastro
+pierri_tomos.js    corte de tomos y expedientes y carril texto (lo usan el kit y la web; el kit no arranca sin él)
 pierri_texto.js    reglas sobre el texto de la resolución (fechas, cuentas, tipos de documento)
 pierri_core.js     elegibilidad, clasificación, decodificación de cuentas, planilla de salida
 tablero_pierri.html  interfaz completa

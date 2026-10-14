@@ -41,7 +41,7 @@ async function textoPorPagina(buf) {
   const paginas = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const tc = await (await doc.getPage(i)).getTextContent();
-    paginas.push(tc.items.map(t => t.str).join(' ').replace(/\s+/g, ' ').trim());
+    paginas.push(PierriTomos.textoDeItems(tc.items));
   }
   await doc.destroy();
   return paginas;

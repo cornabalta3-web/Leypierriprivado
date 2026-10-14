@@ -365,7 +365,7 @@ El tiempo de CPU queda a medir.
 - **No toca** `extraerDeTexto` ni `tipoDocumento`, porque su lógica de suficiencia es de resolución.
 - Reusa `RE_CTA`, `RE_CTA_SUELTA` y `apariciones`, que ya distinguen la cuenta del inmueble de la de un lindero. Para eso se agregan al `return` de `pierri_texto.js`, sin cambiar su comportamiento.
 - **Fojas resolutivas.**
-  - `RE_RESOLUTIVA` (`pierri_lector.js:58`) se pensó para bloques que ya empiezan con VISTO o con el número de expediente. Incluye `ORDENAR` y `ARTÍCULO 1`, que también aparecen en ordenanzas, certificados municipales, informes y escrituras.
+  - `RE_RESOLUTIVA` (`pierri_tomos.js:43`) se pensó para bloques que ya empiezan con VISTO o con el número de expediente. Incluye `ORDENAR` y `ARTÍCULO 1`, que también aparecen en ordenanzas, certificados municipales, informes y escrituras.
   - Por eso, una foja se marca `RESOLUCION` solo si además cumple `RE_INICIO` o trae el sello o el número de resolución.
   - **La foja no se saltea.** Se clasifica, entra a `fojas` y a `documentos_cuerpo` con el rol que le corresponde (§3), y además se lista en `traspaso_resoluciones.jsonl`, por si hace falta leerla con `procesar_lote.js` como resolución.
   - Si la foja tiene texto, todo esto es gratis. Si no tiene, se lee una sola vez, en el carril de cuerpos. El traspaso al lector de resoluciones es una decisión explícita.
@@ -429,7 +429,7 @@ Tiene **un tope duro** (`--max-porcentaje`, 5% de las fojas por defecto). **Por 
 
 **Función.** `leerConModelo(buf, {key, modelo, prompt, esquema, maxTokens, effort, thinking})`. Llamada sin parámetros nuevos hace exactamente lo de hoy: Haiku 4.5, `PROMPT_SISTEMA`, `max_tokens 3000` y `temperature 0`. La lectura de resoluciones no cambia.
 
-**Parámetros según el modelo.** Fuente: skill `claude-api`, tabla del 06/10/2026. Hoy `leerConModelo` manda siempre `temperature: 0` (`pierri_lector.js:181`), y los modelos 5.5 responden con error 400 a una temperatura distinta de la de por defecto.
+**Parámetros según el modelo.** Fuente: skill `claude-api`, tabla del 06/10/2026. Hoy `leerConModelo` manda siempre `temperature: 0` (`pierri_lector.js:72`), y los modelos 5.5 responden con error 400 a una temperatura distinta de la de por defecto.
 
 | Modelo | `temperature` | Razonamiento (`thinking`) | `effort` |
 |---|---|---|---|
@@ -456,7 +456,7 @@ Tiene **un tope duro** (`--max-porcentaje`, 5% de las fojas por defecto). **Por 
 - Indica expresamente que de un `DOC_SENSIBLE` se devuelvan solo el tipo, la fecha y el domicilio, sin cita (§5.5).
 - **Caché.** El mínimo cacheable de Haiku 5.5 es de 512 tokens, así que este prompt se cachea. En Haiku 4.5 el mínimo es de 4.096 tokens: el `PROMPT_SISTEMA` de hoy (≈4.000 a 5.000 tokens, estimado) puede no estar cacheando. Se confirma con los contadores desglosados de la Etapa 0.
 
-**Salida con esquema** (`output_config.format`). Evita el reintento por JSON inválido, que hoy además pierde los tokens del intento fallido (`pierri_lector.js:200`). Batch acepta este parámetro. Que funcione en la práctica con este modelo se prueba en el piloto. Esquema orientativo, con valores inventados:
+**Salida con esquema** (`output_config.format`). Evita el reintento por JSON inválido, que hoy además pierde los tokens del intento fallido (`pierri_lector.js:91`). Batch acepta este parámetro. Que funcione en la práctica con este modelo se prueba en el piloto. Esquema orientativo, con valores inventados:
 
 ```json
 {"fojas": [{"pagina": 3, "tipo": "BOLETA_TRIBUTO", "continua_anterior": false, "legible": true, "manuscrito": false}],
@@ -503,17 +503,17 @@ Tiene **un tope duro** (`--max-porcentaje`, 5% de las fojas por defecto). **Por 
 ### 4.7 Arreglos al lector actual (Etapa 0)
 
 1. **`cortarTomo` devuelve también `rangosCuerpo`.**
-   - **Hoy:** las páginas de cuerpo solo se cuentan (`pierri_lector.js:111-116`). Las resoluciones de trámite que descarta `unaPorExpediente` (emplazamientos, archivo, suspensión, desestimación de una oposición) desaparecen: no figuran en `unidades`, en `sueltas` ni en `paginasCuerpo`, y solo quedan contadas en `resolucionesTramite`.
+   - **Hoy:** las páginas de cuerpo solo se cuentan (`pierri_tomos.js:98-103`). Las resoluciones de trámite que descarta `unaPorExpediente` (emplazamientos, archivo, suspensión, desestimación de una oposición) desaparecen: no figuran en `unidades`, en `sueltas` ni en `paginasCuerpo`, y solo quedan contadas en `resolucionesTramite`.
    - **Cambio:** `rangosCuerpo` es el **complemento de las páginas de `elegidas`**, o sea, todo lo que no es la resolución conservada.
    - Los bloques resolutivos descartados se guardan además como `RESOLUCION_TRAMITE` o `PROVIDENCIA_ARCHIVO` propuestos, y pasan por `extraerMotivoCierre` (§7.1). Son justo las piezas de cierre que interesan.
    - Todo se guarda en `archivos_cuerpo` con origen `EMBUDO`.
 2. **Un PDF sin parte dispositiva deja de mandar falsas "resoluciones" al modelo.**
-   - **Hoy:** cuando ningún bloque tiene parte dispositiva, se devuelven todos los bloques (`pierri_lector.js:118-119`). El gasto inútil se da exactamente en los tomos **con capa de texto**, con el número de expediente al principio de cada foja y sin `RE_RESOLUTIVA`: terminan en el modelo **con el prompt de resolución**.
+   - **Hoy:** cuando ningún bloque tiene parte dispositiva, se devuelven todos los bloques (`pierri_tomos.js:105-106`). El gasto inútil se da exactamente en los tomos **con capa de texto**, con el número de expediente al principio de cada foja y sin `RE_RESOLUTIVA`: terminan en el modelo **con el prompt de resolución**.
    - **Cambio:** si hay texto suficiente por página, el archivo queda como cuerpo y figura así en "Qué aportó cada archivo", para que se note si se escapó una resolución.
    - **Si no hay capa de texto, este arreglo no cambia nada.** Ojo: hoy un tomo de más de 6 páginas sin texto no produce ninguna unidad. Todas sus páginas quedan como "sueltas" y no se leen ni por texto ni por el modelo (probado con `cortarTomo` sobre 10 páginas vacías). Solo los PDF de 6 páginas o menos sin texto van al modelo. Es un tema aparte (§13.D).
    - El umbral se calibra con los 191 expedientes de resolución y cuerpo.
-3. **`esTomo`.** Usa `> 6` (`pierri_lector.js:72`), pero la SPEC dice que un cuerpo tiene 6 o más hojas. Pasarlo a `>= 6` se decide con la regresión, porque cambia cómo se corta un PDF de 6 páginas.
-4. **Tokens desglosados.** Hoy se guarda un solo entero (`pierri_lector.js:203`) y el costo no se puede reconstruir. `resoluciones.tokens` sigue como suma, por compatibilidad.
+3. **`esTomo`.** Usa `> 6` (`pierri_tomos.js:59`), pero la SPEC dice que un cuerpo tiene 6 o más hojas. Pasarlo a `>= 6` se decide con la regresión, porque cambia cómo se corta un PDF de 6 páginas.
+4. **Tokens desglosados.** Hoy se guarda un solo entero (`pierri_lector.js:94`) y el costo no se puede reconstruir. `resoluciones.tokens` sigue como suma, por compatibilidad.
 
 ---
 

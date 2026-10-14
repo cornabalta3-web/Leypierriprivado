@@ -62,7 +62,8 @@ Si algún día llegan 10.000 archivos juntos, se pueden procesar sin el navegado
 |---|---|
 | `pierri.js` | La aplicación (servidor local + base de datos). |
 | `tablero_pierri.html` | El Tablero (lo sirve pierri.js; también se abre solo, con un JSONL). |
-| `pierri_lector.js` | El Lector: reconoce tomos, lee por texto, manda al modelo lo que falta. |
+| `pierri_lector.js` | El Lector: lee el PDF y manda al modelo lo que el texto no resolvió. |
+| `pierri_tomos.js` | Reconoce tomos y expedientes y lee por texto. El Lector lo necesita: si se actualiza el kit copiando archivos, va junto con `pierri_lector.js`. |
 | `pierri_texto.js` | Carril de texto: reglas sobre la capa de texto del PDF. |
 | `pierri_core.js` | Reglas compartidas: elegibilidad, validaciones, Catastro, clasificación, planilla, prompt. |
 | `codigos_departamentos_pedanias_cordoba.json` | Códigos oficiales de Catastro. |

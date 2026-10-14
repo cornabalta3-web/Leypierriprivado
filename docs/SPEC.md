@@ -11,7 +11,7 @@ el Saneamiento de Títulos (Ley 9150), extrae la antigüedad de la posesión, y 
 elegible o no para la Ley Pierri (24.374 / 8932). Se abre con `node pierri.js` → http://localhost:3777.
 Base SQLite `pierri.db`; copia de cada PDF en `embudo/`; configuración en `config.json`.
 
-**Archivos.** `pierri.js` (servidor + base), `pierri_lector.js` (lectura de PDF, cortador de tomos y expedientes),
+**Archivos.** `pierri.js` (servidor + base), `pierri_lector.js` (lectura de PDF y carril modelo), `pierri_tomos.js` (cortador de tomos y expedientes, carril texto; compartido con la web),
 `pierri_texto.js` (reglas sobre el texto), `pierri_core.js` (elegibilidad, Catastro, clasificación, planilla),
 `tablero_pierri.html` (la interfaz; se ensambla embebiendo `pierri_core.js`, la tabla de códigos y el GeoJSON de
 departamentos). `banco_pruebas_texto.js`: **14/14 casos pasan** — correrlo después de tocar cualquier regla.

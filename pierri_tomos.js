@@ -54,6 +54,8 @@
     if (RE_ORDENAR.test(texto)) return 2;                 // ordena algo, pero no la inscripción
     return 1;                                             // rectifica, desestima, archiva
   }
+  /** El texto de una página a partir de lo que da pdf.js (getTextContent().items): el mismo en el kit y en la web. */
+  function textoDeItems(items) { return items.map(t => t.str).join(' ').replace(/\s+/g, ' ').trim(); }
   function esTomo(pags) { return pags.length > 6 || pags.filter(t => RE_INICIO.test(t)).length > 1; }
   /** El nombre del archivo del sistema de la UEST ya trae el expediente: documento_0535-004490-2004_<hash>.pdf */
   function expedienteDelNombre(nombre) {
@@ -206,7 +208,7 @@
       lectura: { fuente: 'texto_incompleto', cobertura: lect.cobertura, faltan: lect.faltan } });
   }
 
-  return {
+  return { textoDeItems,
     RE_INICIO, RE_EXP, RE_EXP_TEMPRANO, RE_FIN, RE_FIN_FUERTE, RE_RESOLUTIVA, RE_ORDEN_INSCRIPCION, RE_ORDENAR,
     puntajeResolucion, esTomo, expedienteDelNombre, cortarTomo, mejorDe, unaPorExpediente,
     unidadesDe, leerTexto, registroBase, registroPorTexto, registroIncompleto,

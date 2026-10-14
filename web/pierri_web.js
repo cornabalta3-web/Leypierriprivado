@@ -619,10 +619,19 @@
     }
     return c._ix;
   }
-  /** Las parcelas consultadas, con la forma de la tabla del kit (para el inventario). */
+  /**
+   * Las parcelas consultadas para el inventario, con la forma de la tabla del kit. Como en el kit, las que se consultaron
+   * para ubicar resoluciones no cuentan para el inventario (allá van a otra tabla); para ubicar resoluciones sirven todas.
+   */
   function parcelasDe(cat) {
     const out = {};
-    for (const [cta, v] of Object.entries(cat || {})) out[cta] = window.PierriBase.parcelaDesdeCatastro(v.p || null, v.en || null);
+    for (const [cta, v] of Object.entries(cat || {})) if (v.inv) out[cta] = window.PierriBase.parcelaDesdeCatastro(v.p || null, v.en || null);
+    return out;
+  }
+  /** Suma consultas nuevas a las guardadas sin perder la marca de las que ya cuentan para el inventario. */
+  function sumarParcelas(actual, nuevas) {
+    const out = Object.assign({}, actual || {});
+    for (const [cta, v] of Object.entries(nuevas)) out[cta] = (out[cta] && out[cta].inv && !v.inv) ? Object.assign({}, v, { inv: true }) : v;
     return out;
   }
   let LOCALIDADES;   // undefined: sin pedir; null: no está
@@ -744,7 +753,7 @@
     try {
       for (let i = 1; i <= doc.numPages; i++) {
         const tc = await (await doc.getPage(i)).getTextContent();
-        paginas.push(tc.items.map(t => t.str).join(' ').replace(/\s+/g, ' ').trim());
+        paginas.push(window.PierriTomos.textoDeItems(tc.items));
       }
     } finally { await doc.destroy(); }
     return paginas;
@@ -866,7 +875,7 @@
           const archivos = { [ruta]: await sellarDatos(ab.dek, contenido), [RUTAS.indice]: JSON.stringify(indice, null, 1) };
           escrito = { dek: ab.dek, ruta, contenido, indice };
           if (parcelas && Object.keys(parcelas).length) {
-            const cat = Object.assign((await abrirJSON(ab.dek, await estado.leer(RUTAS.catastro))) || {}, parcelas);
+            const cat = sumarParcelas(await abrirJSON(ab.dek, await estado.leer(RUTAS.catastro)), parcelas);
             archivos[RUTAS.catastro] = await sellarDatos(ab.dek, cat);
             escrito.catastro = cat;
           }
@@ -981,7 +990,8 @@
     const cuentas = window.PierriBase.cuentasSinParcela(c.inventario ? c.inventario.filas || [] : [], parcelasDe(c.catastro), Math.min(Number(maximo) || 500, 500));
     if (!cuentas.length) { const d = await datos(); return { consultadas: 0, encontradas: 0, pendientes: 0, inventario: d.resumen.inventario }; }
     const nuevas = await consultarParcelas(cuentas);
-    await guardarUno(s, 'catastro', actual => Object.assign(actual || {}, nuevas));
+    for (const v of Object.values(nuevas)) v.inv = true;
+    await guardarUno(s, 'catastro', actual => sumarParcelas(actual, nuevas));
     const d = await datos(), inv = d.resumen.inventario || {};
     return { consultadas: cuentas.length, encontradas: Object.values(nuevas).filter(v => v.p).length, pendientes: inv.pendientes_catastro || 0, inventario: inv };
   }
@@ -992,7 +1002,7 @@
       .map(g => g.cuenta_normalizada.replace(/\D/g, '')).filter(x => x.length === 12))];
     if (!cuentas.length) return { ubicadas: 0 };
     const nuevas = await consultarParcelas(cuentas);
-    await guardarUno(s, 'catastro', actual => Object.assign(actual || {}, nuevas));
+    await guardarUno(s, 'catastro', actual => sumarParcelas(actual, nuevas));
     return { ubicadas: Object.values(nuevas).filter(v => v.p).length };
   }
   async function inventarioLocalidades() {
