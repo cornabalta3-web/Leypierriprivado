@@ -109,7 +109,7 @@ button.chip.a.on{border-color:#c9911e;background:var(--ambar2);color:var(--ambar
 .panel{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--r);display:flex;flex-direction:column;min-width:0}
 .panel .cabp{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--fondo)}
 .panel .cabp h2{font-size:16px;font-weight:700}
-.panel .cabp .sub{font-size:12px;color:var(--texto2)}
+.panel .cabp .sub{font-size:12px;color:var(--texto2);overflow-wrap:anywhere;min-width:0}
 .panel .cuerpo{padding:14px 18px;display:flex;flex-direction:column;gap:12px}
 .dos{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}
 @media (max-width:980px){.dos{grid-template-columns:1fr!important}}
@@ -166,7 +166,7 @@ button.boton-ver{cursor:pointer}
 @media (max-width:900px){.visor{width:100vw}}
 @media (min-width:901px){body.con-visor main{margin-right:min(46vw,780px)}
   /* Con el PDF al costado la tabla queda angosta: sin las columnas secundarias, la ficha y "Guardar revisión" entran a la vista */
-  body.con-visor #v-expedientes .col-sec{display:none}}
+  body.con-visor #v-expedientes .col-sec{display:none} body.con-visor #v-expedientes .tag{white-space:normal}}
 .clicable{cursor:pointer;transition:box-shadow .12s,border-color .12s}
 tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 .clicable:hover{border-color:var(--acento);box-shadow:0 1px 6px rgba(22,67,110,.14)}
@@ -177,14 +177,14 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 .ranking .barra{height:10px;background:var(--fondo);border-radius:99px;overflow:hidden}
 .ranking .barra i{display:block;height:100%;background:var(--verde);border-radius:99px}
 .ranking .cifra{text-align:right;font-weight:700}
-#mapa{height:560px;border-radius:var(--r);border:1px solid var(--linea);background:var(--suave)}
+#mapa,#mapaInv{position:relative;z-index:0} #mapa{height:560px;border-radius:var(--r);border:1px solid var(--linea);background:var(--suave)}
 .leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--texto2)}
 .punto{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
 @media (max-width:760px){.app{grid-template-columns:1fr}nav{position:static;height:auto;flex-direction:row;flex-wrap:wrap;padding:12px}.logo{padding:4px 10px;width:100%}nav .pie{width:100%;padding:6px 10px 0}nav .pie:last-child{display:none}main{padding:16px}.cab h1{font-size:22px}#mapa{height:380px}.col-sec{display:none}}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--blanco);color:var(--texto)}
 .leaflet-container a.leaflet-popup-close-button{color:var(--texto2)}
 .leaflet-popup-content a{color:var(--acento)}
-@media (max-width:760px){#filas td{white-space:normal}#filas .tag{white-space:normal}.detalle dl{grid-template-columns:1fr}.detalle dd{overflow-wrap:anywhere;margin-bottom:6px}}
+@media (max-width:760px){#filas td,#recientes td{white-space:normal}#filas .tag,#recientes .tag{white-space:normal}.detalle dl{grid-template-columns:1fr}.detalle dd{overflow-wrap:anywhere;margin-bottom:6px}}
 .tema{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;padding:7px 10px;font-size:12px;border-radius:6px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;min-height:34px}
 .tema:hover{background:rgba(255,255,255,.1)}
 /* ¿Está cumpliendo? — la cadena del relevamiento y tres preguntas: avance, calidad, resultado */
@@ -280,7 +280,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     <input id="filePdf" type="file" accept="application/pdf,.pdf" multiple class="oculto">
     <input id="carpetaPdf" type="file" webkitdirectory multiple class="oculto">
     <input id="file" type="file" accept=".jsonl,.json,application/json" class="oculto">
-    <div class="panel oculto" id="progreso"><div class="cabp"><h2>Últimas cargas</h2><span class="sub" id="progresoSub"></span></div><div class="mini oculto" id="progresoWeb" style="margin:10px 18px 0"></div><div class="msg oculto" id="balanceCarga" style="margin:12px 18px 0"></div><div class="acciones oculto" id="pendienteWeb" style="margin:10px 18px 0"><button id="btnGuardarPendiente">Guardar lo pendiente</button><span class="mini">Hay PDF leídos que todavía no se guardaron en GitHub.</span></div><div class="cuerpo" id="progresoCuerpo" style="gap:0"></div></div>
+    <div class="panel oculto" id="progreso"><div class="cabp"><h2>Últimas cargas</h2><span class="sub" id="progresoSub"></span></div><div class="mini oculto" id="progresoWeb" style="margin:10px 18px 0"></div><div class="msg oculto" id="balanceCarga" style="margin:12px 18px 0"></div><div class="acciones oculto" id="pendienteWeb" style="margin:10px 18px 0"><button id="btnGuardarPendiente">Guardar lo pendiente</button><span class="mini">Hay lectura que todavía no se guardó en GitHub (PDF leídos o lo leído con el modelo).</span></div><div class="cuerpo" id="progresoCuerpo" style="gap:0"></div></div>
     <div class="origen" id="origen"></div>
     <div class="panel oculto" id="panelArchivos"><div class="cabp"><h2>Qué aportó cada archivo</h2><span class="sub" id="subArchivos"></span></div>
       <div class="cuerpo" style="gap:6px"><div class="acciones" id="filtroArchivos">
@@ -393,7 +393,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     <div class="dos" style="grid-template-columns:minmax(0,1fr) 320px">
       <div class="panel"><div class="cuerpo">
         <div id="mapa"></div>
-        <div class="leyenda"><span><i class="punto f-v"></i>Elegible</span><span><i class="punto f-a"></i>Borde</span><span><i class="punto f-g"></i>No elegible</span><span><i class="punto f-r"></i>Revisar / sin fecha</span><span><i class="punto" style="background:rgba(29,107,69,.3);border:2px solid #1d6b45;width:11px;height:11px"></i>Claro: estimado con la planilla</span><span><i class="punto" style="background:transparent;border:2px dashed #5b6675;width:11px;height:11px"></i>Ubicación aproximada (por localidad)</span><span style="margin-left:6px">Departamentos sombreados según elegibles; se apagan desde el control de capas.</span></div>
+        <div class="leyenda"><span><i class="punto f-v"></i>Elegible</span><span><i class="punto f-a"></i>Borde</span><span><i class="punto f-g"></i>No elegible</span><span><i class="punto f-r"></i>Revisar / sin fecha</span><span id="leyendaEst" class="oculto"><i class="punto" style="background:rgba(29,107,69,.35);border:1.5px solid #1d6b45;width:11px;height:11px"></i>Claro: estimado con la planilla</span><span><i class="punto" style="background:transparent;border:2px dashed #5b6675;width:11px;height:11px"></i>Ubicación aproximada (por localidad)</span><span style="margin-left:6px">Departamentos sombreados según elegibles; se apagan desde el control de capas.</span></div>
         <p class="mini" style="margin:0">El punto es la parcela madre según Catastro (la del titular registral). Al acercar se dibujan los límites oficiales; con "Satélite" se ve la construcción. Los filtros de Expedientes también aplican acá.</p>
       </div></div>
       <div class="panel"><div class="cabp"><h2>Agrupado</h2><div class="acciones" id="agrupar2"><button class="chip" data-g="departamento">Dpto.</button><button class="chip on" data-g="localidad">Localidad</button><button class="chip" data-g="seccion">Sección</button></div></div><div class="cuerpo ranking" id="ranking2"></div></div>
@@ -1496,6 +1496,7 @@ function ir(v){
   document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.dataset.vista === v));
   // Abierto con doble clic (file://) algunos navegadores no dejan tocar la dirección: no debe cortar la navegación.
   try { if(location.hash !== '#' + v) history.replaceState(null, '', '#' + v); } catch(e) { /* sin historial */ }
+  if(v !== 'expedientes' && !$('visor').classList.contains('oculto')) cerrarVisor();   // el PDF va con la ficha
   if(v === 'mapa'){ if(!mapa) iniciarMapa(); setTimeout(() => { mapa.invalidateSize(); pintarMapa(); }, 60); }
   if(v === 'inventario' && SERVIDOR){ cargarInventarioVista(); }
   window.scrollTo(0, 0);
@@ -1562,7 +1563,8 @@ async function subirPDFsAhora(lista){
   $('progresoSub').textContent = `procesando ${lista.length} archivo(s)…`;
   let n = 0;
   const B = { yaEstaban: 0, nuevos: 0, sinResolucion: 0, errores: 0, resoluciones: 0 };
-  const visiblesAntes = registros.length, repetidasAntes = (resumenSrv && resumenSrv.repetidas) || 0;
+  const leidasAhora = () => registros.filter(r => !deLaPlanilla(r)).length;   // la planilla se achica cuando llega la lectura
+  const visiblesAntes = leidasAhora(), repetidasAntes = (resumenSrv && resumenSrv.repetidas) || 0;
   for(const f of lista){
     const fila = document.createElement('div'); fila.className = 'fila-carga';
     fila.innerHTML = `<span>${esc(f.name)}</span><span class="mini">leyendo…</span>`; cuerpo.prepend(fila);
@@ -1601,7 +1603,7 @@ async function subirPDFsAhora(lista){
   }
   if(WEB) await guardarPendienteWeb();
   await cargarDesdeServidor();
-  const sumadas = registros.length - visiblesAntes, mismoExp = Math.max(0, ((resumenSrv && resumenSrv.repetidas) || 0) - repetidasAntes);
+  const sumadas = leidasAhora() - visiblesAntes, mismoExp = Math.max(0, ((resumenSrv && resumenSrv.repetidas) || 0) - repetidasAntes);
   const partes = [`<b>${lista.length}</b> archivo(s)`];
   if(B.nuevos) partes.push(`${B.nuevos} leídos`);
   if(B.yaEstaban) partes.push(`${B.yaEstaban} ya estaban cargados (mismo archivo)`);
@@ -1737,8 +1739,10 @@ function errorIngreso(t){ const e = $('ingError'); e.textContent = t; e.classLis
 function aplicarPerfil(){
   $('pieUsuario').classList.remove('oculto');
   $('pieUsuario').innerHTML = `<b>${esc(YO.nombre || YO.usuario)}</b>${esc(YO.rol_nombre)}<br><button id="btnSalir">Cerrar sesión</button>${WEB ? ' <button id="btnTraer" title="Trae lo que guardaron los demás desde que entraste">Volver a traer los datos</button>' : ''}`;
-  if(WEB) $('btnTraer').addEventListener('click', async () => { const b = $('btnTraer'); b.disabled = true;
-    try{ await cargarDesdeServidor(true); avisar('Datos actualizados.'); }catch(err){ avisar('No se pudieron traer los datos: ' + err.message, true); } b.disabled = false; });
+  if(WEB) $('btnTraer').addEventListener('click', async () => {
+    if(cargando || window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine lo que está en curso.', true); return; }
+    const b = $('btnTraer'); b.disabled = true;
+    try{ await cargarDesdeServidor(true); if(!resumenSrv.aviso_datos) avisar('Datos actualizados.'); }catch(err){ avisar('No se pudieron traer los datos: ' + err.message, true); } b.disabled = false; });
   $('btnSalir').addEventListener('click', async () => {
     if(WEB && window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine la carga que está en curso antes de cerrar la sesión.', true); return; }
     if(WEB && window.PIERRI_WEB.pendientes() && !(await guardarPendienteWeb()) && !confirm('Hay lectura que no se pudo guardar en GitHub (PDF leídos o lo leído con el modelo). Si salís, se pierde (los PDF siguen en tu computadora). ¿Salir igual?')) return;
@@ -1815,9 +1819,9 @@ if(SERVIDOR){
       if(cargando || window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
       const inc = registros.filter(r => r.fuente === 'texto_incompleto' && !r.error);
       // Las que el modelo ya no pudo leer en esta sesión no se vuelven a mandar; lo leído sin guardar se guarda sin volver a pagarlo.
-      const salteadas = inc.filter(r => r.pdf_web && window.PIERRI_WEB.modeloSalteada(r.hash)).length, sinGuardar = window.PIERRI_WEB.modeloSinGuardar();
+      const salteadas = inc.filter(r => r.pdf_web && window.PIERRI_WEB.modeloSalteada(r.hash)).length, pend = window.PIERRI_WEB.modeloSinGuardar(), sinGuardar = pend.resoluciones;
       const conPdf = inc.filter(r => r.pdf_web).length - salteadas - sinGuardar;
-      if(sinGuardar && conPdf <= 0){ /* solo falta guardar lo ya leído: no se cobra nada */ }
+      if((sinGuardar || pend.tokens) && conPdf <= 0){ /* solo falta guardar lo ya leído o cobrado: no se cobra nada */ }
       else if(!conPdf){ avisar(salteadas ? `Las ${salteadas} que quedan sin leer ya se probaron con el modelo en esta sesión y no las pudo leer: se vuelven a intentar al volver a ingresar.` : inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en "Filtro Ley Pierri" (la carga de PDF, en el menú).` : 'No hay resoluciones sin leer del todo.'); return; }
       else if(!confirm(`Se van a leer con el modelo ${conPdf} resolución(es) que el texto no resolvió${sinGuardar ? ` (antes se guardan ${sinGuardar} ya leídas, sin volver a cobrarlas)` : ''}${salteadas ? `; otras ${salteadas} ya no se pudieron leer en esta sesión y se saltean` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
     }
@@ -1833,14 +1837,18 @@ if(SERVIDOR){
         // El kit no saltea las que no puede leer: si no completó ninguna, se corta para no pagar lo mismo otra vez.
         if(r.corte || (!WEB && r.fallas && r.fallas.length && !r.completadas)){ avisar('La lectura con el modelo se cortó: ' + (r.corte || r.fallas[0]) + (hechas ? `. Antes se completaron ${hechas} (${gasto}).` : '.'), true); break; }
         if(WEB ? !r.por_probar : !r.pendientes){
-          avisar(`Listo: ${hechas} resolución(es) completadas (${gasto}).` + (noLeidas ? ` El modelo no pudo leer ${noLeidas} (${[...motivos].join('; ')}): quedan sin leer y no se vuelven a intentar hasta que vuelvas a ingresar.` : '')
+          avisar(`Listo: ${hechas} resolución(es) completadas (${gasto}).` + (noLeidas ? ` No se pudieron leer ${noLeidas} (${[...motivos].join('; ')}): quedan sin leer por ahora y se vuelven a intentar al volver a ingresar.` : '')
             + (r.sin_pdf ? ` Otras ${r.sin_pdf} no tienen el PDF guardado en la web.` : ''), !!noLeidas);
           break;
         }
         if(!WEB && !r.completadas){ avisar(`Quedan ${r.pendientes} que no se pudieron completar.`, true); break; }
       }
       await cargarDesdeServidor();
-    }catch(err){ avisar('Error: ' + err.message, true); }
+    }catch(err){
+      avisar('Error: ' + err.message, true);
+      // Lo leído (o cobrado) que GitHub no guardó: el botón "Guardar lo pendiente" también lo guarda.
+      if(WEB && window.PIERRI_WEB.pendientes()){ $('progreso').classList.remove('oculto'); $('pendienteWeb').classList.remove('oculto'); }
+    }
     b.disabled = false; b.textContent = 'Completar incompletas con el modelo'; });
   /** Consulta Catastro de a tandas hasta terminar: cada tanda queda guardada, así que si se corta, se vuelve a tocar y sigue. */
   async function ubicarEnCatastro(boton){
@@ -2109,11 +2117,11 @@ function pintarCumple(){
   const confirmadas = n(d => cl(d) === 'ELEGIBLE' && rev(d) && ins(d) === 'INSCRIPTA');
   const cfg = config(), corte = cfg.regla === 'CORTE_FIJO' ? (cfg.fechaCorte || '2006-01-01').split('-').reverse().join('/') : 'plazo móvil de 10 años';
   $('cumpleEmbudo').innerHTML = `
-    <div class="paso"><span class="r">Escaneadas por la UEST</span><span class="v c-m">${f(esc_)}</span><small>${esc_ ? 'con resolución, según el inventario' : 'cargá el inventario de la UEST'}</small></div>
+    <div class="paso"><span class="r">Escaneadas por la UEST</span><span class="v c-m">${f(esc_)}</span><small>${esc_ ? 'con resolución, según el inventario' : puedeCargar() ? 'cargá el inventario de la UEST' : 'sin inventario cargado'}</small></div>
     <div class="paso"><span class="r">Leídas</span><span class="v c-m">${f(V.length)}</span><small>${esc_ && leidasInv != null ? `${f(leidasInv)} de las ${f(esc_)} del inventario (${pc(leidasInv, esc_)} %)` : 'resoluciones'}</small></div>
     <div class="paso"><span class="r">Evaluables</span><span class="v">${f(ev)}</span><small>${f(noEval)} no ordenan la inscripción</small></div>
     <div class="paso prota"><span class="r">Posesión anterior al corte</span><span class="v">${f(anteriores)}</span><small>${bordeDentro ? `+${f(bordeDentro)} en el borde · ` : ''}corte: ${esc(corte)}</small></div>
-    <div class="paso"><span class="r">De esas, inscriptas</span><span class="v c-m">${hayPadron ? f(insAnt) : '—'}</span><small>${hayPadron ? `${trabAnt ? f(trabAnt) + ' observadas o provisorias · ' : ''}${f(noInsAnt)} no figuran · ${f(sinCruce)} sin cruzar` : 'cargá el Padrón del Registro'}</small></div>
+    <div class="paso"><span class="r">De esas, inscriptas</span><span class="v c-m">${hayPadron ? f(insAnt) : '—'}</span><small>${hayPadron ? `${trabAnt ? f(trabAnt) + ' observadas o provisorias · ' : ''}${f(noInsAnt)} no figuran · ${f(sinCruce)} sin cruzar` : (puedeCargar() ? 'cargá el Padrón del Registro' : 'sin Padrón cargado')}</small></div>
     <div class="paso"><span class="r">Confirmadas</span><span class="v">${f(confirmadas)}</span><small>anteriores, inscriptas y revisadas a mano</small></div>`;
   $('cumplePaneles').innerHTML = `
     <div class="panel"><div class="cabp"><h2>Avance</h2><span class="sub">¿cuánto se leyó?</span></div><div class="cuerpo">
@@ -2233,7 +2241,7 @@ function tagInsc(d){
   const e = i.estado;
   if(e === 'INSCRIPTA') return ' <span class="tag p-m">Inscripta</span>';
   if(e === 'PROVISORIA' || e === 'OBSERVADA') return ` <span class="tag p-a">${e === 'PROVISORIA' ? 'Provisoria' : 'Observada'}</span>`;
-  // Un trámite que la planilla no registra con resolución no tiene nada que inscribir: no lleva rótulo del Registro.
+  // Un trámite que la planilla no registra con resolución no tiene nada que inscribir: no lleva "No figura en el Padrón".
   if(e === 'NO_FIGURA_EN_PADRON') return d.tipo_documento === 'PLANILLA_UEST' && !d.resolucion_fecha && !d.resolucion_numero ? '' : ' <span class="tag p-r" title="el nombre no aparece en el Padrón cargado (cruce por nombre)">No figura en el Padrón</span>';
   if(e === 'AMBIGUO') return ' <span class="tag p-g">Ambiguo</span>';
   return '';
@@ -2429,13 +2437,15 @@ async function abrirVisor(ds){
   $('visor').classList.remove('oculto'); document.body.classList.add('con-visor');
   $('visorTitulo').textContent = ds.exp ? 'Expediente ' + ds.exp : (ds.nombre || 'Resolución original');
   $('visorSub').textContent = 'trayendo el PDF y descifrándolo…'; $('visorPaginas').innerHTML = '';
-  const ficha = document.querySelector('#filas tr.det'); if(ficha) try{ ficha.scrollIntoView({ block: 'nearest' }); }catch(e){}
+  const ficha = document.querySelector('#filas tr.det'), caja = ficha && (ficha.querySelector('.revision') || ficha);
+  if(caja) try{ caja.scrollIntoView({ block: 'nearest' }); }catch(e){}
   const archivo = ds.exp && ds.nombre ? ds.nombre.replace(/#.*$/, '') + ' · ' : '';
   try{
     const r = await api('/api/web/pdf?h=' + encodeURIComponent(ds.verpdf));
     if(yo !== visorTarea) return;
     const lib = await window.PIERRI_WEB.pdfjs();
     const doc = await lib.getDocument({ data: r.bytes, isEvalSupported: false, verbosity: 0 }).promise;
+    if(yo !== visorTarea){ await doc.destroy(); return; }
     try{
       const desde = ds.desde !== '' && ds.desde != null ? Number(ds.desde) + 1 : 1;
       const hasta = Math.min(ds.hasta !== '' && ds.hasta != null ? Number(ds.hasta) + 1 : doc.numPages, doc.numPages);
@@ -2490,7 +2500,7 @@ function armarRanking(conFiltros, cuantos){
     if(!m.has(k)) m.set(k, { nombre: k, dep: agrupacion === 'departamento' ? '' : (d.geo && d.geo.dep_nombre || ''), total: 0, eleg: 0, est: 0 }); const f = m.get(k); f.total++; if(cl(d).startsWith('ELEGIBLE')){ f.eleg++; if(deLaPlanilla(r)) f.est++; } }
   const lista = Array.from(m.values()).sort((a, b) => b.eleg - a.eleg || b.total - a.total), max = Math.max(1, ...lista.map(x => x.eleg));
   const conEst = lista.some(x => x.est);
-  const html = lista.slice(0, cuantos).map(x => `<div class="item ${localidadSel === x.nombre ? 'on' : ''}" data-loc="${esc(x.nombre)}"><span>${esc(x.nombre)}<small>${esc([x.dep, x.est ? x.est + ' estimadas' : ''].filter(Boolean).join(' · '))}</small></span><div class="barra"><i style="width:${Math.round(x.eleg / max * 100)}%"></i></div><span class="cifra">${x.eleg}<small style="font-weight:400"> / ${x.total}</small></span></div>`).join('') + (conEst ? '<div class="mini" style="margin-top:6px">Anteriores al corte / total por lugar. Incluye lo estimado con la planilla de la UEST, sin la resolución leída.</div>' : '') || '<div class="vacio">Sin datos todavía.</div>';
+  const html = lista.slice(0, cuantos).map(x => `<div class="item ${localidadSel === x.nombre ? 'on' : ''}" data-loc="${esc(x.nombre)}"><span>${esc(x.nombre)}<small>${esc([x.dep, x.est ? x.est + (x.est === 1 ? ' estimada' : ' estimadas') : ''].filter(Boolean).join(' · '))}</small></span><div class="barra"><i style="width:${Math.round(x.eleg / max * 100)}%"></i></div><span class="cifra">${x.eleg}<small style="font-weight:400"> / ${x.total}</small></span></div>`).join('') + (conEst ? '<div class="mini" style="margin-top:6px">Anteriores al corte / total por lugar. Incluye lo estimado con la planilla de la UEST, sin la resolución leída.</div>' : '') || '<div class="vacio">Sin datos todavía.</div>';
   return html;
 }
 function enlazarRanking(){
@@ -2520,7 +2530,8 @@ function pintarPadron(){
       <div class="clicable" data-verinsc="TRABADA" role="button" tabindex="0" style="background:var(--suave);border-radius:8px;padding:10px 12px"><span class="mini">Observadas / provisorias</span><div class="disp c-a" style="font-size:24px">${cuenta('PROVISORIA') + cuenta('OBSERVADA')}</div></div>
       <div class="clicable" data-verinsc="NO_FIGURA_EN_PADRON" role="button" tabindex="0" style="background:var(--suave);border-radius:8px;padding:10px 12px"><span class="mini">No figuran en el Padrón</span><div class="disp c-r" style="font-size:24px">${cuenta('NO_FIGURA_EN_PADRON')}</div></div></div>
       <p class="mini" style="margin:0">${cuenta('NO_FIGURA_EN_PADRON') ? `${cuenta('NO_FIGURA_EN_PADRON')} resolución(es) leídas no aparecen en el Padrón cargado. El cruce es por nombre: confirmalas a mano antes de darlas por no inscriptas.` : 'Todas las resoluciones leídas que se cruzaron figuran en el Padrón.'} ${cuenta('AMBIGUO') ? cuenta('AMBIGUO') + ' ambiguas para mirar a mano.' : ''}</p>`
-    : `<p class="mini" style="margin:0">Cargá el Padrón del Registro (el .xls de anotaciones de posesión) para saber cuáles de estas resoluciones figuran inscriptas.</p><div class="acciones"><button class="sec" data-ir="padron">Ir al Padrón</button></div>`;
+    : puedeCargar() ? `<p class="mini" style="margin:0">Cargá el Padrón del Registro (el .xls de anotaciones de posesión) para saber cuáles de estas resoluciones figuran inscriptas.</p><div class="acciones"><button class="sec" data-ir="padron">Ir al Padrón</button></div>`
+    : '<p class="mini" style="margin:0">Todavía no se cargó el Padrón del Registro.</p>';
   $('registroResumen').querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
   $('registroResumen').querySelectorAll('[data-verinsc]').forEach(el => el.addEventListener('click', () => verInscripcion(el.dataset.verinsc)));
 }
@@ -2582,9 +2593,9 @@ document.addEventListener('click', e => { const a = e.target.closest('[data-abri
 /** Lleva a la tabla de Expedientes filtrada por estado en el Registro, para ver cuáles son. */
 function verInscripcion(estado){
   ['fDep','fLoc','fSec','fAnioD','fAnioH'].forEach(id => $(id).value = '');
-  $('buscar').value = ''; localidadSel = null; F.elig = 'TODOS'; F.lect = null; F.ctrl = null; marcarChips();
-  pagina = 0; pintarTodo();
-  $('fInsc').value = estado; pintarTodo(); ir('expedientes');
+  $('buscar').value = ''; localidadSel = null; F.elig = 'TODOS'; F.ctrl = null;
+  F.lect = registros.some(deLaPlanilla) ? 'LEIDAS' : null; marcarChips();   // las tarjetas del Registro cuentan lo leído
+  $('fInsc').value = estado; pagina = 0; pintarTodo(); ir('expedientes');
 }
 /** Los nombres de Catastro y los del inventario difieren en abreviaturas: Gral./General, Pte./Presidente. */
 const CLAVE_DEP = new Map();   // son 26 departamentos: se normaliza cada nombre una sola vez
@@ -2688,9 +2699,10 @@ function pintarMapa(){
     // Lleno: resolución leída. Claro: estimado con la planilla. Borde punteado: ubicación aproximada, por la localidad.
     L.circleMarker([lat, lon], aprox
       ? { radius: 9 + Math.min(ds.length, 8), color: col, weight: 2.5, dashArray: '4 3', fillColor: col, fillOpacity: est ? .08 : .18 }
-      : est ? { radius: 7 + Math.min(ds.length, 8), color: col, weight: 2, fillColor: col, fillOpacity: .3 }
+      : est ? { radius: 7 + Math.min(ds.length, 8), color: '#fff', weight: 1.5, fillColor: col, fillOpacity: .35 }
       : { radius: 7 + Math.min(ds.length, 8), color: '#fff', fillColor: col, fillOpacity: .9, weight: 1.5 }).bindPopup(html).addTo(capa);
   }
+  $('leyendaEst').classList.toggle('oculto', !registros.some(deLaPlanilla));
   const ubic = vista.filter(r => r.derivado.geo && r.derivado.geo.lat != null), nAprox = ubic.filter(r => r.derivado.geo.ubicacion_aproximada).length;
   $('subMapa').textContent = `${ubic.length} de ${vista.length} expedientes en el mapa` + (nAprox ? ` · ${nAprox} con ubicación aproximada (por localidad)` : '') +
     (vista.length - ubic.length ? ` · ${vista.length - ubic.length} sin ubicar (sin cuenta ni localidad legible)` : '') + (localidadSel ? ' · ' + localidadSel : '');

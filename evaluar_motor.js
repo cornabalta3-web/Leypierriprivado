@@ -46,7 +46,8 @@ function leerCSV(ruta) {
 function derivadoDesdeVerdad(f) {
   const pos = f.posee_desde ? PierriCore.parseFecha(f.posee_desde) : null;
   const d = {
-    tipo_documento: f.tipo_documento || (f.clasificacion && f.clasificacion !== 'NO_APLICA' ? 'RESOLUCION_INSCRIPCION' : ''),
+    // Sin tipo, "no aplica" se representa con un tipo que no se evalúa: un documento sin tipo ahora queda para revisar.
+    tipo_documento: f.tipo_documento || (f.clasificacion === 'NO_APLICA' ? 'RESOLUCION_TRAMITE' : f.clasificacion ? 'RESOLUCION_INSCRIPCION' : ''),
     expediente: f.expediente || '', posee_desde: pos ? PierriCore.fmtFecha(pos) : '', posesion_criterio: f.criterio || '',
     geo: { cuenta_normalizada: f.cuenta || '' }, matriculas: f.matricula ? String(f.matricula).split(/[|,]/).map(x => x.trim()).filter(Boolean) : [],
     dni_principal: f.dni || '', rogante_principal: f.rogante || '', revisar: false,

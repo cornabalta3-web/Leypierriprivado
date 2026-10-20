@@ -69,7 +69,7 @@ async function leerConModelo(buf, opciones) {
   const { key, modelo = PierriTomos.MODELO_POR_DEFECTO } = opciones || {};
   if (!key) throw new Error('sin clave de API');
   const cuerpo = PierriTomos.cuerpoModelo(buf.toString('base64'), modelo, PierriCore.PROMPT_SISTEMA, PierriCore.PROMPT_USUARIO);
-  let ultimo = 'sin respuesta', sinDatos = 0;
+  let ultimo = 'sin respuesta', sinDatos = 0, cobrados = 0;
   for (let intento = 0; intento < 5; intento++) {
     let resp;
     try {
@@ -78,9 +78,10 @@ async function leerConModelo(buf, opciones) {
     } catch (err) { ultimo = 'error de red: ' + err.message; await dormir(1500 * 2 ** intento); continue; }
     if (resp.status === 429 || resp.status >= 500) { ultimo = 'la API respondió ' + resp.status; await dormir(1500 * 2 ** intento); continue; }
     if (!resp.ok) throw new Error('la API respondió ' + resp.status + ': ' + (await resp.text()).slice(0, 300));
-    const leido = PierriTomos.respuestaModelo(await resp.json());
-    // Contestó pero sin los datos: se reintenta una sola vez (cada respuesta se cobra).
-    if (!leido) { ultimo = 'el modelo no devolvió JSON válido'; if (++sinDatos >= 2) break; continue; }
+    const data = await resp.json(), leido = PierriTomos.respuestaModelo(data);
+    // Contestó pero sin los datos: se reintenta una sola vez (cada respuesta se cobra, y se suma).
+    if (!leido) { cobrados += PierriTomos.tokensDe(data); ultimo = 'el modelo no devolvió JSON válido'; if (++sinDatos >= 2) break; continue; }
+    leido.tokens += cobrados;
     return leido;
   }
   throw new Error(ultimo);

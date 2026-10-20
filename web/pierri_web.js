@@ -88,7 +88,11 @@
   const dormir = ms => new Promise(r => setTimeout(r, ms));
   const mb = n => (n / 1024 / 1024).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' MB';
   /** Avisa al Tablero cómo va una tarea larga (leer, subir, esperar a GitHub). */
-  function progreso(texto) { try { window.dispatchEvent(new CustomEvent('pierri-web-progreso', { detail: texto })); } catch (e) { /* sin pantalla */ } }
+  let PROGRESO = '';   // lo último que se avisó: vuelve a mostrarse después de una espera
+  function progreso(texto, deEspera) {
+    if (!deEspera) PROGRESO = texto;
+    try { window.dispatchEvent(new CustomEvent('pierri-web-progreso', { detail: texto })); } catch (e) { /* sin pantalla */ }
+  }
   let OCUPADO = 0;
   async function ocupado(fn) { OCUPADO++; try { return await fn(); } finally { OCUPADO--; } }
 
@@ -193,8 +197,21 @@
   }
   // En las cargas grandes, GitHub pide dejar al menos un segundo entre escrituras.
   const RITMO = { ultimo: 0, minimo: 0 };
+  /**
+   * Una falla momentánea de GitHub (500 a 504) se reintenta sola hasta tres veces, a los 5, 15 y 30 segundos. No en el
+   * avance de la rama (PATCH): si GitHub lo aplicó y contestó mal, repetirlo podría duplicar el cambio; ese lo resuelve
+   * la transacción, que vuelve a leer el estado.
+   */
+  async function esperar5xx(r, fallas) {
+    if (r.status < 500 || r.status > 504 || fallas >= 3) return false;
+    const s = [5, 15, 30][fallas];
+    progreso(`GitHub tuvo una falla momentánea: reintento en ${s} segundos…`, true);
+    await dormir(s * 1000);
+    progreso(PROGRESO, true);
+    return true;
+  }
   async function gh(token, metodo, ruta, cuerpo) {
-    for (let intento = 0; ; intento++) {
+    for (let intento = 0, fallas5xx = 0; ; intento++) {
       if (metodo !== 'GET' && RITMO.minimo) { const falta = RITMO.ultimo + RITMO.minimo - Date.now(); if (falta > 0) await dormir(falta); RITMO.ultimo = Date.now(); }
       const r = await red(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}${ruta}`, {
         method: metodo, cache: 'no-store',
@@ -205,22 +222,21 @@
       if (r.ok) return j;
       const espera = esperaPedida(r, j);
       if (espera != null && intento < 6) {
-        progreso(`GitHub pidió una pausa: sigo solo en ${Math.ceil(espera / 1000)} segundos…`);
-        await dormir(espera); continue;
+        progreso(`GitHub pidió una pausa: sigo solo en ${Math.ceil(espera / 1000)} segundos…`, true);
+        await dormir(espera); progreso(PROGRESO, true); continue;
       }
-      // Una falla momentánea de GitHub (500 a 504) se reintenta sola, hasta tres veces.
-      if (r.status >= 500 && r.status <= 504 && intento < 3) {
-        const s = [5, 15, 30][intento];
-        progreso(`GitHub tuvo una falla momentánea: reintento en ${s} segundos…`);
-        await dormir(s * 1000); progreso(''); continue;
-      }
+      if (metodo !== 'PATCH' && await esperar5xx(r, fallas5xx)) { fallas5xx++; continue; }
       const e = new Error(errorGitHub(r.status, j)); e.status = r.status; throw e;
     }
   }
   /** Lee un archivo en un commit dado por la API (lo último de verdad). Devuelve null si no existe. */
   async function leerEn(token, ruta, ref) {
-    const r = await red(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/contents/${ruta}?ref=${encodeURIComponent(ref)}`,
-      { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' }, cache: 'no-store' });
+    let r;
+    for (let fallas = 0; ; fallas++) {
+      r = await red(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/contents/${ruta}?ref=${encodeURIComponent(ref)}`,
+        { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' }, cache: 'no-store' });
+      if (!(await esperar5xx(r, fallas))) break;
+    }
     if (r.status === 404) return null;
     if (!r.ok) throw new Error(errorGitHub(r.status, await r.json().catch(() => ({}))));
     return r.text();
@@ -308,6 +324,7 @@
     // error (pedido antes de que GitHub lo tuviera), se vuelve a pedir sin usarlo.
     let r = await red(url, { headers: rango, cache: 'force-cache' });
     if (!r.ok) r = await red(url, { headers: rango, cache: 'reload' });
+    for (let fallas = 0; await esperar5xx(r, fallas); fallas++) r = await red(url, { headers: rango, cache: 'reload' });
     if (!r.ok) throw new Error(`GitHub no devolvió el PDF (respuesta ${r.status}). Si recién lo cargaste, esperá unos cinco minutos y volvé a probar.`);
     let u = new Uint8Array(await r.arrayBuffer());
     if (r.status === 200 && u.length !== p.len) u = u.subarray(p.off, p.off + p.len);   // el servidor mandó el paquete entero
@@ -716,7 +733,8 @@
     const porExp = new Map(filas.map(f => [f.expediente, f]));
     const leidas = new Set();
     for (const r of todos) {
-      if (!r.derivado || r.repetido_de || r.error || P.clasificar(r.derivado) === 'NO_APLICA') continue;
+      // Un documento que no se pudo leer (sin tipo) no reemplaza a la estimación: no se sabe qué dice.
+      if (!r.derivado || r.repetido_de || r.error || !r.derivado.tipo_documento || P.clasificar(r.derivado) === 'NO_APLICA') continue;
       const e = SIA.canonExpediente(r.derivado.expediente); if (e && porExp.has(e)) leidas.add(e);
     }
     const validacion = SIA.compararConLeidas(todos, porExp, cfg, T);
@@ -871,7 +889,7 @@
   function pendienteNuevo() { return { registros: [], archivos: {}, pdfs: [], bytes: 0, resoluciones: 0, fallo: null }; }
   let PEND = pendienteNuevo();
   const hayPendientePDF = () => PEND.pdfs.length > 0 || Object.keys(PEND.archivos).length > 0;
-  const hayPendiente = () => hayPendientePDF() || Object.keys(PEND_MODELO.registros).length > 0;
+  const hayPendiente = () => hayPendientePDF() || Object.keys(PEND_MODELO.registros).length > 0 || PEND_MODELO.tokens > 0;
   const cuantosPendientes = () => Object.keys(PEND.archivos).length;
   /** Lo que estaba esperando, delante de lo que llegó después (si un guardado falló y hay que reintentar). */
   function juntarPendientes(a, b) {
@@ -886,7 +904,7 @@
     const n = cuantosPendientes();
     if (n) { try { sessionStorage.setItem('pierri_pendientes', String(n)); } catch (e) { /* sin almacenamiento */ } }
     PEND = pendienteNuevo();
-    PEND_MODELO = { registros: {}, tokens: 0 };
+    PEND_MODELO = { registros: {}, tokens: 0, noLeidas: 0 };
   }
   // Si Catastro no contestó, por diez minutos no se lo vuelve a esperar en cada tanda; después se prueba de nuevo.
   let CATASTRO_CAIDO = 0;
@@ -979,7 +997,7 @@
       const r = await guardarAhora();
       if (Object.keys(PEND_MODELO.registros).length || PEND_MODELO.tokens) {
         const p = PEND_MODELO;
-        await ocupado(() => guardarModelo(s, p.registros, p.tokens, modeloElegido(), 0));
+        await ocupado(() => guardarModelo(s, p.registros, p.tokens, modeloElegido(), p.noLeidas || 0));
       }
       return r;
     });
@@ -1132,10 +1150,14 @@
     }
     const e = new Error(ultimo); e.tokens = cobrados; throw e;
   }
-  // Las que el modelo no pudo leer en esta sesión no se vuelven a pagar en cada vuelta: se saltean hasta volver a ingresar.
-  const FALLIDAS_MODELO = new Set();
-  // Lo leído con el modelo que GitHub no guardó: se guarda primero en la vuelta siguiente, sin volver a pagarlo.
-  let PEND_MODELO = { registros: {}, tokens: 0 };
+  // Las que no se pudieron leer por algo de ese documento (el modelo contestó sin datos, la API rechazó el PDF, el PDF
+  // guardado no abre) no se vuelven a pagar en cada vuelta: se saltean hasta volver a ingresar. Las que GitHub todavía no
+  // publicó, solo por cinco minutos. hash → hasta cuándo se saltea.
+  const FALLIDAS_MODELO = new Map();
+  const salteada = h => (FALLIDAS_MODELO.get(h) || 0) > Date.now();
+  // Lo leído con el modelo (y lo cobrado sin datos) que GitHub no guardó: se guarda en la vuelta siguiente, con "Guardar
+  // lo pendiente" o al cerrar la sesión, sin volver a pagarlo.
+  let PEND_MODELO = { registros: {}, tokens: 0, noLeidas: 0 };
   /** "Completar incompletas con el modelo": hasta LOTE_MODELO por vez, en la cola con las cargas. */
   function completar() {
     const s = exigir('cargar'); exigirToken();
@@ -1150,19 +1172,22 @@
     const conPdf = incompletas.filter(r => r.pdf_web);
     // Primero lo que ya se pagó y no se pudo guardar; después las que no se probaron en esta sesión.
     const nuevas = Object.assign({}, PEND_MODELO.registros);
-    const porProbar = conPdf.filter(r => !FALLIDAS_MODELO.has(r.hash) && !nuevas[r.hash]);
+    const porProbar = conPdf.filter(r => !salteada(r.hash) && !nuevas[r.hash]);
     const lote = porProbar.slice(0, LOTE_MODELO), ix = indices(c), modelo = modeloElegido(), cfg = cfgDe(c, s);
     // El registro tal como se guardó (sin lo que se calcula al mirar), del kit o de lo leído en la web.
     const original = new Map();
     for (const r of (c.kit.resultados || []).concat(lecturasWeb(c).registros)) if (r && !original.has(r.hash)) original.set(r.hash, r);
     const fallas = [];
     let n = Object.keys(nuevas).length, tokens = PEND_MODELO.tokens, noLeidas = 0, corte = null;
+    const noLeidasAntes = PEND_MODELO.noLeidas || 0;
     for (let i = 0; i < lote.length; i++) {
       const r = lote[i];
       progreso(`Leyendo con el modelo ${i + 1} de ${lote.length}: ${(r.derivado && r.derivado.expediente) || r.archivo}…`);
       try {
-        let bytes = await traerPDF(ix.archivos[r.pdf_web]);
-        if (r.tomo) bytes = await recortarPaginas(bytes, r.tomo.desde, r.tomo.hasta);
+        let bytes;
+        // Si el PDF guardado no se puede traer o abrir, es un problema de ese documento (salvo que falte la conexión).
+        try { bytes = await traerPDF(ix.archivos[r.pdf_web]); if (r.tomo) bytes = await recortarPaginas(bytes, r.tomo.desde, r.tomo.hasta); }
+        catch (e) { if (!e.red) e.documento = true; throw e; }
         const leido = await leerConModelo(bytes, s.claveApi, modelo, c.instrucciones);
         const reg = structuredClone(original.get(r.hash) || r);
         const fusion = T.fusionar(reg.extraido, leido.extraido);
@@ -1171,17 +1196,17 @@
         delete reg.falla_modelo; delete reg.error_modelo;
         nuevas[r.hash] = limpiar(reg); n++; tokens += leido.tokens;
       } catch (err) {
-        const m = T.motivoModelo(err); fallas.push(m.texto);
+        const m = T.motivoModelo(err), deDocumento = m.documento || (err && err.documento);
+        fallas.push(deDocumento && !m.documento ? `no se pudo abrir el PDF guardado de esa resolución (${String(err.message || err).slice(0, 80)})` : m.texto);
         tokens += Number(err && err.tokens) || 0;
-        // Si el modelo contestó sin los datos, esa se saltea por esta sesión y se sigue con las demás. Cualquier otra
-        // falla (clave, crédito, conexión, sobrecarga de Anthropic, GitHub sin el PDF) corta, dice por qué, y la próxima
-        // vez se vuelve a intentar.
-        if (!/no devolvió JSON/.test(String(err && err.message))) { corte = m.texto; break; }
-        FALLIDAS_MODELO.add(r.hash); noLeidas++;
+        // Un problema de la cuenta o de la conexión (clave, crédito, demasiados pedidos, Anthropic caído, sin internet)
+        // corta, dice por qué, y la próxima vez se vuelve a intentar. Un problema de este documento lo saltea y sigue.
+        if (!deDocumento) { corte = m.texto; break; }
+        FALLIDAS_MODELO.set(r.hash, /GitHub no devolvió el PDF/.test(String(err.message)) ? Date.now() + 5 * 60000 : Infinity); noLeidas++;
       }
     }
     // Se guarda también si no salió ninguna: lo cobrado queda en la cuenta de tokens y en la auditoría.
-    if (n || tokens) await guardarModelo(s, nuevas, tokens, modelo, noLeidas);
+    if (n || tokens) await guardarModelo(s, nuevas, tokens, modelo, noLeidasAntes + noLeidas);
     progreso('');
     return { completadas: n, no_leidas: noLeidas, pendientes: conPdf.length - n, por_probar: corte ? 0 : porProbar.length - lote.length,
       sin_pdf: incompletas.length - conPdf.length, tokens, corte, fallas: [...new Set(fallas)].slice(0, 3) };
@@ -1214,11 +1239,11 @@
         archivos[RUTAS.admin] = await sellarBovedaDe(ab, s);
         return archivos;
       }, 'Actualización del relevamiento').catch(e => {
-        PEND_MODELO = { registros: nuevas, tokens };
+        PEND_MODELO = { registros: nuevas, tokens, noLeidas };
         progreso('');
         throw new Error(`GitHub no guardó lo leído con el modelo (${e.message}). Quedó en esta pestaña: tocá de nuevo "Completar incompletas con el modelo" y se guarda sin volver a cobrarlo.`);
       });
-      PEND_MODELO = { registros: {}, tokens: 0 };
+      PEND_MODELO = { registros: {}, tokens: 0, noLeidas: 0 };
       const cambios = { completadas: escrito.completadas };
       if (escrito.catastro) cambios.catastro = escrito.catastro;
       alGuardar(s, escrito.dek, cambios);
@@ -1486,5 +1511,5 @@
   }
 
   window.PIERRI_WEB = { api, repo: REPO, version: 3, pdfjs, ocupado: () => OCUPADO > 0, pendientes: hayPendiente, cuantosPendientes, catastroCaido,
-    modeloSalteada: h => FALLIDAS_MODELO.has(h), modeloSinGuardar: () => Object.keys(PEND_MODELO.registros).length };
+    modeloSalteada: salteada, modeloSinGuardar: () => ({ resoluciones: Object.keys(PEND_MODELO.registros).length, tokens: PEND_MODELO.tokens }) };
 })();

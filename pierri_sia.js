@@ -187,7 +187,7 @@
     const out = { comparadas: 0, coinciden: 0, sin_comparar: 0, diferencia_mediana_anios: null, hasta_un_anio: 0 };
     const difs = [];
     for (const r of registros || []) {
-      if (!r.derivado || r.repetido_de || r.error || r.fuente === 'planilla') continue;
+      if (!r.derivado || r.repetido_de || r.error || r.fuente === 'planilla' || !r.derivado.tipo_documento) continue;
       const c1 = P.clasificar(r.derivado); if (c1 === 'NO_APLICA') continue;
       const f = porExp.get(canonExpediente(r.derivado.expediente)); if (!f) continue;
       const e = registroDePlanilla(f, cfg, tabla).derivado, c2 = P.clasificar(e);

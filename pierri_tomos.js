@@ -221,12 +221,12 @@
       ] }],
     };
   }
-  /** Lo leído y los tokens gastados, a partir de la respuesta de la API. null si el modelo no devolvió JSON válido. */
   /** Los tokens que cobró una respuesta, aunque no haya traído los datos. */
   function tokensDe(data) {
     const u = (data && data.usage) || {};
     return (u.input_tokens || 0) + (u.output_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
   }
+  /** Lo leído y los tokens gastados, a partir de la respuesta de la API. null si el modelo no devolvió JSON válido. */
   function respuestaModelo(data) {
     const texto = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n');
     const extraido = PierriCore.parsearJSON(texto);
@@ -237,12 +237,18 @@
   /** Convierte un error de la API en una frase que entienda cualquiera. `grave` = no tiene sentido seguir intentando. */
   function motivoModelo(err) {
     const m = String((err && err.message) || err || '');
+    // Lo que no es del modelo: el PDF guardado en GitHub y la conexión con GitHub.
+    if (/GitHub no devolvió el PDF/i.test(m)) return { texto: 'GitHub no devolvió el PDF de esa resolución (si recién se cargó, hay que esperar unos minutos)', grave: false, documento: true };
+    if (/conexión con GitHub/i.test(m)) return { texto: 'no hay conexión con GitHub', grave: false };
     if (/401|authentication|invalid x-api-key|API key is invalid/i.test(m)) return { texto: 'la clave de API no es válida', grave: true };
     if (/credit balance|billing|402|insufficient/i.test(m)) return { texto: 'la cuenta de Anthropic no tiene crédito', grave: true };
     if (/403|permission/i.test(m)) return { texto: 'la clave no tiene permiso para usar el modelo', grave: true };
     if (/429|rate/i.test(m)) return { texto: 'demasiados pedidos seguidos; reintentar en unos minutos', grave: false };
-    if (/red|fetch failed|ENOTFOUND|ECONN|network/i.test(m)) return { texto: 'no hay conexión a internet', grave: false };
-    if (/no devolvió JSON/i.test(m)) return { texto: 'el modelo contestó pero no pudo leerla', grave: false };
+    if (/529|overloaded/i.test(m)) return { texto: 'Anthropic está sobrecargado; probá en unos minutos', grave: false };
+    if (/respondió 5\d\d/i.test(m)) return { texto: 'Anthropic tuvo una falla de su lado; probá en unos minutos', grave: false };
+    if (/respondió 400/i.test(m)) return { texto: 'la API rechazó el PDF de esa resolución (puede estar dañado o ser demasiado grande)', grave: false, documento: true };
+    if (/no devolvió JSON/i.test(m)) return { texto: 'el modelo contestó pero no pudo leerla', grave: false, documento: true };
+    if (/fetch failed|ENOTFOUND|ECONN|network|No hay conexión|error de red/i.test(m)) return { texto: 'no hay conexión a internet', grave: false };
     return { texto: 'el modelo no respondió (' + m.slice(0, 120) + ')', grave: false };
   }
   function fusionar(deTexto, delModelo) {
