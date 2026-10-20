@@ -2484,7 +2484,7 @@ async function guardarRevision(caja){
       revisor: caja.querySelector('.rv-quien').value,
       nota: caja.querySelector('.rv-nota').value,
     }) });
-    const texto = 'Guardada · queda como ' + String(r.clasificacion || '').replace(/_/g, ' ').toLowerCase();
+    const texto = 'Guardada · queda como ' + nombreClase(r.clasificacion);
     est.textContent = texto;
     await cargarDesdeServidor();
     // Al recargar se redibuja la tabla: se vuelve a abrir la misma ficha para seguir trabajando sobre ella.
