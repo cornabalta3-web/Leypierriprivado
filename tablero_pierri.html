@@ -1859,7 +1859,7 @@ if(SERVIDOR){
     let ubicadas = 0, consultadas = 0, fallas = null;
     try{
       for(let vuelta = 0; vuelta < 200; vuelta++){
-        const r = await api('/api/catastro?maximo=2000', { method: 'POST' });
+        const r = await api('/api/catastro', { method: 'POST' });
         ubicadas += r.ubicadas || 0; consultadas += r.consultadas || 0; fallas = r.fallas || null;   // vale lo de la última tanda: las fallas se reintentan en la siguiente
         if(!r.pendientes || !r.consultadas) break;
         boton.textContent = `Catastro: ${consultadas.toLocaleString('es-AR')} consultadas, faltan ${r.pendientes.toLocaleString('es-AR')}…`;
@@ -1868,7 +1868,7 @@ if(SERVIDOR){
         + (fallas ? ` Ojo: ${fallas}. Volvé a tocar más tarde y se consultan esas.` : ''), !!fallas);
       await cargarDesdeServidor();
     }catch(err){
-      avisar('Catastro: ' + err.message + (consultadas ? ' Lo consultado hasta acá quedó guardado: volvé a tocar y sigue donde quedó.' : ''), true);
+      avisar('Catastro: ' + err.message + (err.consultadas ? ' Lo consultado en esta tanda quedó en esta pestaña: volvé a tocar y se guarda sin volver a consultarlo.' : consultadas ? ' Lo consultado hasta acá quedó guardado: volvé a tocar y sigue donde quedó.' : ''), true);
       if(consultadas) await cargarDesdeServidor().catch(() => {});
     }
     boton.textContent = rotulo; boton.disabled = false;
