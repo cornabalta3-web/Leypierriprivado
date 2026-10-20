@@ -18,7 +18,8 @@
  *     no desde un CDN, y la página declara con quién puede hablar (Content-Security-Policy): sí misma, GitHub (la API y
  *     los PDF cifrados) y Catastro.
  *   - Las reglas de lectura van tal cual las usa el kit (pierri_texto.js, pierri_tomos.js, pierri_base.js; el motor
- *     pierri_core.js ya viene adentro del Tablero): la web y el kit leen igual.
+ *     pierri_core.js ya viene adentro del Tablero): la web y el kit leen igual. pierri_sia.js (la planilla de trámites
+ *     de la UEST) es solo de la web.
  *
  * Uso:
  *   node armar_web.js --salida ../relevamiento-pierri [--owner cornabalta3-web] [--repo relevamiento-pierri] [--rama main]
@@ -31,7 +32,7 @@ const crypto = require('crypto');
 const vm = require('vm');
 
 // Las reglas de lectura que la web usa tal cual las usa el kit. Se cargan antes de pierri_web.js.
-const MODULOS = ['pierri_texto.js', 'pierri_tomos.js', 'pierri_base.js'];
+const MODULOS = ['pierri_texto.js', 'pierri_tomos.js', 'pierri_base.js', 'pierri_sia.js'];
 // Lo único que se publica de web/vendor. Cualquier otro archivo ahí (una planilla o un PDF de prueba olvidado) corta el armado.
 const VENDOR = ['leaflet/leaflet.js', 'leaflet/leaflet.css', 'leaflet/LICENSE', 'leaflet/images/layers.png', 'leaflet/images/layers-2x.png',
   'leaflet/images/marker-icon.png', 'leaflet/images/marker-icon-2x.png', 'leaflet/images/marker-shadow.png',

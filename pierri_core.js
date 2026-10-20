@@ -566,11 +566,14 @@
     return true;
   }
   function clasificar(d) {
-    if (!d || !d.tipo_documento) return 'NO_APLICA';
+    if (!d) return 'NO_APLICA';
     if (TIPOS_NO_EVALUABLES.includes(d.tipo_documento)) return 'NO_APLICA';
-    if (d.revisar && d.elegibilidad.estado === 'SIN_DATO') return 'REVISAR';
-    if (d.elegibilidad.estado === 'ELEGIBLE') return d.elegibilidad.borde ? 'ELEGIBLE_BORDE' : 'ELEGIBLE';
-    if (d.elegibilidad.estado === 'NO_ELEGIBLE') return d.elegibilidad.borde ? 'NO_ELEGIBLE_BORDE' : 'NO_ELEGIBLE';
+    const e = d.elegibilidad || {};
+    // Sin tipo es que no se pudo leer: no se sabe qué ordena. No se la da por "no aplica": queda para revisar.
+    if (!d.tipo_documento && e.estado !== 'ELEGIBLE' && e.estado !== 'NO_ELEGIBLE') return 'REVISAR';
+    if (d.revisar && e.estado === 'SIN_DATO') return 'REVISAR';
+    if (e.estado === 'ELEGIBLE') return e.borde ? 'ELEGIBLE_BORDE' : 'ELEGIBLE';
+    if (e.estado === 'NO_ELEGIBLE') return e.borde ? 'NO_ELEGIBLE_BORDE' : 'NO_ELEGIBLE';
     return 'SIN_DATO';
   }
   const COLUMNAS_PLANILLA = ['expediente', 'clasificacion', 'posee_desde', 'precision', 'criterio_antiguedad', 'rogante', 'dni', 'cuil', 'cantidad_rogantes',

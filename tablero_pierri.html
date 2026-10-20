@@ -120,11 +120,15 @@ button.chip.a.on{border-color:#c9911e;background:var(--ambar2);color:var(--ambar
 .zona span{color:var(--texto2);font-size:13.5px}
 .fila-carga{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--fondo);font-size:13px;flex-wrap:wrap}
 .tag{display:inline-block;font-size:11.5px;font-weight:600;border-radius:6px;padding:3px 8px;white-space:nowrap}
+.tag.p-est{background:transparent;border:1px dashed var(--texto3);color:var(--texto2);padding:2px 7px}
 .mini{font-size:12px;color:var(--texto2)}
 .origen{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--texto2)}
 .origen b{color:var(--texto);font-weight:600}
 .msg{padding:10px 12px;border-radius:var(--r2);background:var(--azul2);color:var(--acento);font-size:13.5px}
 .msg.err{background:var(--rojo2);color:var(--rojo)}
+#aviso{position:sticky;top:8px;z-index:850}
+#aviso .msg{margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.cerrar-aviso{background:transparent;border:0;color:inherit;font-size:20px;line-height:1;padding:0 4px;cursor:pointer;min-height:0}
 
 .controles{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .controles label{font-size:12.5px;color:var(--texto2);display:block;margin-bottom:4px}
@@ -160,7 +164,9 @@ button.boton-ver{cursor:pointer}
 .visor-cuerpo{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--fondo)}
 .visor-cuerpo canvas{width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 @media (max-width:900px){.visor{width:100vw}}
-@media (min-width:901px){body.con-visor main{margin-right:min(46vw,780px)}}
+@media (min-width:901px){body.con-visor main{margin-right:min(46vw,780px)}
+  /* Con el PDF al costado la tabla queda angosta: sin las columnas secundarias, la ficha y "Guardar revisión" entran a la vista */
+  body.con-visor #v-expedientes .col-sec{display:none}}
 .clicable{cursor:pointer;transition:box-shadow .12s,border-color .12s}
 tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 .clicable:hover{border-color:var(--acento);box-shadow:0 1px 6px rgba(22,67,110,.14)}
@@ -174,9 +180,11 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 #mapa{height:560px;border-radius:var(--r);border:1px solid var(--linea);background:var(--suave)}
 .leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--texto2)}
 .punto{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
-@media (max-width:760px){.app{grid-template-columns:1fr}nav{position:static;height:auto;flex-direction:row;flex-wrap:wrap;padding:12px}.logo{padding:4px 10px;width:100%}nav .pie{display:none}main{padding:16px}.cab h1{font-size:22px}#mapa{height:380px}.col-sec{display:none}}
+@media (max-width:760px){.app{grid-template-columns:1fr}nav{position:static;height:auto;flex-direction:row;flex-wrap:wrap;padding:12px}.logo{padding:4px 10px;width:100%}nav .pie{width:100%;padding:6px 10px 0}nav .pie:last-child{display:none}main{padding:16px}.cab h1{font-size:22px}#mapa{height:380px}.col-sec{display:none}}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--blanco);color:var(--texto)}
 .leaflet-container a.leaflet-popup-close-button{color:var(--texto2)}
+.leaflet-popup-content a{color:var(--acento)}
+@media (max-width:760px){#filas td{white-space:normal}#filas .tag{white-space:normal}.detalle dl{grid-template-columns:1fr}.detalle dd{overflow-wrap:anywhere;margin-bottom:6px}}
 .tema{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;padding:7px 10px;font-size:12px;border-radius:6px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;min-height:34px}
 .tema:hover{background:rgba(255,255,255,.1)}
 /* ¿Está cumpliendo? — la cadena del relevamiento y tres preguntas: avance, calidad, resultado */
@@ -188,7 +196,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 .embudo .paso small{font-size:11.5px;color:var(--texto2)}
 .embudo .paso.prota{background:var(--verde2)} .embudo .paso.prota .v{font-size:46px;color:var(--verde)}
 .embudo .paso:not(:last-child)::after{content:"›";position:absolute;right:-6px;top:50%;transform:translateY(-50%);color:var(--texto3);font-size:20px;z-index:1}
-.cumple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.cumple{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:14px}
 .cumple .panel{margin:0}
 .cumple .cuerpo{gap:9px}
 .fila-m{display:flex;justify-content:space-between;gap:10px;font-size:13px;border-bottom:1px solid var(--linea);padding-bottom:6px}
@@ -199,11 +207,11 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 </style>
 <style>
 .ing-fondo{position:fixed;inset:0;background:var(--marca);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px}
-.ing-caja{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(420px,94vw);padding:28px 30px}
-.ing-caja h2{font-family:Manrope,sans-serif;font-size:22px;font-weight:800;color:var(--marca);margin:0 0 4px}
+.ing-caja{background:var(--blanco);color:var(--texto);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(420px,94vw);padding:28px 30px}
+.ing-caja h2{font-family:Manrope,sans-serif;font-size:22px;font-weight:800;color:var(--acento);margin:0 0 4px}
 .ing-caja p.sub{margin:0 0 18px;font-size:13px;color:var(--texto2)}
 .ing-caja label{display:block;font-size:12.5px;color:var(--texto2);margin:10px 0 4px}
-.ing-caja input{width:100%;border:1px solid var(--linea2);border-radius:8px;padding:10px 12px;font:14px "Public Sans",sans-serif}
+.ing-caja input{width:100%;border:1px solid var(--linea2);border-radius:8px;padding:10px 12px;font:14px "Public Sans",sans-serif;background:var(--blanco);color:var(--texto)}
 .ing-caja button{width:100%;margin-top:16px;padding:11px}
 .ing-error{background:var(--rojo2);color:var(--rojo);border-radius:8px;padding:9px 12px;font-size:13px;margin-top:12px}
 .usuario-pie{font-size:12px;line-height:1.5}
@@ -286,6 +294,14 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     <div class="cab"><div><h1>Inventario de la Unidad Ejecutora</h1><p>El CSV de expedientes digitalizados: qué existe, cuáles tienen la resolución escaneada y dónde está cada lote según Catastro, antes de leer un solo PDF.</p></div>
       <div class="acciones"><button id="btnInventario">Cargar inventario (.csv)</button><button id="btnUbicarInv" class="sec">Ubicar cuentas en Catastro</button></div></div>
     <input id="fileInventario" type="file" accept=".csv,text/csv" class="oculto">
+    <div class="panel oculto" id="panelSIA"><div class="cabp"><h2>Planilla de trámites de la UEST (SIA)</h2><span class="sub" id="siaSub"></span></div>
+      <div class="cuerpo">
+        <p class="mini" style="margin:0">La planilla que exporta el sistema de la UEST, una fila por expediente. Con la fecha de ingreso del trámite y la antigüedad que se declaró al iniciarlo se <b>estima</b> desde cuándo posee cada uno, sin abrir el PDF. Es una estimación: la resolución puede fijar otra antigüedad. Cuando se lee la resolución de un expediente, manda la lectura, y la planilla sirve para medir cuánto acierta.</p>
+        <div class="acciones"><button id="btnSIA">Cargar planilla de trámites (.xlsx)</button><button id="btnSIAUbicar" class="sec">Ubicar las parcelas en Catastro</button><button id="btnSIALista" class="sec">Bajar la lista para pedir los PDF</button></div>
+        <input id="fileSIA" type="file" accept=".xlsx,.xls" class="oculto">
+        <div id="siaProgreso" class="mini"></div>
+        <div class="tarjetas" id="siaTarjetas"></div>
+      </div></div>
     <div class="tarjetas" id="invTarjetas"></div>
     <div id="invProgreso" class="mini"></div>
     <div class="dos" style="grid-template-columns:minmax(0,1fr) 380px">
@@ -340,7 +356,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
           </div>
           <div class="gf">
             <span class="rotulo">Lectura</span>
-            <div class="acciones"><button class="chip" data-f="POR_TEXTO">Por texto</button><button class="chip" data-f="POR_MODELO">Revisadas por el modelo</button><button class="chip a" data-f="INCOMPLETA">No se pudieron leer</button></div>
+            <div class="acciones"><button class="chip" data-f="LEIDAS">Leídas del PDF</button><button class="chip" data-f="POR_TEXTO">Por texto</button><button class="chip" data-f="POR_MODELO">Revisadas por el modelo</button><button class="chip a" data-f="INCOMPLETA">No se pudieron leer</button><button class="chip" data-f="POR_PLANILLA">Estimadas con la planilla</button></div>
           </div>
           <div class="gf sin-linea">
             <span class="rotulo">Control manual</span>
@@ -351,7 +367,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
           <div class="grupo"><label for="fDep">Departamento</label><select id="fDep"><option value="">Todos</option></select></div>
           <div class="grupo"><label for="fLoc">Localidad</label><select id="fLoc"><option value="">Todas</option></select></div>
           <div class="grupo"><label for="fSec">Sección / barrio</label><select id="fSec"><option value="">Todas</option></select></div>
-          <div class="grupo"><label for="fInsc">Registro</label><select id="fInsc"><option value="">Cualquiera</option><option value="INSCRIPTA">Inscripta</option><option value="TRABADA">Provisoria u observada</option><option value="NO_FIGURA_EN_PADRON">No inscripta</option><option value="AMBIGUO">Ambigua</option><option value="SIN">Sin cruzar</option></select></div>
+          <div class="grupo"><label for="fInsc">Registro</label><select id="fInsc"><option value="">Cualquiera</option><option value="INSCRIPTA">Inscripta</option><option value="TRABADA">Provisoria u observada</option><option value="NO_FIGURA_EN_PADRON">No figura en el Padrón</option><option value="AMBIGUO">Ambigua</option><option value="SIN">Sin cruzar</option></select></div>
           <div class="grupo"><label for="fAnioD">Resolución desde</label><select id="fAnioD"><option value="">—</option></select></div>
           <div class="grupo"><label for="fAnioH">hasta</label><select id="fAnioH"><option value="">—</option></select></div>
           <button id="fLimpiar" class="sec">Limpiar filtros</button>
@@ -377,7 +393,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     <div class="dos" style="grid-template-columns:minmax(0,1fr) 320px">
       <div class="panel"><div class="cuerpo">
         <div id="mapa"></div>
-        <div class="leyenda"><span><i class="punto f-v"></i>Elegible</span><span><i class="punto f-a"></i>Borde</span><span><i class="punto f-g"></i>No elegible</span><span><i class="punto f-r"></i>Revisar / sin fecha</span><span><i class="punto" style="background:transparent;border:2px dashed #5b6675;width:11px;height:11px"></i>Ubicación aproximada (por localidad)</span><span style="margin-left:6px">Departamentos sombreados según elegibles; se apagan desde el control de capas.</span></div>
+        <div class="leyenda"><span><i class="punto f-v"></i>Elegible</span><span><i class="punto f-a"></i>Borde</span><span><i class="punto f-g"></i>No elegible</span><span><i class="punto f-r"></i>Revisar / sin fecha</span><span><i class="punto" style="background:rgba(29,107,69,.3);border:2px solid #1d6b45;width:11px;height:11px"></i>Claro: estimado con la planilla</span><span><i class="punto" style="background:transparent;border:2px dashed #5b6675;width:11px;height:11px"></i>Ubicación aproximada (por localidad)</span><span style="margin-left:6px">Departamentos sombreados según elegibles; se apagan desde el control de capas.</span></div>
         <p class="mini" style="margin:0">El punto es la parcela madre según Catastro (la del titular registral). Al acercar se dibujan los límites oficiales; con "Satélite" se ve la construcción. Los filtros de Expedientes también aplican acá.</p>
       </div></div>
       <div class="panel"><div class="cabp"><h2>Agrupado</h2><div class="acciones" id="agrupar2"><button class="chip" data-g="departamento">Dpto.</button><button class="chip on" data-g="localidad">Localidad</button><button class="chip" data-g="seccion">Sección</button></div></div><div class="cuerpo ranking" id="ranking2"></div></div>
@@ -391,7 +407,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     <div class="tarjetas" id="padronTarjetas"></div>
     <div class="panel"><div class="cabp"><h2>Qué significa cada estado</h2></div><div class="cuerpo mini" style="gap:6px">
       <div><b>Inscripta</b>: la anotación existe y es definitiva. <b>Provisoria / Observada</b>: la anotación quedó trabada; hay que destrabarla antes de escriturar.</div>
-      <div><b>No inscripta</b>: la resolución fue dictada pero el Registro no tiene la anotación. Resolución sin inscripción.</div>
+      <div><b>No figura en el Padrón</b>: el nombre no aparece en el Padrón cargado. Puede ser una resolución que no se inscribió o el mismo nombre escrito de otra forma: el cruce es por nombre, así que se confirma a mano.</div>
       <div><b>Ambiguo</b>: el nombre aparece más de una vez, o el año del diario no cierra con el de la resolución. Se resuelve a mano.</div>
     </div></div>
   </section>
@@ -1016,11 +1032,14 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     return true;
   }
   function clasificar(d) {
-    if (!d || !d.tipo_documento) return 'NO_APLICA';
+    if (!d) return 'NO_APLICA';
     if (TIPOS_NO_EVALUABLES.includes(d.tipo_documento)) return 'NO_APLICA';
-    if (d.revisar && d.elegibilidad.estado === 'SIN_DATO') return 'REVISAR';
-    if (d.elegibilidad.estado === 'ELEGIBLE') return d.elegibilidad.borde ? 'ELEGIBLE_BORDE' : 'ELEGIBLE';
-    if (d.elegibilidad.estado === 'NO_ELEGIBLE') return d.elegibilidad.borde ? 'NO_ELEGIBLE_BORDE' : 'NO_ELEGIBLE';
+    const e = d.elegibilidad || {};
+    // Sin tipo es que no se pudo leer: no se sabe qué ordena. No se la da por "no aplica": queda para revisar.
+    if (!d.tipo_documento && e.estado !== 'ELEGIBLE' && e.estado !== 'NO_ELEGIBLE') return 'REVISAR';
+    if (d.revisar && e.estado === 'SIN_DATO') return 'REVISAR';
+    if (e.estado === 'ELEGIBLE') return e.borde ? 'ELEGIBLE_BORDE' : 'ELEGIBLE';
+    if (e.estado === 'NO_ELEGIBLE') return e.borde ? 'NO_ELEGIBLE_BORDE' : 'NO_ELEGIBLE';
     return 'SIN_DATO';
   }
   const COLUMNAS_PLANILLA = ['expediente', 'clasificacion', 'posee_desde', 'precision', 'criterio_antiguedad', 'rogante', 'dni', 'cuil', 'cantidad_rogantes',
@@ -1468,8 +1487,11 @@ $('btnTema').addEventListener('click', () => {
 });
 pintarBotonTema();
 let mapaInv = null, capaInv = null, capaDep = null, capaDepMapa = null;
+/** ¿Este perfil puede cargar? Sin usuarios (kit viejo, modo archivo) se puede todo. */
+const puedeCargar = () => !YO || !YO.permisos || !!YO.permisos.cargar;
 function ir(v){
   if(!VISTAS.includes(v)) v = 'cargar';
+  if(v === 'cargar' && !puedeCargar()) v = 'resumen';   // quien solo consulta no tiene nada que hacer en la carga
   VISTAS.forEach(x => $('v-' + x).classList.toggle('oculto', x !== v));
   document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.dataset.vista === v));
   // Abierto con doble clic (file://) algunos navegadores no dejan tocar la dirección: no debe cortar la navegación.
@@ -1483,10 +1505,12 @@ document.querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', 
 window.addEventListener('hashchange', () => ir(location.hash.slice(1)));
 
 async function api(ruta, opciones){ if(WEB) return window.PIERRI_WEB.api(ruta, opciones); const r = await fetch(ruta, opciones); const j = await r.json().catch(() => ({})); if(!r.ok || j.error) throw new Error(j.error || ('respuesta ' + r.status)); return j; }
-async function cargarDesdeServidor(){
-  const d = await api('/api/datos');
+async function cargarDesdeServidor(volverATraer){
+  // En la web lo descifrado queda en la pestaña; "Volver a traer los datos" lo pide de nuevo (lo que cargaron otros).
+  const d = await api(WEB && volverATraer === true ? '/api/web/recargar' : '/api/datos');
   registros = (d.registros || []).filter(r => r && r.derivado && !r.repetido_de);
   resumenSrv = d.resumen || {};
+  if(resumenSrv.aviso_datos) avisar(resumenSrv.aviso_datos, true);
   const res = resumenSrv;
   $('origen').innerHTML = `<span><b>${Number(res.archivos) || 0}</b> archivos cargados</span><span><b>${Number(res.resoluciones) || 0}</b> resoluciones válidas</span><span>${Number(res.repetidas) || 0} repetidas · ${Number(res.incompletas) || 0} incompletas · ${Number(res.errores) || 0} con error</span><span>tokens ${Number(res.tokens || 0).toLocaleString('es-AR')}</span>`;
   $('subApp').textContent = d.config && d.config.key ? `clave cargada (${d.config.key}) · ${d.config.modelo}` : 'sin clave: se lee solo por texto';
@@ -1509,7 +1533,7 @@ function pintarArchivos(){
   const lista = infoArchivos.filter(a => filtroArch === 'todos' || (filtroArch === 'suman' ? a.suma.length : filtroArch === 'repetidos' ? (!a.suma.length && a.repetidas.length) : (!a.suma.length && !a.repetidas.length)));
   $('tablaArchivos').innerHTML = lista.map(a => {
     const partes = [];
-    if(a.suma.length) partes.push(`<span class="tag p-v">suma ${esc(a.suma.join(', '))}</span>`);
+    if(a.suma.length) partes.push(`<span class="tag p-v">suma ${esc(a.suma.map(e => e === '?' ? 'una resolución sin número de expediente legible' : e).join(', '))}</span>`);
     for(const x of a.repetidas) partes.push(`<span class="tag p-g">${esc(x.expediente)} ya estaba</span> <span class="mini">se conserva la de ${esc(x.queda)}</span>`);
     if(!a.resoluciones) partes.push(`<span class="tag p-r">no se encontró ninguna resolución adentro</span> <span class="mini">${a.paginas} página(s): puede ser solo el cuerpo del expediente</span>`);
     for(const e of a.errores) partes.push(`<span class="tag p-r">error</span> <span class="mini">${esc(e)}</span>`);
@@ -1524,11 +1548,15 @@ async function subirPDFs(archivos){
   avisoModelo = null;
   const lista = Array.from(archivos).filter(f => /\.pdf$/i.test(f.name));
   if(!lista.length){ avisar('Solo se cargan archivos PDF.', true); return; }
+  // Sin el permiso de GitHub no se puede guardar nada: se avisa antes de leer, no después de miles de archivos.
+  if(WEB && YO && !YO.web_token){ avisar('Falta el permiso de GitHub para guardar: cargalo en Configuración, "Permiso de GitHub". No se leyó ningún archivo.', true); return; }
   cargando = true;
-  try{ await subirPDFsAhora(lista); } finally { cargando = false; }
+  try{ await subirPDFsAhora(lista); }
+  catch(err){ avisar('La carga se cortó: ' + err.message, true); }
+  finally { cargando = false; }
 }
 async function subirPDFsAhora(lista){
-  let cortada = null;
+  let cortada = null, sinPermiso = null;
   $('progreso').classList.remove('oculto');
   const cuerpo = $('progresoCuerpo');
   $('progresoSub').textContent = `procesando ${lista.length} archivo(s)…`;
@@ -1555,11 +1583,16 @@ async function subirPDFsAhora(lista){
         (r.sueltas && r.sueltas.length ? ` <span class="mini">${r.sueltas.length} página(s) sin asignar</span>` : '');
       if(r.falla_modelo) avisoModelo = r.falla_modelo;
       if(r.sin_guardar){ fila.lastElementChild.insertAdjacentHTML('beforeend', ' <span class="tag p-a">leído, sin guardar todavía</span>'); cortada = r.sin_guardar; }
-    }catch(err){ fila.lastElementChild.innerHTML = `<span class="tag p-r">error</span> <span class="mini">${esc(err.message)}</span>`; }
+    }catch(err){
+      fila.lastElementChild.innerHTML = `<span class="tag p-r">error</span> <span class="mini">${esc(err.message)}</span>`; B.errores++;
+      // Un error de permiso es el mismo para todos los archivos: se corta y se avisa una sola vez.
+      if(/Tu perfil .* no puede|Tenés que ingresar|Falta el permiso de GitHub|no acepta el token|token no tiene permiso/i.test(err.message)){ n++; sinPermiso = err.message; break; }
+    }
     n++; $('progresoSub').textContent = `${n} de ${lista.length}`;
     if(cortada) break;   // si GitHub no guarda, no se sigue leyendo: lo leído espera en la pestaña
   }
-  $('progresoSub').textContent = `${n} archivo(s) cargados`;
+  if(sinPermiso){ $('progresoSub').textContent = `se detuvo en ${n} de ${lista.length}`; avisar('No se pudo cargar: ' + sinPermiso, true); return; }
+  $('progresoSub').textContent = B.errores ? `${n} archivo(s) procesados, ${B.errores} con error` : `${n} archivo(s) cargados`;
   if(cortada){
     $('progresoSub').textContent = `se detuvo en ${n} de ${lista.length}: sin guardar`;
     $('pendienteWeb').classList.remove('oculto');
@@ -1579,7 +1612,10 @@ async function subirPDFsAhora(lista){
   $('balanceCarga').innerHTML = partes.join(' · ') + '<br>' + res.join(' · ');
   $('balanceCarga').classList.remove('oculto');
   if(!$('panelArchivos').classList.contains('oculto')) verArchivos();
-  if(avisoModelo) avisar(`Atención: ${avisoModelo}. Las resoluciones que no se pudieron leer por texto quedaron guardadas como "no se pudieron leer". Corregí la clave en Configuración y después tocá "Completar incompletas con el modelo".`, true);
+  const atencion = [];
+  if(avisoModelo) atencion.push(`${avisoModelo}. Las resoluciones que no se pudieron leer por texto quedaron guardadas como "no se pudieron leer". Corregí la clave en Configuración y después tocá "Completar incompletas con el modelo".`);
+  if(WEB && window.PIERRI_WEB.catastroCaido && window.PIERRI_WEB.catastroCaido()) atencion.push('Catastro no respondió: las resoluciones de esta carga quedan sin ubicar en su parcela (se ubican por la localidad). Tocá "Reintentar Catastro" en Localidades y mapa.');
+  if(atencion.length) avisar('Atención: ' + atencion.join(' '), true);
 }
 
 const zona = $('cargar');
@@ -1603,7 +1639,7 @@ if(WEB){
     if(await guardarPendienteWeb()) avisar('Listo: lo pendiente quedó guardado en GitHub.');
     await cargarDesdeServidor(); });
   // Cómo va lo largo (leer, subir, esperar a GitHub): una línea en el panel de la carga.
-  window.addEventListener('pierri-web-progreso', e => { const t = String(e.detail || ''); $('progresoWeb').textContent = t; $('progresoWeb').classList.toggle('oculto', !t); });
+  window.addEventListener('pierri-web-progreso', e => { const t = String(e.detail || ''); $('progresoWeb').textContent = t; $('progresoWeb').classList.toggle('oculto', !t); $('siaProgreso').textContent = t; });
 }
 /** Versión web: en la carga entran los PDF (se leen en esta computadora y se guardan cifrados) o el JSON del kit, solo. */
 function cargarWeb(archivos){
@@ -1623,7 +1659,7 @@ async function guardarPendienteWeb(){
 async function importarWeb(f){
   if(!f) return;
   avisar('Cifrando y guardando en el repositorio…');
-  try{ const r = await api('/api/web/importar?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Listo: ${r.resoluciones} resoluciones guardadas. Los demás usuarios las ven en unos minutos.`); await cargarDesdeServidor(); ir('resumen'); }
+  try{ const r = await api('/api/web/importar?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Listo: ${r.resoluciones} resoluciones guardadas. Los demás lo ven al tocar "Volver a traer los datos" (abajo en el menú) o al volver a ingresar; GitHub puede tardar unos minutos en publicarlo.`); await cargarDesdeServidor(); ir('resumen'); }
   catch(err){ avisar('No se pudo guardar: ' + err.message, true); }
 }
 $('file').addEventListener('change', e => { if(e.target.files[0]) cargarArchivo(e.target.files[0]); e.target.value=''; });
@@ -1683,10 +1719,11 @@ if(WEB){
     if(textos.length) setTimeout(() => errorIngreso(textos.join(' ') + ' Volvé a ingresar.'), 300);
   }catch(e){}
   $('btnToken').addEventListener('click', async () => {
-    try{ await api('/api/web/token', { method: 'POST', body: JSON.stringify({ token: $('tokenWeb').value }) }); $('tokenWeb').value = ''; $('subToken').textContent = 'cargado en esta computadora'; avisar('Permiso de GitHub guardado en esta computadora.'); }
+    try{ await api('/api/web/token', { method: 'POST', body: JSON.stringify({ token: $('tokenWeb').value }) }); $('tokenWeb').value = ''; $('subToken').textContent = 'cargado en esta computadora'; if(YO) YO.web_token = true;
+      await cargarDesdeServidor(true).catch(() => {}); avisar('Permiso de GitHub guardado en esta computadora.'); }
     catch(err){ avisar(err.message, true); }
   });
-  $('btnOlvidarToken').addEventListener('click', async () => { await api('/api/web/token', { method: 'DELETE' }); $('subToken').textContent = 'falta: sin él no se pueden guardar cambios'; avisar('Esta computadora ya no guarda el permiso de GitHub.'); });
+  $('btnOlvidarToken').addEventListener('click', async () => { await api('/api/web/token', { method: 'DELETE' }); if(YO) YO.web_token = false; $('subToken').textContent = 'falta: sin él no se pueden guardar cambios'; avisar('Esta computadora ya no guarda el permiso de GitHub.'); });
 }
 if(WEB) $('btnInicial').addEventListener('click', async () => {
   errorIngreso('');
@@ -1699,18 +1736,21 @@ if(WEB) $('btnInicial').addEventListener('click', async () => {
 function errorIngreso(t){ const e = $('ingError'); e.textContent = t; e.classList.toggle('oculto', !t); }
 function aplicarPerfil(){
   $('pieUsuario').classList.remove('oculto');
-  $('pieUsuario').innerHTML = `<b>${esc(YO.nombre || YO.usuario)}</b>${esc(YO.rol_nombre)}<br><button id="btnSalir">Cerrar sesión</button>`;
+  $('pieUsuario').innerHTML = `<b>${esc(YO.nombre || YO.usuario)}</b>${esc(YO.rol_nombre)}<br><button id="btnSalir">Cerrar sesión</button>${WEB ? ' <button id="btnTraer" title="Trae lo que guardaron los demás desde que entraste">Volver a traer los datos</button>' : ''}`;
+  if(WEB) $('btnTraer').addEventListener('click', async () => { const b = $('btnTraer'); b.disabled = true;
+    try{ await cargarDesdeServidor(true); avisar('Datos actualizados.'); }catch(err){ avisar('No se pudieron traer los datos: ' + err.message, true); } b.disabled = false; });
   $('btnSalir').addEventListener('click', async () => {
     if(WEB && window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine la carga que está en curso antes de cerrar la sesión.', true); return; }
-    if(WEB && window.PIERRI_WEB.pendientes() && !(await guardarPendienteWeb()) && !confirm('Hay PDF leídos que no se pudieron guardar en GitHub. Si salís, se pierde esa lectura (los PDF siguen en tu computadora). ¿Salir igual?')) return;
+    if(WEB && window.PIERRI_WEB.pendientes() && !(await guardarPendienteWeb()) && !confirm('Hay lectura que no se pudo guardar en GitHub (PDF leídos o lo leído con el modelo). Si salís, se pierde (los PDF siguen en tu computadora). ¿Salir igual?')) return;
     try{ await api('/api/logout', { method: 'POST' }); }catch(e){} location.reload(); });
   // Los botones que el perfil no puede usar se ocultan; el servidor igual los rechaza.
   const puede = YO.permisos || {};
-  [['btnPadron', 'cargar'], ['btnInventario', 'cargar'], ['btnUbicarInv', 'cargar'], ['btnCatastro', 'cargar'], ['btnCompletar', 'cargar'],
+  [['btnPadron', 'cargar'], ['btnInventario', 'cargar'], ['btnUbicarInv', 'cargar'], ['btnCatastro', 'cargar'], ['btnCompletar', 'cargar'], ['btnSIA', 'cargar'], ['btnSIAUbicar', 'cargar'],
    ['btnReleer', 'cargar'], ['btnVaciar', 'administrar'], ['btnGuardarConfig', 'administrar']].forEach(([id, p]) => {
     const b = $(id); if(b && !puede[p]) b.classList.add('sin-permiso');
   });
-  if(!puede.cargar){ const c = document.querySelector('nav a.item[data-vista="cargar"]'); if(c) c.classList.add('sin-permiso'); }
+  if(!puede.cargar){ const c = document.querySelector('nav a.item[data-vista="cargar"]'); if(c) c.classList.add('sin-permiso');
+    document.querySelectorAll('[data-ir="cargar"]').forEach(b => b.classList.add('sin-permiso')); }
   document.querySelectorAll('.solo-admin').forEach(e => e.classList.toggle('oculto', !puede.administrar));
   if(WEB_VIEJA) avisar('El navegador tiene guardada una versión anterior del programa. Apretá Ctrl+F5 para recargar la página completa.', true);
   if(WEB){
@@ -1721,6 +1761,7 @@ function aplicarPerfil(){
     $('textoApp').innerHTML = 'Sin clave se lee solo por texto, gratis. El modelo se usa <b>solo cuando tocás "Completar incompletas con el modelo"</b>, y solo para las que el texto no resolvió y tienen su PDF guardado: antes de empezar te dice cuántas son. La clave queda guardada solo en esta computadora, cifrada con tu contraseña; no va al repositorio.';
     $('cargarSub').textContent = 'Se leen en esta computadora y se guardan cifrados en el repositorio, junto con el PDF original para poder verlo. Los ven todos los usuarios. Un archivo cargado dos veces se ignora. También entra acá el JSON que baja "Guardar JSON" en el kit.';
     $('panelToken').classList.toggle('oculto', !puede.administrar);
+    $('panelSIA').classList.remove('oculto');   // la planilla de trámites se carga solo en la web
     $('subToken').textContent = YO.web_token ? 'cargado en esta computadora' : 'falta: sin él no se pueden guardar cambios';
     const optAdmin = document.querySelector('#nuRol option[value="admin"]'); if(optAdmin) optAdmin.remove();
     const aviso = document.querySelector('#panelUsuarios p.mini'); if(aviso) aviso.textContent = 'En la versión web la contraseña la definís vos: pasásela a la persona por un medio seguro. Para cambiarla, "nueva contraseña". Desactivar a alguien cambia la llave de los datos: su contraseña deja de servir.';
@@ -1761,42 +1802,83 @@ async function pintarUsuarios(lista){
     <td class="mini"><a href="#" data-activo="${esc(u.usuario)}" data-valor="${u.activo ? 0 : 1}">${u.activo ? 'desactivar' : 'activar'}</a> · <a href="#" data-clave="${esc(u.usuario)}">nueva contraseña</a></td></tr>`).join('');
 }
 async function usuariosAccion(cuerpo){
-  try{ const r = await api('/api/usuarios', { method: 'POST', body: JSON.stringify(cuerpo) }); pintarUsuarios(r.usuarios); avisar(WEB ? 'Listo. GitHub tarda unos minutos en publicarlo: recién ahí vale para la persona.' : 'Listo.'); }
-  catch(err){ avisar(err.message, true); if(WEB) api('/api/usuarios').then(r => pintarUsuarios(r.usuarios)).catch(() => {}); }
+  try{ const r = await api('/api/usuarios', { method: 'POST', body: JSON.stringify(cuerpo) }); pintarUsuarios(r.usuarios); avisar(WEB ? 'Listo. GitHub tarda unos minutos en publicarlo: recién ahí vale para la persona.' : 'Listo.'); return true; }
+  catch(err){ avisar(err.message, true); if(WEB) api('/api/usuarios').then(r => pintarUsuarios(r.usuarios)).catch(() => {}); return false; }
 }
 if(SERVIDOR){
   $('btnPadron').addEventListener('click', () => $('filePadron').click());
   $('filePadron').addEventListener('change', async e => { const f = e.target.files[0]; if(!f) return; e.target.value = '';
-    try{ const r = await api('/api/padron?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Padrón cargado: ${r.filas} filas. Cruce: ${r.cruce.cruzados} cruzadas, ${r.cruce.ambiguos} ambiguas, ${r.cruce.no_figuran} no inscriptas, ${r.cruce.sin_nombre} sin nombre.`); await cargarDesdeServidor(); }
+    try{ const r = await api('/api/padron?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Padrón cargado: ${r.filas} filas. Cruce: ${r.cruce.cruzados} cruzadas, ${r.cruce.ambiguos} ambiguas, ${r.cruce.no_figuran} no figuran en el Padrón, ${r.cruce.sin_nombre} sin nombre.`); await cargarDesdeServidor(); }
     catch(err){ avisar('No se pudo cargar el Padrón: ' + err.message, true); } });
   $('btnCompletar').addEventListener('click', async () => {
     if(WEB){
       if(cargando || window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
-      const inc = registros.filter(r => r.fuente === 'texto_incompleto' && !r.error), conPdf = inc.filter(r => r.pdf_web).length;
-      if(!conPdf){ avisar(inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en Cargar.` : 'No hay resoluciones sin leer del todo.'); return; }
-      if(!confirm(`Se van a leer con el modelo ${conPdf} resolución(es) que el texto no resolvió${inc.length > conPdf ? ` (otras ${inc.length - conPdf} no tienen el PDF guardado y quedan como están)` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
+      const inc = registros.filter(r => r.fuente === 'texto_incompleto' && !r.error);
+      // Las que el modelo ya no pudo leer en esta sesión no se vuelven a mandar; lo leído sin guardar se guarda sin volver a pagarlo.
+      const salteadas = inc.filter(r => r.pdf_web && window.PIERRI_WEB.modeloSalteada(r.hash)).length, sinGuardar = window.PIERRI_WEB.modeloSinGuardar();
+      const conPdf = inc.filter(r => r.pdf_web).length - salteadas - sinGuardar;
+      if(sinGuardar && conPdf <= 0){ /* solo falta guardar lo ya leído: no se cobra nada */ }
+      else if(!conPdf){ avisar(salteadas ? `Las ${salteadas} que quedan sin leer ya se probaron con el modelo en esta sesión y no las pudo leer: se vuelven a intentar al volver a ingresar.` : inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en "Filtro Ley Pierri" (la carga de PDF, en el menú).` : 'No hay resoluciones sin leer del todo.'); return; }
+      else if(!confirm(`Se van a leer con el modelo ${conPdf} resolución(es) que el texto no resolvió${sinGuardar ? ` (antes se guardan ${sinGuardar} ya leídas, sin volver a cobrarlas)` : ''}${salteadas ? `; otras ${salteadas} ya no se pudieron leer en esta sesión y se saltean` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
     }
     const b = $('btnCompletar'); b.disabled = true;
-    let hechas = 0, tokens = 0, vueltas = 0;
+    let hechas = 0, tokens = 0, noLeidas = 0, vueltas = 0; const motivos = new Set();
     try{
       while(vueltas++ < 400){
         b.textContent = `Leyendo con el modelo… (${hechas} listas)`;
         const r = await api('/api/completar?maximo=5', { method: 'POST' });
         if(r.motivo === 'sin clave'){ avisar('Falta cargar la clave de API y guardarla. Sin clave no se pueden leer las que el texto no resolvió.', true); break; }
-        hechas += r.completadas; tokens += r.tokens || 0;
-        if(r.fallas && r.fallas.length && !r.completadas){ avisar('La lectura con el modelo está fallando: ' + r.fallas[0], true); break; }
-        if(!r.pendientes){ avisar(`Listo: ${hechas} resolución(es) completadas (${tokens.toLocaleString('es-AR')} tokens).` + (r.sin_pdf ? ` Otras ${r.sin_pdf} no tienen el PDF guardado en la web.` : '')); break; }
-        if(!r.completadas){ avisar(`Quedan ${r.pendientes} que no se pudieron completar.`, true); break; }
+        hechas += r.completadas || 0; tokens += r.tokens || 0; noLeidas += r.no_leidas || 0; (r.fallas || []).forEach(m => motivos.add(m));
+        const gasto = `${tokens.toLocaleString('es-AR')} tokens`;
+        // El kit no saltea las que no puede leer: si no completó ninguna, se corta para no pagar lo mismo otra vez.
+        if(r.corte || (!WEB && r.fallas && r.fallas.length && !r.completadas)){ avisar('La lectura con el modelo se cortó: ' + (r.corte || r.fallas[0]) + (hechas ? `. Antes se completaron ${hechas} (${gasto}).` : '.'), true); break; }
+        if(WEB ? !r.por_probar : !r.pendientes){
+          avisar(`Listo: ${hechas} resolución(es) completadas (${gasto}).` + (noLeidas ? ` El modelo no pudo leer ${noLeidas} (${[...motivos].join('; ')}): quedan sin leer y no se vuelven a intentar hasta que vuelvas a ingresar.` : '')
+            + (r.sin_pdf ? ` Otras ${r.sin_pdf} no tienen el PDF guardado en la web.` : ''), !!noLeidas);
+          break;
+        }
+        if(!WEB && !r.completadas){ avisar(`Quedan ${r.pendientes} que no se pudieron completar.`, true); break; }
       }
       await cargarDesdeServidor();
     }catch(err){ avisar('Error: ' + err.message, true); }
     b.disabled = false; b.textContent = 'Completar incompletas con el modelo'; });
-  $('btnCatastro').addEventListener('click', async () => { try{ const r = await api('/api/catastro', { method: 'POST' }); avisar(`Catastro: ${r.ubicadas} ubicadas nuevas.`); await cargarDesdeServidor(); }catch(err){ avisar('Catastro: ' + err.message, true); } });
-  $('btnRecargar').addEventListener('click', cargarDesdeServidor);
+  /** Consulta Catastro de a tandas hasta terminar: cada tanda queda guardada, así que si se corta, se vuelve a tocar y sigue. */
+  async function ubicarEnCatastro(boton){
+    const rotulo = boton.textContent; boton.disabled = true;
+    let ubicadas = 0, consultadas = 0, fallas = null;
+    try{
+      for(let vuelta = 0; vuelta < 200; vuelta++){
+        const r = await api('/api/catastro?maximo=2000', { method: 'POST' });
+        ubicadas += r.ubicadas || 0; consultadas += r.consultadas || 0; fallas = r.fallas || null;   // vale lo de la última tanda: las fallas se reintentan en la siguiente
+        if(!r.pendientes || !r.consultadas) break;
+        boton.textContent = `Catastro: ${consultadas.toLocaleString('es-AR')} consultadas, faltan ${r.pendientes.toLocaleString('es-AR')}…`;
+      }
+      avisar((consultadas ? `Catastro: ${consultadas.toLocaleString('es-AR')} cuentas consultadas, ${ubicadas.toLocaleString('es-AR')} parcelas encontradas.` : `Catastro: ${ubicadas} ubicadas nuevas.`)
+        + (fallas ? ` Ojo: ${fallas}. Volvé a tocar más tarde y se consultan esas.` : ''), !!fallas);
+      await cargarDesdeServidor();
+    }catch(err){
+      avisar('Catastro: ' + err.message + (consultadas ? ' Lo consultado hasta acá quedó guardado: volvé a tocar y sigue donde quedó.' : ''), true);
+      if(consultadas) await cargarDesdeServidor().catch(() => {});
+    }
+    boton.textContent = rotulo; boton.disabled = false;
+  }
+  $('btnCatastro').addEventListener('click', () => ubicarEnCatastro($('btnCatastro')));
+  $('btnSIAUbicar').addEventListener('click', () => ubicarEnCatastro($('btnSIAUbicar')));
+  $('btnSIA').addEventListener('click', () => $('fileSIA').click());
+  $('fileSIA').addEventListener('change', async e => { const f = e.target.files[0]; if(!f) return; e.target.value = '';
+    if(cargando || (WEB && window.PIERRI_WEB.ocupado())){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
+    const b = $('btnSIA'); b.disabled = true;
+    try{ const r = await api('/api/web/sia?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f });
+      avisar(`Planilla cargada: ${r.expedientes.toLocaleString('es-AR')} expedientes${r.descartadas ? ` (${r.descartadas} filas sin número de expediente válido quedaron afuera)` : ''}. Ya están en Expedientes, el mapa y el Resumen, con la posesión estimada.`);
+      await cargarDesdeServidor(); }
+    catch(err){ avisar('No se pudo cargar la planilla: ' + err.message, true); }
+    b.disabled = false; });
+  $('btnRecargar').addEventListener('click', () => cargarDesdeServidor(true).catch(err => avisar('No se pudieron traer los datos: ' + err.message, true)));
   $('btnArchivos').addEventListener('click', () => verArchivos().catch(err => avisar('Error: ' + err.message, true)));
   $('btnCrearUsuario').addEventListener('click', async () => {
-    await usuariosAccion({ accion: 'crear', usuario: $('nuUsuario').value, nombre: $('nuNombre').value, rol: $('nuRol').value, clave: $('nuClave').value });
-    $('nuUsuario').value = ''; $('nuNombre').value = ''; $('nuClave').value = '';
+    // Si hubo un error (contraseña corta, usuario repetido) los datos quedan para corregirlos, no se borran.
+    if(await usuariosAccion({ accion: 'crear', usuario: $('nuUsuario').value, nombre: $('nuNombre').value, rol: $('nuRol').value, clave: $('nuClave').value })){
+      $('nuUsuario').value = ''; $('nuNombre').value = ''; $('nuClave').value = ''; }
   });
   $('tablaUsuarios').addEventListener('change', e => { const sel = e.target.closest('[data-rol]'); if(sel) usuariosAccion({ accion: 'rol', usuario: sel.dataset.rol, rol: sel.value }); });
   $('tablaUsuarios').addEventListener('click', e => {
@@ -1854,7 +1936,7 @@ if(SERVIDOR){
     else avisar('Configuración guardada.');
     await cargarDesdeServidor(); }catch(err){ avisar('Error: ' + err.message, true); } });
   ['regla','corte','margen'].forEach(id => $(id).addEventListener('change', async () => { try{ await api('/api/config', { method: 'POST', body: JSON.stringify({ regla: $('regla').value, fechaCorte: $('corte').value, margenBordeMeses: $('margen').value }) }); await cargarDesdeServidor(); }catch(err){ avisar('Error: ' + err.message, true); } }));
-  $('expCsv').addEventListener('click', () => { if(WEB) descargar('\ufeff' + P.aCSV(vista), 'planilla_ley_pierri.csv', 'text/csv;charset=utf-8'); else location.href = '/api/planilla.csv'; });
+  $('expCsv').addEventListener('click', () => { if(WEB) descargar('\ufeff' + planillaExcel(vista), 'planilla_ley_pierri.csv', 'text/csv;charset=utf-8'); else location.href = '/api/planilla.csv'; });
   window.__arrancar = () => arrancarConSesion().then(ok => {
     if(!ok) return;                                   // hay que ingresar primero
     cargarDesdeServidor().then(() => ir(location.hash.slice(1) || (registros.length ? 'resumen' : 'cargar'))).catch(err => { avisar((WEB ? 'No se pudieron abrir los datos: ' : 'No se pudo conectar con pierri.js: ') + err.message, true); ir('cargar'); });
@@ -1870,7 +1952,7 @@ if(SERVIDOR){
   // sino para poder explicar por qué no se puede, en vez de mostrarlos en gris sin motivo.
   $('file').accept = '.jsonl,.json,application/json,.pdf,application/pdf';
   ['regla','corte','margen'].forEach(id => $(id).addEventListener('change', recalcularLocal));
-  $('expCsv').addEventListener('click', () => descargar('\ufeff' + P.aCSV(vista), 'planilla_ley_pierri.csv', 'text/csv;charset=utf-8'));
+  $('expCsv').addEventListener('click', () => descargar('\ufeff' + planillaExcel(vista), 'planilla_ley_pierri.csv', 'text/csv;charset=utf-8'));
   ir(location.hash.slice(1) || 'cargar');
 }
 
@@ -1882,12 +1964,17 @@ function recalcularLocal(){
   pintarTodo();
 }
 const cl = d => P.clasificar(d);
-const loc = d => (d.geo && (d.geo.localidad_catastro || d.geo.localidad)) ? P.normalizarTexto(d.geo.localidad_catastro || d.geo.localidad).replace(/ EST .*$/, '') : '(SIN LOCALIDAD)';
+// La localidad se calcula una vez por expediente: con la planilla son decenas de miles y se pide en cada dibujo.
+const LOCALIDAD = new WeakMap();
+const loc = d => { let v = LOCALIDAD.get(d); if(v === undefined){ v = (d.geo && (d.geo.localidad_catastro || d.geo.localidad)) ? P.normalizarTexto(d.geo.localidad_catastro || d.geo.localidad).replace(/ EST .*$/, '') : '(SIN LOCALIDAD)'; LOCALIDAD.set(d, v); } return v; };
 const mz = d => { const c = d.geo && d.geo.catastro; return c && c.manzana ? `${c.circunscripcion}-${c.seccion}-${c.manzana}` : (d.geo && d.geo.manzana ? 'mz ' + d.geo.manzana : ''); };
 const dep = d => (d.geo && d.geo.dep_nombre) || '(SIN DEPARTAMENTO)';
 /** Sección catastral: es la división interna de la planta urbana, lo más parecido a "barrio" que da Catastro. */
 const sec = d => { const c = d.geo && d.geo.catastro; return c && c.seccion ? `${loc(d)} · secc. ${c.circunscripcion}-${c.seccion}` : null; };
 const claveGrupo = d => agrupacion === 'departamento' ? dep(d) : agrupacion === 'seccion' ? (sec(d) || '(SIN SECCIÓN)') : loc(d);
+/** Lo que ordena la inscripción o la estima la planilla de la UEST: entra en los desplegables, el ranking y el mapa. */
+const evaluable = d => d.tipo_documento === 'RESOLUCION_INSCRIPCION' || d.tipo_documento === 'PLANILLA_UEST';
+const deLaPlanilla = r => r.fuente === 'planilla';
 const estadoInsc = d => { const i = d.inscripcion; if(!i) return 'SIN'; if(i.estado === 'PROVISORIA' || i.estado === 'OBSERVADA') return 'TRABADA'; if(i.estado === 'SIN_NOMBRE_PARA_CRUZAR') return 'SIN'; return i.estado; };
 
 /**
@@ -1895,7 +1982,7 @@ const estadoInsc = d => { const i = d.inscripcion; if(!i) return 'SIN'; if(i.est
  * (por ejemplo: elegibles + no se pudieron leer + sin revisar). Tocar de nuevo un filtro activo lo apaga.
  */
 const GRUPO_DE = { TODOS: 'elig', ELEGIBLE: 'elig', NO_ELEGIBLE: 'elig', SIN_DATO: 'elig',
-  POR_TEXTO: 'lect', POR_MODELO: 'lect', INCOMPLETA: 'lect',
+  POR_TEXTO: 'lect', POR_MODELO: 'lect', INCOMPLETA: 'lect', LEIDAS: 'lect', POR_PLANILLA: 'lect',
   REVISADA: 'ctrl', SIN_REVISAR: 'ctrl', REVISAR: 'ctrl', SIN_UBICAR: 'ctrl' };
 const F = { elig: 'TODOS', lect: null, ctrl: null };
 function marcarChips(){
@@ -1916,7 +2003,7 @@ function poblarFiltros(){
     sel.innerHTML = `<option value="">${etiqueta}</option>` + valores.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
     if(valores.includes(previo)) sel.value = previo;
   };
-  const R = registros.map(r => r.derivado).filter(d => d.tipo_documento === 'RESOLUCION_INSCRIPCION');
+  const R = registros.map(r => r.derivado).filter(evaluable);
   opciones('fDep', [...new Set(R.map(dep))].sort(), 'Todos');
   const depSel = $('fDep').value;
   opciones('fLoc', [...new Set(R.filter(d => !depSel || dep(d) === depSel).map(loc))].sort(), 'Todas');
@@ -1936,6 +2023,8 @@ function pasa(r, ignorarLoc){
   if(F.lect === 'INCOMPLETA' && r.fuente !== 'texto_incompleto') return false;
   if(F.lect === 'POR_TEXTO' && r.fuente !== 'texto') return false;
   if(F.lect === 'POR_MODELO' && r.fuente !== 'modelo') return false;
+  if(F.lect === 'LEIDAS' && r.fuente === 'planilla') return false;
+  if(F.lect === 'POR_PLANILLA' && r.fuente !== 'planilla') return false;
   if(F.ctrl === 'REVISAR' && !d.revisar) return false;
   if(F.ctrl === 'REVISADA' && !(d.revision && d.revision.revisado)) return false;
   if(F.ctrl === 'SIN_REVISAR' && d.revision && d.revision.revisado) return false;
@@ -1956,7 +2045,7 @@ function pasa(r, ignorarLoc){
 /** Lista legible de los filtros que están ocultando resoluciones, para que nunca pase desapercibido. */
 function filtrosActivos(){
   const nombres = { ELEGIBLE: 'elegibles', NO_ELEGIBLE: 'no elegibles', SIN_DATO: 'sin fecha', POR_TEXTO: 'leídas por texto',
-    POR_MODELO: 'revisadas por el modelo', INCOMPLETA: 'no se pudieron leer', REVISADA: 'revisadas', SIN_REVISAR: 'sin revisar',
+    POR_MODELO: 'revisadas por el modelo', INCOMPLETA: 'no se pudieron leer', LEIDAS: 'leídas del PDF', POR_PLANILLA: 'estimadas con la planilla', REVISADA: 'revisadas', SIN_REVISAR: 'sin revisar',
     REVISAR: 'a revisar', SIN_UBICAR: 'sin ubicar' };
   const a = [];
   if(F.elig !== 'TODOS') a.push(nombres[F.elig]);
@@ -1977,7 +2066,9 @@ function limpiarFiltros(){
   $('buscar').value = ''; localidadSel = null; F.elig = 'TODOS'; F.lect = null; F.ctrl = null; marcarChips();
   pagina = 0; pintarTodo();
 }
-function pintarTodo(){ poblarFiltros(); vista = registros.filter(r => pasa(r)); pintarMetricas(); pintarRecientes(); pintarTabla(); pintarRanking(); pintarPadron(); if(!$('v-mapa').classList.contains('oculto')) pintarMapa(); pintarPie(); }
+function pintarTodo(){ poblarFiltros(); vista = registros.filter(r => pasa(r)); pintarMetricas(); pintarRecientes(); pintarTabla(); pintarRanking(); pintarPadron(); pintarPlanilla(); if(!$('v-mapa').classList.contains('oculto')) pintarMapa(); pintarPie(); }
+/** "21/09/2026 18:42", siempre con reloj de 24 horas (sin él, Chrome pone la tarde como "02:17" sin a. m. ni p. m.). */
+function fechaHora(iso){ const f = new Date(iso); return isNaN(f) ? '—' : f.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }); }
 /** "21/09 18:42", o "hoy 18:42" si es de hoy. */
 function fechaCarga(iso){
   if(!iso) return '—'; const f = new Date(iso); if(isNaN(f)) return '—';
@@ -1986,18 +2077,22 @@ function fechaCarga(iso){
 }
 /** Las últimas resoluciones cargadas, la más nueva arriba. Cada fila abre su ficha. */
 function pintarRecientes(){
-  const lista = registros.slice().sort((a, b) => String(b.cargado_en || '').localeCompare(String(a.cargado_en || ''))).slice(0, 8);
-  $('subRecientes').textContent = registros.length ? `las ${lista.length} más recientes de ${registros.length}` : '';
+  const leidas = registros.filter(r => !deLaPlanilla(r));
+  const lista = leidas.sort((a, b) => String(b.cargado_en || '').localeCompare(String(a.cargado_en || ''))).slice(0, 8);
+  $('subRecientes').textContent = leidas.length ? `las ${lista.length} más recientes de ${leidas.length}` : '';
   $('recientes').innerHTML = lista.map(r => { const d = r.derivado;
     return `<tr class="clicable" data-abrir="${esc(r.hash)}" title="Abrir el expediente"><td class="mini" style="white-space:nowrap">${esc(fechaCarga(r.cargado_en))}</td>` +
       `<td class="exp">${esc(d.expediente || '—')}</td><td>${esc(d.rogante_principal || '—')}</td><td class="col-sec">${esc(loc(d))}</td><td>${tagDe(cl(d))}${tagInsc(d)}</td></tr>`; }).join('')
     || '<tr><td colspan="5" class="vacio">Todavía no hay resoluciones cargadas.</td></tr>';
 }
-$('verRecientes').addEventListener('click', () => { limpiarFiltros(); orden = { k: 'cargado', asc: false }; pagina = 0; pintarTabla(); ir('expedientes'); });
-function pintarPie(){ $('pie').innerHTML = registros.length ? `${WEB ? 'versión web' : SERVIDOR ? 'pierri.db' : esc(origenNombre || 'archivo')} · ${registros.length} resoluciones` + (resumenSrv.padron && resumenSrv.padron.filas ? `<br>Padrón: ${resumenSrv.padron.filas} filas` : '') : 'sin datos cargados'; }
+// Las últimas cargadas son resoluciones leídas: la lista que abre deja afuera lo estimado con la planilla.
+$('verRecientes').addEventListener('click', () => { limpiarFiltros(); if(registros.some(deLaPlanilla)){ F.lect = 'LEIDAS'; marcarChips(); }
+  orden = { k: 'cargado', asc: false }; pagina = 0; pintarTodo(); ir('expedientes'); });
+function pintarPie(){ const np = registros.filter(deLaPlanilla).length; $('pie').innerHTML = registros.length ? `${WEB ? 'versión web' : SERVIDOR ? 'pierri.db' : esc(origenNombre || 'archivo')} · ${registros.length - np} resoluciones` + (np ? ` · ${np} de la planilla` : '') + (resumenSrv.padron && resumenSrv.padron.filas ? `<br>Padrón: ${Number(resumenSrv.padron.filas) || 0} filas` : '') : 'sin datos cargados'; }
 /** ¿Está cumpliendo? La cadena del relevamiento y tres paneles. Siempre sobre todo lo cargado, sin los filtros de Expedientes. */
 function pintarCumple(){
-  const V = registros.filter(r => r && r.derivado && !r.repetido_de && !r.error), R = V.map(r => r.derivado);
+  // La cadena es la de lo leído: los expedientes estimados con la planilla de la UEST van aparte (Inventario).
+  const V = registros.filter(r => r && r.derivado && !r.repetido_de && !r.error && !deLaPlanilla(r)), R = V.map(r => r.derivado);
   const n = f => R.filter(f).length, nr = f => V.filter(f).length, inv = (resumenSrv && resumenSrv.inventario) || {};
   const f = x => x == null || isNaN(x) ? '—' : Number(x).toLocaleString('es-AR'), pc = (a, b) => b ? Math.round(a / b * 100) : 0;
   const rev = d => !!(d.revision && d.revision.revisado), corr = d => rev(d) && !!(d.revision.posee_desde || d.revision.tipo_documento);
@@ -2009,15 +2104,16 @@ function pintarCumple(){
   const esc_ = Number(inv.con_resolucion) || null, leidasInv = inv.cargado ? (Number(inv.leidas) || 0) : null;
   const texto = nr(r => r.fuente === 'texto'), modelo = nr(r => r.fuente === 'modelo'), noLeidas = nr(r => r.fuente === 'texto_incompleto'), tot = texto + modelo + noLeidas;
   const insAnt = n(d => cl(d) === 'ELEGIBLE' && ins(d) === 'INSCRIPTA'), noInsAnt = n(d => cl(d) === 'ELEGIBLE' && ins(d) === 'NO_FIGURA_EN_PADRON');
+  const trabAnt = n(d => cl(d) === 'ELEGIBLE' && (ins(d) === 'PROVISORIA' || ins(d) === 'OBSERVADA'));
   const sinCruce = n(d => cl(d) === 'ELEGIBLE' && (!ins(d) || ins(d) === 'AMBIGUO' || ins(d) === 'SIN_NOMBRE_PARA_CRUZAR'));
   const confirmadas = n(d => cl(d) === 'ELEGIBLE' && rev(d) && ins(d) === 'INSCRIPTA');
   const cfg = config(), corte = cfg.regla === 'CORTE_FIJO' ? (cfg.fechaCorte || '2006-01-01').split('-').reverse().join('/') : 'plazo móvil de 10 años';
   $('cumpleEmbudo').innerHTML = `
     <div class="paso"><span class="r">Escaneadas por la UEST</span><span class="v c-m">${f(esc_)}</span><small>${esc_ ? 'con resolución, según el inventario' : 'cargá el inventario de la UEST'}</small></div>
-    <div class="paso"><span class="r">Leídas</span><span class="v c-m">${f(leidasInv != null ? leidasInv : V.length)}</span><small>${esc_ && leidasInv != null ? `${pc(leidasInv, esc_)} % del inventario` : `${f(V.length)} resoluciones`}</small></div>
+    <div class="paso"><span class="r">Leídas</span><span class="v c-m">${f(V.length)}</span><small>${esc_ && leidasInv != null ? `${f(leidasInv)} de las ${f(esc_)} del inventario (${pc(leidasInv, esc_)} %)` : 'resoluciones'}</small></div>
     <div class="paso"><span class="r">Evaluables</span><span class="v">${f(ev)}</span><small>${f(noEval)} no ordenan la inscripción</small></div>
     <div class="paso prota"><span class="r">Posesión anterior al corte</span><span class="v">${f(anteriores)}</span><small>${bordeDentro ? `+${f(bordeDentro)} en el borde · ` : ''}corte: ${esc(corte)}</small></div>
-    <div class="paso"><span class="r">De esas, inscriptas</span><span class="v c-m">${hayPadron ? f(insAnt) : '—'}</span><small>${hayPadron ? `${f(noInsAnt)} no inscriptas · ${f(sinCruce)} sin cruzar` : 'cargá el Padrón del Registro'}</small></div>
+    <div class="paso"><span class="r">De esas, inscriptas</span><span class="v c-m">${hayPadron ? f(insAnt) : '—'}</span><small>${hayPadron ? `${trabAnt ? f(trabAnt) + ' observadas o provisorias · ' : ''}${f(noInsAnt)} no figuran · ${f(sinCruce)} sin cruzar` : 'cargá el Padrón del Registro'}</small></div>
     <div class="paso"><span class="r">Confirmadas</span><span class="v">${f(confirmadas)}</span><small>anteriores, inscriptas y revisadas a mano</small></div>`;
   $('cumplePaneles').innerHTML = `
     <div class="panel"><div class="cabp"><h2>Avance</h2><span class="sub">¿cuánto se leyó?</span></div><div class="cuerpo">
@@ -2040,6 +2136,20 @@ function pintarCumple(){
       <div class="fila-m"><span>Posteriores al corte</span><b>${f(posteriores)}</b></div>
       <div class="fila-m"><span>Sin fecha de posesión</span><b class="c-r">${f(sinFecha)}</b></div>
       <div class="fila-m"><span>No evaluables (trámite, cédula, desestima)</span><b class="c-g">${f(noEval)}</b></div></div></div>`;
+  // La planilla de la UEST, aparte: es una estimación, no una lectura.
+  const pl = (resumenSrv && resumenSrv.planilla) || {};
+  if(pl.cargada){
+    const E = registros.filter(deLaPlanilla).map(r => r.derivado), k = x => E.filter(d => cl(d) === x).length;
+    const ant = k('ELEGIBLE') + k('ELEGIBLE_BORDE'), pos = k('NO_ELEGIBLE') + k('NO_ELEGIBLE_BORDE'), bor = k('ELEGIBLE_BORDE') + k('NO_ELEGIBLE_BORDE'), sinA = k('SIN_DATO'), v = pl.validacion || {};
+    $('cumplePaneles').insertAdjacentHTML('beforeend', `
+    <div class="panel"><div class="cabp"><h2>Planilla de la UEST</h2><span class="sub">estimado, sin la resolución leída</span></div><div class="cuerpo">
+      <div class="apilada" role="img" aria-label="estimados anteriores, posteriores y sin dato"><div style="width:${pc(ant, E.length)}%;background:var(--verde);opacity:.55"></div><div style="width:${pc(pos, E.length)}%;background:var(--barra-no)"></div><div style="width:${pc(sinA, E.length)}%;background:var(--barra-sin)"></div></div>
+      <div class="fila-m"><span>Expedientes sin la resolución leída</span><b>${f(E.length)}</b></div>
+      <div class="fila-m"><span>Anteriores al corte (estimado)</span><b class="c-v">${f(ant)}</b></div>
+      <div class="fila-m"><span>Posteriores al corte (estimado)</span><b>${f(pos)}</b></div>
+      <div class="fila-m"><span>En el borde · sin antigüedad usable</span><b>${f(bor)} · ${f(sinA)}</b></div>
+      <div class="fila-m"><span>¿Cuánto acierta contra lo leído?</span><b>${v.comparadas >= 30 ? pc(v.coinciden, v.comparadas) + ' %' : v.comparadas ? `${f(v.coinciden)} de ${f(v.comparadas)}` : '—'}</b></div></div></div>`);
+  }
 }
 /** La fecha de posesión con la precisión que realmente tiene: día/mes/año, mes/año, o solo el año. */
 function fechaPosesion(d){
@@ -2047,12 +2157,16 @@ function fechaPosesion(d){
   const [a, m, di] = String(d.posee_desde).split('-'), p = d.posee_desde_precision;
   return p === 'anio' ? `${a} (año aprox.)` : p === 'mes' ? `${m}/${a}` : `${di}/${m}/${a}`;
 }
-const CRITERIOS = { DECLARADA_ROGANTE: 'declarada por el rogante', SURGE_DOCUMENTAL: 'surge de la documental', SURGE_EXPEDIENTE: 'surge del expediente', CORREGIDA_A_MANO: 'corregida a mano', OTRO: 'otro criterio' };
+const CRITERIOS = { PLANILLA_UEST: 'estimada con la planilla de la UEST: fecha de ingreso menos la antigüedad declarada al iniciar el trámite', DECLARADA_ROGANTE: 'declarada por el rogante', SURGE_DOCUMENTAL: 'surge de la documental', SURGE_EXPEDIENTE: 'surge del expediente', CORREGIDA_A_MANO: 'corregida a mano', OTRO: 'otro criterio' };
 const VEREDICTOS = { ELEGIBLE: 'Posesión anterior al corte', ELEGIBLE_BORDE: 'Anterior al corte, en el borde', NO_ELEGIBLE: 'Posesión posterior al corte', NO_ELEGIBLE_BORDE: 'Posterior al corte, en el borde', SIN_DATO: 'Sin fecha de posesión', REVISAR: 'Sin fecha de posesión: revisar', NO_APLICA: 'No ordena la inscripción' };
 function pintarMetricas(){
   pintarCumple();
-  const R = registros.map(r => r.derivado);
-  const c = k => R.filter(d => cl(d) === k).length;
+  const R = registros.map(r => r.derivado), RL = registros.filter(r => !deLaPlanilla(r)).map(r => r.derivado), nPlan = R.length - RL.length;
+  const elegPlan = registros.filter(r => deLaPlanilla(r) && cl(r.derivado).startsWith('ELEGIBLE')).length;
+  // Las cifras son de lo leído. Lo estimado con la planilla se cuenta aparte y se dice aparte.
+  const porClase = {}; for(const d of RL){ const k = cl(d); porClase[k] = (porClase[k] || 0) + 1; }
+  const c = k => porClase[k] || 0;
+  const DP = registros.filter(deLaPlanilla).map(r => r.derivado), nPlanEval = DP.filter(d => cl(d) !== 'SIN_DATO').length;
   const eleg = c('ELEGIBLE') + c('ELEGIBLE_BORDE'), no = c('NO_ELEGIBLE') + c('NO_ELEGIBLE_BORDE');
   const sin = c('SIN_DATO') + c('REVISAR');
   // El total son las resoluciones que se pudieron evaluar (inscripciones y ampliatorias o rectificatorias que declaran
@@ -2061,13 +2175,17 @@ function pintarMetricas(){
   const pct = x => n ? Math.round(x / n * 100) : 0;
   const cfg = config();
   const alt = cfg.regla === 'CORTE_FIJO' ? { regla: 'PLAZO_MOVIL', anosPlazoMovil: 10 } : { regla: 'CORTE_FIJO', fechaCorte: '2006-01-01' };
-  const elegAlt = R.filter(d => cl(d) !== 'NO_APLICA' && P.evaluarElegibilidad(d.posee_desde ? P.parseFecha(d.posee_desde) : null, alt).estado === 'ELEGIBLE').length;
+  // El límite del otro criterio se calcula una vez; después alcanza con comparar la fecha de cada uno (como evaluarElegibilidad).
+  const limAlt = P.parseFecha(P.evaluarElegibilidad(null, alt).fechaLimite);
+  const entraAlt = d => { const pd = d.posee_desde ? P.parseFecha(d.posee_desde) : null; return !!pd && (alt.regla === 'PLAZO_MOVIL' ? pd <= limAlt : pd < limAlt); };
+  const elegAlt = RL.filter(d => cl(d) !== 'NO_APLICA' && entraAlt(d)).length, elegAltPlan = DP.filter(entraAlt).length;
   // Una sola cifra manda: cuántos entran en la ley. El resto queda subordinado.
   $('protagonista').innerHTML = !n
     ? `<span class="rot">Entran en la Ley Pierri</span><div class="cifra c-g">—</div><span class="mini">Todavía no hay resoluciones cargadas.</span>`
     : `<span class="rot">Entran en la Ley Pierri</span>
        <div style="display:flex;align-items:baseline;gap:12px"><span class="cifra">${eleg}</span><span class="de">de ${n} evaluadas</span></div>
-       ${noAplica ? `<span class="mini">Se leyeron ${R.length} documentos: ${noAplica} no aplican porque no ordenan la inscripción (resoluciones de trámite, cédulas, desestimatorias).</span>` : ''}
+       ${noAplica ? `<span class="mini">Se leyeron ${RL.length} documentos: ${noAplica} no aplican porque no ordenan la inscripción (resoluciones de trámite, cédulas, desestimatorias).</span>` : ''}
+       ${nPlan ? `<span class="mini">Además, <b>${elegPlan} estimadas con la planilla de la UEST</b> (de ${nPlanEval} expedientes de la planilla sin la resolución leída): es lo que se declaró al iniciar el trámite, no lo que fijó la resolución.</span>` : ''}
        <div class="barra"><div style="width:${pct(eleg)}%;background:var(--verde)"></div><div style="width:${pct(no)}%;background:var(--barra-no)"></div><div style="width:${pct(sin)}%;background:var(--barra-sin)"></div></div>
        <div class="leyenda2"><span><i class="cuadro" style="background:var(--verde)"></i>${pct(eleg)} % elegibles</span><span><i class="cuadro" style="background:var(--barra-no)"></i>${no} no elegibles</span>${sin ? `<span><i class="cuadro" style="background:var(--barra-sin)"></i>${sin} sin fecha</span>` : ''}</div>
        <div class="mini" style="line-height:1.45"><b>Elegible</b>: cumple el requisito de antigüedad de la posesión que exige la Ley Pierri (${cfg.regla === 'CORTE_FIJO' ? 'posesión anterior al ' + cfg.fechaCorte.split('-').reverse().join('/') : 'diez años de posesión'}). <b>No elegible</b>: no lo cumple. Los demás requisitos de la ley se verifican después, en el trámite.</div>
@@ -2077,12 +2195,13 @@ function pintarMetricas(){
   // Cuenta lo mismo que muestra el filtro al que lleva, para que el número no engañe.
   const revisada = d => !!(d.revision && d.revision.revisado), anterior = d => cl(d).startsWith('ELEGIBLE');
   const incompletas = registros.filter(r => r.fuente === 'texto_incompleto').length;
+  // Las tareas sobre lo leído no cuentan lo estimado con la planilla: eso tiene su propia tarea, conseguir el PDF.
   const tareas = [
-    ['Anteriores al corte sin revisar', 'controlarlas contra el PDF', R.filter(d => anterior(d) && !revisada(d)).length, 'c-v', 'ELEGIBLE+SIN_REVISAR'],
+    ['Anteriores al corte sin revisar', puedeCargar() ? 'controlarlas contra el PDF' : 'todavía sin controlar a mano', RL.filter(d => anterior(d) && !revisada(d)).length, 'c-v', 'ELEGIBLE+LEIDAS+SIN_REVISAR'],
     ['Con dudas', 'el sistema marcó algo para mirar', R.filter(d => d.revisar).length, 'c-a', 'REVISAR'],
-    ['Anteriores no inscriptas', 'resolución dictada, sin inscribir', R.filter(d => anterior(d) && d.inscripcion && d.inscripcion.estado === 'NO_FIGURA_EN_PADRON').length, 'c-r', 'ELEGIBLE+INSC:NO_FIGURA_EN_PADRON'],
-    ['No se pudieron leer', WEB ? 'se completan en el kit' : 'necesitan el modelo', incompletas, 'c-a', 'INCOMPLETA'],
-  ];
+    ['Anteriores que no figuran en el Padrón', 'cruce por nombre: confirmarlas a mano', RL.filter(d => anterior(d) && d.inscripcion && d.inscripcion.estado === 'NO_FIGURA_EN_PADRON').length, 'c-r', 'ELEGIBLE+LEIDAS+INSC:NO_FIGURA_EN_PADRON'],
+    ['No se pudieron leer', !puedeCargar() ? 'falta leerlas con el modelo' : WEB ? 'se leen con el modelo desde Configuración' : 'necesitan el modelo', incompletas, 'c-a', 'INCOMPLETA'],
+  ].concat(nPlan ? [['Anteriores según la planilla', puedeCargar() ? 'sin la resolución leída: conseguir el PDF' : 'estimadas, sin la resolución leída', elegPlan, 'c-m', 'ELEGIBLE+POR_PLANILLA']] : []);
   $('pendientes').innerHTML = tareas.map(([t, sub, v, col, f]) =>
     `<button class="accion ${v ? 'clicable' : ''}" ${v ? `data-tarea="${f}"` : 'disabled'}><span class="txt"><b>${t}</b><small class="${v ? col : ''}">${v ? sub : 'nada pendiente'}</small></span><span class="num ${v ? col : 'c-g'}">${v}</span></button>`).join('');
   $('pendientes').querySelectorAll('[data-tarea]').forEach(b => b.addEventListener('click', () => {
@@ -2093,11 +2212,13 @@ function pintarMetricas(){
     marcarChips();
     pagina = 0; pintarTodo(); ir('expedientes');
   }));
-  const txt = !n ? 'Todavía no hay resoluciones cargadas.' : cfg.regla === 'CORTE_FIJO'
-    ? `${R.length} documentos leídos · ${n} evaluadas · corte: posesión anterior al ${cfg.fechaCorte.split('-').reverse().join('/')}`
-    : `${R.length} documentos leídos · ${n} evaluadas · criterio: diez años de posesión al día de hoy`;
+  const ademas = nPlan ? ` · además, ${nPlan} expedientes estimados con la planilla de la UEST` : '';
+  const txt = (!n ? 'Todavía no hay resoluciones cargadas.' : cfg.regla === 'CORTE_FIJO'
+    ? `${RL.length} documentos leídos · ${n} evaluadas · corte: posesión anterior al ${cfg.fechaCorte.split('-').reverse().join('/')}`
+    : `${RL.length} documentos leídos · ${n} evaluadas · criterio: diez años de posesión al día de hoy`) + ademas;
   $('avisoCorte').textContent = txt;
-  $('avisoCorte2').textContent = !n ? txt : `Con el criterio actual entran ${eleg} de ${n} evaluadas; con el otro, ${elegAlt}.`;
+  $('avisoCorte2').textContent = (!n ? 'Todavía no hay resoluciones leídas.' : `Resoluciones leídas: con el criterio actual entran ${eleg} de ${n} evaluadas; con el otro, ${elegAlt}.`)
+    + (nPlan ? ` Estimadas con la planilla de la UEST: ${elegPlan} de ${nPlanEval}; con el otro criterio, ${elegAltPlan}.` : '');
 }
 function tagDe(c){
   if(c === 'ELEGIBLE') return '<span class="tag p-v">Elegible</span>';
@@ -2112,16 +2233,23 @@ function tagInsc(d){
   const e = i.estado;
   if(e === 'INSCRIPTA') return ' <span class="tag p-m">Inscripta</span>';
   if(e === 'PROVISORIA' || e === 'OBSERVADA') return ` <span class="tag p-a">${e === 'PROVISORIA' ? 'Provisoria' : 'Observada'}</span>`;
-  if(e === 'NO_FIGURA_EN_PADRON') return ' <span class="tag p-r">No inscripta</span>';
+  // Un trámite que la planilla no registra con resolución no tiene nada que inscribir: no lleva rótulo del Registro.
+  if(e === 'NO_FIGURA_EN_PADRON') return d.tipo_documento === 'PLANILLA_UEST' && !d.resolucion_fecha && !d.resolucion_numero ? '' : ' <span class="tag p-r" title="el nombre no aparece en el Padrón cargado (cruce por nombre)">No figura en el Padrón</span>';
   if(e === 'AMBIGUO') return ' <span class="tag p-g">Ambiguo</span>';
   return '';
 }
-const valorOrden = (r, k) => { const d = r.derivado; return { expediente: d.expediente || '', rogante: d.rogante_principal || '', posee_desde: d.posee_desde || '9999', clasif: cl(d), localidad: loc(d), manzana: mz(d), fuente: r.fuente || '', cargado: r.cargado_en || '' }[k] || ''; };
+const valorOrden = (r, k) => { const d = r.derivado;
+  switch(k){ case 'expediente': return d.expediente || ''; case 'rogante': return d.rogante_principal || ''; case 'posee_desde': return d.posee_desde || '9999';
+    case 'clasif': return cl(d); case 'localidad': return loc(d); case 'manzana': return mz(d) || ''; case 'fuente': return r.fuente || ''; case 'cargado': return r.cargado_en || ''; default: return ''; } };
 document.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click', () => { if(orden.k === th.dataset.k) orden.asc = !orden.asc; else orden = { k: th.dataset.k, asc: true }; pintarTabla(); }));
+/** La lista en el orden elegido. La clave de orden se calcula una vez por fila, no en cada comparación. */
+function ordenar(lista){ return lista.map(r => [valorOrden(r, orden.k), r]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0) * (orden.asc ? 1 : -1)).map(x => x[1]); }
 function pintarTabla(){
   document.querySelectorAll('th[data-k]').forEach(th => { th.classList.toggle('orden', th.dataset.k === orden.k); th.classList.toggle('asc', th.dataset.k === orden.k && orden.asc); });
-  const lista = vista.slice().sort((a, b) => { const x = valorOrden(a, orden.k), y = valorOrden(b, orden.k); return (x < y ? -1 : x > y ? 1 : 0) * (orden.asc ? 1 : -1); });
-  const total = lista.length, desde = pagina * POR_PAG, pag = lista.slice(desde, desde + POR_PAG);
+  const lista = ordenar(vista), total = lista.length;
+  // Si la lista se achicó (otro corte, una revisión, el Padrón), la página tiene que seguir existiendo.
+  pagina = Math.max(0, Math.min(pagina, Math.ceil(total / POR_PAG) - 1));
+  const desde = pagina * POR_PAG, pag = lista.slice(desde, desde + POR_PAG);
   const activos = filtrosActivos();
   $('subTabla').innerHTML = `${total} de ${registros.length}` + (activos.length
     ? ` · <b style="color:var(--ambar)">filtrando por: ${esc(activos.join(', '))}</b> · <a href="#" id="verTodas">ver todas</a>` : '');
@@ -2136,10 +2264,10 @@ function pintarTabla(){
       <td class="exp">${esc(d.expediente || '—')}<div class="mini">${esc(d.resolucion_numero ? d.resolucion_numero + '/' + (d.resolucion_anio || '') : '')}</div></td>
       <td>${esc(d.rogante_principal || '—')}${d.cantidad_rogantes > 1 ? ` <span class="mini">+${d.cantidad_rogantes - 1}</span>` : ''}${marcas ? `<div class="mini">${esc(marcas)}</div>` : ''}</td>
       <td><b>${esc(d.posee_desde ? d.posee_desde.slice(0, 4) : '—')}</b><div class="mini">${!d.posee_desde ? '' : d.posee_desde_precision === 'anio' ? 'año aprox.' : d.posee_desde_precision === 'mes' ? 'mes ' + esc(d.posee_desde.slice(5, 7)) : esc(d.posee_desde.slice(8, 10) + '/' + d.posee_desde.slice(5, 7))}</div></td>
-      <td>${tagDe(c)}${tagInsc(d)}${d.revisar ? ' <span class="tag p-r">Revisar</span>' : ''}</td>
+      <td>${tagDe(c)}${deLaPlanilla(r) ? ' <span class="tag p-est" title="estimado con la planilla de la UEST: no se leyó la resolución">estimado</span>' : ''}${tagInsc(d)}${d.revisar ? ' <span class="tag p-r">Revisar</span>' : ''}</td>
       <td class="col-sec">${esc(loc(d))}<div class="mini">${esc([d.geo && d.geo.ped_nombre, d.geo && d.geo.dep_nombre].filter(Boolean).join(' · '))}</div></td>
       <td class="col-sec">${esc(mz(d) || '—')}</td>
-      <td class="col-sec"><span class="mini">${esc(r.fuente === 'texto' ? 'leída por texto' : r.fuente === 'modelo' ? 'revisada por el modelo' : 'no se pudo leer')}</span></td>
+      <td class="col-sec"><span class="mini">${esc(r.fuente === 'texto' ? 'leída por texto' : r.fuente === 'modelo' ? 'revisada por el modelo' : r.fuente === 'planilla' ? 'estimada con la planilla' : 'no se pudo leer')}</span></td>
       <td class="col-sec"><span class="mini">${esc(fechaCarga(r.cargado_en))}</span></td>
     </tr>`;
   }).join('');
@@ -2169,14 +2297,17 @@ $('filas').addEventListener('click', e => {
   const caja = e.target.closest('.revision');
   if(caja){ if(e.target.classList.contains('rv-guardar')) guardarRevision(caja); return; }
   const tr = e.target.closest('tr.fila'); if(!tr) return;
+  if(visorReg && registros[Number(tr.dataset.i)] && registros[Number(tr.dataset.i)].hash !== visorReg) cerrarVisor();
   const sig = tr.nextElementSibling; if(sig && sig.classList.contains('det')){ sig.remove(); return; }
   document.querySelectorAll('tr.det').forEach(x => x.remove());
   const r = registros[Number(tr.dataset.i)], d = r.derivado, e2 = r.extraido || {}, g = d.geo || {}, c = g.catastro || {};
   const rog = (e2.rogantes || []).map(x => `${esc(x.apellido_nombre || '?')} · DNI ${esc(x.dni || '?')} · ${esc(x.estado_civil || '')} · ${esc([x.domicilio && x.domicilio.calle, x.domicilio && x.domicilio.numero, x.domicilio && x.domicilio.localidad].filter(Boolean).join(' '))}`).join('<br>');
   const rev = d.revision || {};
-  const ESTADO_REG = { INSCRIPTA: 'Inscripta', PROVISORIA: 'Provisoria', OBSERVADA: 'Observada', NO_FIGURA_EN_PADRON: 'No inscripta (el Registro no tiene la anotación)',
+  const ESTADO_REG = { INSCRIPTA: 'Inscripta', PROVISORIA: 'Provisoria', OBSERVADA: 'Observada', NO_FIGURA_EN_PADRON: 'No figura en el Padrón cargado (el cruce es por nombre: confirmarlo a mano)',
     AMBIGUO: 'Ambigua (el nombre aparece más de una vez)', SIN_NOMBRE_PARA_CRUZAR: 'Sin nombre legible para cruzar con el Registro' };
   const insc = d.inscripcion ? `${esc(ESTADO_REG[d.inscripcion.estado] || d.inscripcion.estado)}${d.inscripcion.diario ? ' · diario ' + esc(d.inscripcion.diario) : ''}${d.inscripcion.candidatas ? ' · candidatas: ' + esc(d.inscripcion.candidatas.map(x => x.diario + ' (' + x.estado + ')').join(', ')) : ''}` : 'sin cruzar con el Padrón';
+  if(deLaPlanilla(r)){ tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="8" class="detalle">${fichaPlanilla(r, insc)}</td></tr>`); return; }
+  const pe = r.planilla_estimaba;
   tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="8" class="detalle"><p style="margin:0 0 10px;font-size:14px"><b class="${cl(d).startsWith('ELEGIBLE') ? 'c-v' : cl(d).startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(VEREDICTOS[cl(d)] || cl(d))}</b> · posee desde ${esc(fechaPosesion(d))} · ${config().regla === 'CORTE_FIJO' ? 'corte ' + esc((config().fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p><dl>
     <dt>Rogantes</dt><dd>${rog || '—'}</dd>
     <dt>Posesión</dt><dd>${esc(fechaPosesion(d))} (${esc(CRITERIOS[d.posesion_criterio] || d.posesion_criterio || 'sin criterio')})<br><span class="mini">${esc(e2.posesion && e2.posesion.texto_original || '')}</span></dd>
@@ -2185,13 +2316,14 @@ $('filas').addEventListener('click', e => {
     <dt>Catastro</dt><dd>${c.encontrada ? esc(`${c.localidad} · ${c.nomenclatura_legible} · ${c.estado || ''} · ${c.sup_tierra || '?'} m² tierra, ${c.sup_mejoras || 0} m² construidos`) : 'sin parcela encontrada'}</dd>
     <dt>Registro</dt><dd>${insc}</dd>
     <dt>Inventario UEST</dt><dd>${r.inventario ? esc(`${r.inventario.estado_digitalizacion || ''} · cuenta ${r.inventario.cuenta || 'sin'}${r.inventario.cuenta_coincide === false ? ' (NO coincide con la leída)' : r.inventario.cuenta_coincide ? ' (coincide)' : ''} · resolución N° ${r.inventario.nro_resolucion || 'sin'}${r.inventario.resolucion_coincide === false ? ' (NO coincide)' : r.inventario.resolucion_coincide ? ' (coincide)' : ''}${r.inventario.iniciador ? ' · SUAC: ' + r.inventario.iniciador + (r.inventario.dni ? ' DNI ' + r.inventario.dni : '') + (r.inventario.dni_coincide === false ? ' (DNI NO coincide)' : r.inventario.dni_coincide ? ' (DNI coincide)' : '') : ''}`) : 'no está en el inventario cargado'}</dd>
+    ${pe ? `<dt>Planilla UEST</dt><dd>${esc(`estimaba posesión desde ${pe.posee_desde ? pe.posee_desde.slice(0, 4) : '—'}: ${String(VEREDICTOS[pe.clasificacion] || pe.clasificacion).toLowerCase()}`)}${pe.coincide === false ? ' · <b class="c-r">no coincide con la resolución</b>' : pe.coincide ? ' · coincide con la resolución' : ''}</dd>` : ''}
     <dt>Señales</dt><dd>${esc((d.senales || []).join(', ') || '—')}</dd>
     <dt>Revisar</dt><dd>${esc((d.motivos_revision || []).join(' · ') || 'no')}</dd>
     <dt>Archivo</dt><dd>${esc(r.archivo || '')}${r.tomo ? ` <span class="mini">(páginas ${(Number(r.tomo.desde) || 0) + 1}–${(Number(r.tomo.hasta) || 0) + 1} de ${esc(r.tomo.archivo)})</span>` : ''}</dd>
   </dl>
   ${SERVIDOR && !WEB ? `<div class="acciones" style="margin-top:12px"><a class="boton-ver" href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">Ver la resolución original</a><span class="mini">se abre el PDF tal como lo leyó el sistema, para controlarlo</span></div>` : ''}
-  ${WEB ? (r.pdf_web ? `<div class="acciones" style="margin-top:12px"><button class="boton-ver" data-verpdf="${esc(r.pdf_web)}" data-desde="${r.tomo ? Number(r.tomo.desde) || 0 : ''}" data-hasta="${r.tomo ? Number(r.tomo.hasta) || 0 : ''}" data-nombre="${esc(r.archivo || '')}">Ver la resolución original</button><span class="mini">se abre al costado el PDF tal como lo leyó el sistema, para controlarlo</span></div>`
-    : `<p class="mini" style="margin:12px 0 0">El PDF de esta resolución todavía no está guardado en la web.${YO && YO.permisos && YO.permisos.cargar ? ' Subilo en Cargar: si ya estaba leído, se guarda sin volver a leerlo y queda para verlo acá.' : ''}</p>`) : ''}
+  ${WEB ? (r.pdf_web ? `<div class="acciones" style="margin-top:12px"><button class="boton-ver" data-verpdf="${esc(r.pdf_web)}" data-desde="${r.tomo ? Number(r.tomo.desde) || 0 : ''}" data-hasta="${r.tomo ? Number(r.tomo.hasta) || 0 : ''}" data-nombre="${esc(r.archivo || '')}" data-exp="${esc(d.expediente || '')}" data-reg="${esc(r.hash)}">Ver la resolución original</button><span class="mini">se abre al costado el PDF tal como lo leyó el sistema, para controlarlo</span></div>`
+    : `<p class="mini" style="margin:12px 0 0">El PDF de esta resolución todavía no está guardado en la web.${YO && YO.permisos && YO.permisos.cargar ? ' Subilo en "Filtro Ley Pierri" (la carga de PDF, en el menú): si ya estaba leído, se guarda sin volver a leerlo y queda para verlo acá.' : ''}</p>`) : ''}
   ${SERVIDOR && (!WEB || (YO && YO.permisos && YO.permisos.revisar)) ? `<div class="revision" data-id="${encodeURIComponent(r.hash)}">
     <label class="tilde"><input type="checkbox" class="rv-ok" ${rev.revisado ? 'checked' : ''}> <b>Revisada</b> contra el documento</label>
     <div class="controles">
@@ -2208,16 +2340,97 @@ $('filas').addEventListener('click', e => {
       <div class="grupo" style="flex:1;min-width:190px"><label>Observación</label><input type="text" class="rv-nota" value="${esc(rev.nota || '')}" placeholder="qué hubo que corregir"></div>
       <button class="rv-guardar">Guardar revisión</button>
     </div>
-    <span class="mini rv-estado">${rev.en ? 'Revisada el ' + new Date(rev.en).toLocaleString('es-AR') + (rev.revisor ? ' por ' + esc(rev.revisor) : '') : 'Sin revisar'}</span>
+    <span class="mini rv-estado">${rev.en ? 'Revisada el ' + fechaHora(rev.en) + (rev.revisor ? ' por ' + esc(rev.revisor) : '') : 'Sin revisar'}</span>
   </div>` : ''}<details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ extraido: e2, derivado: d }, null, 1))}</pre></details></td></tr>`);
 });
 
+/** La ficha de un expediente estimado con la planilla de la UEST: qué se declaró al iniciar el trámite y qué falta para confirmarlo. */
+function fichaPlanilla(r, insc){
+  const d = r.derivado, p = r.planilla || {}, g = d.geo || {}, c = g.catastro || {}, cfg = config(), k = cl(d);
+  const fecha = iso => iso ? String(iso).split('-').reverse().join('/') : '—';
+  const estim = d.posee_desde ? `el trámite ingresó el ${fecha(p.fecha_ingreso)} declarando ${p.antiguedad} año${p.antiguedad === 1 ? '' : 's'} de posesión: posee desde ${fechaPosesion(d)}` : (d.sin_estimar || 'sin dato');
+  const catastro = c.encontrada ? `${c.localidad} · ${c.nomenclatura_legible} · ${c.estado || ''} · ${c.sup_tierra || '?'} m² tierra, ${c.sup_mejoras || 0} m² construidos`
+    : !g.cuenta_normalizada ? (g.ubicacion_aproximada ? 'sin cuenta: ubicada aproximadamente por la localidad' : 'sin cuenta ni localidad para ubicarla')
+    : c.encontrada === false ? 'Catastro no tiene esa cuenta' : 'sin consultar todavía' + (puedeCargar() ? ': "Ubicar las parcelas en Catastro", en Inventario' : '');
+  const inv = r.inventario ? `${r.inventario.estado_digitalizacion || ''} · cuenta ${r.inventario.cuenta || 'sin'} · resolución N° ${r.inventario.nro_resolucion || 'sin'}` : 'no está en el inventario cargado';
+  return `<p style="margin:0 0 10px;font-size:14px"><b class="${k.startsWith('ELEGIBLE') ? 'c-v' : k.startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(VEREDICTOS[k] || k)}</b> · estimada con la planilla de la UEST · ${cfg.regla === 'CORTE_FIJO' ? 'corte ' + esc((cfg.fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p><dl>
+    <dt>Estimación</dt><dd>${esc(estim)}<br><span class="mini">No se leyó la resolución: es lo que se declaró al iniciar el trámite. La resolución puede fijar otra antigüedad.</span></dd>
+    <dt>Iniciador</dt><dd>${esc(d.rogante_principal || '—')}${d.dni_principal ? ' · DNI ' + esc(d.dni_principal) : ''}</dd>
+    <dt>Resolución</dt><dd>${p.con_resolucion ? esc('según la planilla: ' + [d.resolucion_numero && 'N° ' + d.resolucion_numero, d.resolucion_fecha && 'del ' + fecha(d.resolucion_fecha)].filter(Boolean).join(' ')) : 'la planilla no registra resolución'}</dd>
+    <dt>Trámite</dt><dd>${esc([p.estado, p.etapa].filter(Boolean).join(' · ') || '—')}</dd>
+    <dt>Inmueble</dt><dd>${esc([g.localidad, g.calle, g.ped_nombre && 'pedanía ' + g.ped_nombre, p.tipo_lugar, p.superficie].filter(Boolean).join(' · ') || '—')}</dd>
+    <dt>Cuenta</dt><dd>${esc(g.cuenta_normalizada || 'sin cuenta')}</dd>
+    <dt>Catastro</dt><dd>${esc(catastro)}</dd>
+    <dt>Registro</dt><dd>${insc}</dd>
+    <dt>Inventario UEST</dt><dd>${esc(inv)}</dd>
+  </dl>
+  <p class="mini" style="margin:12px 0 0">${puedeCargar() ? 'Para confirmarla, conseguí el PDF de la resolución y subilo en "Filtro Ley Pierri" (la carga de PDF, en el menú): la lectura reemplaza a esta estimación.' : 'Se confirma cuando se lea la resolución.'}</p>
+  <details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ planilla: p, derivado: d }, null, 1))}</pre></details>`;
+}
+/** La planilla de trámites de la UEST: qué trae, qué estima y cuánto acierta contra lo leído. */
+function pintarPlanilla(){
+  const pl = resumenSrv.planilla || {};
+  ['btnSIAUbicar','btnSIALista'].forEach(id => $(id).disabled = !pl.cargada);
+  if(!pl.cargada){ $('siaSub').textContent = 'sin cargar'; $('siaTarjetas').innerHTML = ''; return; }
+  const f = x => Number(x || 0).toLocaleString('es-AR'), pc = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const E = registros.filter(deLaPlanilla), D = E.map(r => r.derivado), k = c => D.filter(d => cl(d) === c).length;
+  const ant = k('ELEGIBLE') + k('ELEGIBLE_BORDE'), pos = k('NO_ELEGIBLE') + k('NO_ELEGIBLE_BORDE'), borde = k('ELEGIBLE_BORDE') + k('NO_ELEGIBLE_BORDE'), sin = k('SIN_DATO');
+  const conRes = E.filter(r => r.planilla && r.planilla.con_resolucion && cl(r.derivado).startsWith('ELEGIBLE')).length;
+  const parcela = D.filter(d => d.geo && d.geo.catastro && d.geo.catastro.encontrada).length, aprox = D.filter(d => d.geo && d.geo.ubicacion_aproximada).length;
+  const sinConsultar = D.filter(d => d.geo && d.geo.cuenta_normalizada && !d.geo.catastro).length;
+  const v = pl.validacion || {};
+  $('siaSub').textContent = [pl.archivo, pl.cargado_en && fechaCarga(pl.cargado_en)].filter(Boolean).join(' · ');
+  const tarjeta = (t, n, col, mini, filtro, pill) => `<div class="tarjeta ${filtro ? 'clicable' : ''}" ${filtro ? `data-siaver="${filtro}" role="button" tabindex="0"` : ''}><div class="t"><span>${t}</span>${pill || ''}</div><span class="n ${col}">${n}</span><span class="mini">${mini}</span></div>`;
+  $('siaTarjetas').innerHTML =
+    tarjeta('Expedientes en la planilla', f(pl.expedientes), 'c-m', `${f(pl.con_lectura)} ya tienen la resolución leída (manda la lectura)`) +
+    tarjeta('Anteriores al corte (estimado)', f(ant), 'c-v', `${f(conRes)} con resolución según la planilla · tocá para ver cuáles`, 'ELEGIBLE', `<span class="pill p-v">${pc(ant, E.length)} %</span>`) +
+    tarjeta('Posteriores al corte (estimado)', f(pos), 'c-g', 'tocá para ver cuáles', 'NO_ELEGIBLE') +
+    tarjeta('En el borde', f(borde), 'c-a', `a menos de ${f(config().margenBordeMeses)} meses del corte: la resolución puede cambiar el resultado`) +
+    tarjeta('Sin antigüedad usable', f(sin), 'c-r', 'la planilla no trae la fecha de ingreso o la antigüedad', 'SIN_DATO') +
+    tarjeta('En el mapa', f(parcela + aprox), 'c-m', `${f(parcela)} por la parcela de Catastro · ${f(aprox)} aproximadas por la localidad${sinConsultar ? ` · ${f(sinConsultar)} cuentas sin consultar` : ''}`) +
+    // Con pocos casos un porcentaje engaña: hasta 30 comparados se muestra "tantos de tantos".
+    tarjeta('¿Cuánto acierta?', v.comparadas >= 30 ? pc(v.coinciden, v.comparadas) + ' %' : v.comparadas ? `${f(v.coinciden)} de ${f(v.comparadas)}` : '—', 'c-m', v.comparadas
+      ? `${v.comparadas >= 30 ? `en ${f(v.comparadas)} expedientes` : 'expedientes'} con la resolución leída en que coincide si entra o no${v.diferencia_mediana_anios != null ? ` · diferencia típica en el año de inicio: ${v.diferencia_mediana_anios} año${v.diferencia_mediana_anios === 1 ? '' : 's'}` : ''}${v.comparadas < 30 ? ' · todavía son pocos para sacar conclusiones' : ''}`
+      : 'todavía no hay resoluciones leídas de expedientes de la planilla: cuando se lean, se mide acá');
+  $('siaTarjetas').querySelectorAll('[data-siaver]').forEach(el => el.addEventListener('click', () => {
+    ['fDep','fLoc','fSec','fInsc','fAnioD','fAnioH'].forEach(id => $(id).value = ''); $('buscar').value = ''; localidadSel = null;
+    F.elig = el.dataset.siaver; F.lect = 'POR_PLANILLA'; F.ctrl = null; marcarChips(); pagina = 0; pintarTodo(); ir('expedientes');
+  }));
+}
+/**
+ * La planilla para Excel de lo que se está viendo. Con la planilla de la UEST cargada, cada fila dice si sale de una
+ * resolución leída o es una estimación; a una estimación sin cruzar no se le pone "ORDENADA": no hay resolución leída.
+ */
+function planillaExcel(lista){
+  if(!lista.some(deLaPlanilla)) return P.aCSV(lista);
+  const cols = ['origen'].concat(P.COLUMNAS_PLANILLA);
+  const c = v => { const t = v == null ? '' : String(v); return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const filas = lista.filter(r => r.derivado).map(r => { const f = P.aFilaPlanilla(r);
+    f.origen = deLaPlanilla(r) ? 'estimada con la planilla de la UEST' : 'resolución leída';
+    if(deLaPlanilla(r) && !r.derivado.inscripcion) f.inscripcion = '';
+    return cols.map(k => c(f[k])).join(';'); });
+  return [cols.join(';')].concat(filas).join('\n');
+}
+/** La lista para pedir los PDF: primero los del borde (donde la estimación puede cambiar), después los anteriores al corte. */
+$('btnSIALista').addEventListener('click', () => {
+  const orden = { ELEGIBLE_BORDE: 0, NO_ELEGIBLE_BORDE: 0, ELEGIBLE: 1 }, texto = { ELEGIBLE_BORDE: 'anterior al corte, en el borde', NO_ELEGIBLE_BORDE: 'posterior al corte, en el borde', ELEGIBLE: 'anterior al corte' };
+  const lista = registros.filter(r => deLaPlanilla(r) && cl(r.derivado) in orden).sort((a, b) => orden[cl(a.derivado)] - orden[cl(b.derivado)]
+    || ((b.planilla && b.planilla.con_resolucion ? 1 : 0) - (a.planilla && a.planilla.con_resolucion ? 1 : 0)) || String(a.derivado.expediente).localeCompare(String(b.derivado.expediente)));
+  const c = v => { const t = v == null ? '' : String(v); return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const filas = lista.map(r => { const d = r.derivado, p = r.planilla || {};
+    return [d.expediente, texto[cl(d)], d.posee_desde ? d.posee_desde.slice(0, 4) : '', d.resolucion_numero || '', d.resolucion_fecha ? d.resolucion_fecha.split('-').reverse().join('/') : '', [p.estado, p.etapa].filter(Boolean).join(' · '), loc(d), d.geo && d.geo.dep_nombre || '', d.geo && d.geo.cuenta_normalizada || ''].map(c).join(';'); });
+  descargar('\ufeff' + ['Expediente;Estimación;Posee desde (año);Resolución N°;Fecha de resolución;Trámite;Localidad;Departamento;Cuenta'].concat(filas).join('\r\n'), 'pedir_pdf_planilla_uest.csv', 'text/csv;charset=utf-8');
+});
 /** Versión web: muestra al costado el PDF guardado (cifrado en el repositorio), solo las páginas de esta resolución. */
 let visorTarea = 0;
+let visorReg = null;   // la resolución cuyo PDF está abierto: al abrir la ficha de otra, el visor se cierra
 async function abrirVisor(ds){
-  const yo = ++visorTarea;
-  $('visor').classList.remove('oculto'); document.body.classList.add('con-visor'); $('visorTitulo').textContent = ds.nombre || 'Resolución original';
+  const yo = ++visorTarea; visorReg = ds.reg || null;
+  $('visor').classList.remove('oculto'); document.body.classList.add('con-visor');
+  $('visorTitulo').textContent = ds.exp ? 'Expediente ' + ds.exp : (ds.nombre || 'Resolución original');
   $('visorSub').textContent = 'trayendo el PDF y descifrándolo…'; $('visorPaginas').innerHTML = '';
+  const ficha = document.querySelector('#filas tr.det'); if(ficha) try{ ficha.scrollIntoView({ block: 'nearest' }); }catch(e){}
+  const archivo = ds.exp && ds.nombre ? ds.nombre.replace(/#.*$/, '') + ' · ' : '';
   try{
     const r = await api('/api/web/pdf?h=' + encodeURIComponent(ds.verpdf));
     if(yo !== visorTarea) return;
@@ -2226,10 +2439,11 @@ async function abrirVisor(ds){
     try{
       const desde = ds.desde !== '' && ds.desde != null ? Number(ds.desde) + 1 : 1;
       const hasta = Math.min(ds.hasta !== '' && ds.hasta != null ? Number(ds.hasta) + 1 : doc.numPages, doc.numPages);
-      $('visorSub').textContent = desde > 1 || hasta < doc.numPages ? `páginas ${desde} a ${hasta} de ${doc.numPages} del archivo` : `${doc.numPages} página${doc.numPages === 1 ? '' : 's'}`;
+      $('visorSub').textContent = archivo + (desde > 1 || hasta < doc.numPages ? `páginas ${desde} a ${hasta} de ${doc.numPages} del archivo` : `${doc.numPages} página${doc.numPages === 1 ? '' : 's'}`);
       const ancho = Math.max(300, $('visorPaginas').clientWidth - 24) * (window.devicePixelRatio || 1);
       for(let i = desde; i <= hasta && yo === visorTarea; i++){
         const pg = await doc.getPage(i), escala = Math.min(3, ancho / pg.getViewport({ scale: 1 }).width), vp = pg.getViewport({ scale: escala });
+        if(yo !== visorTarea) break;   // mientras se traía la página se abrió otro PDF: no se mezclan
         const cv = document.createElement('canvas'); cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height); cv.setAttribute('aria-label', 'página ' + i);
         $('visorPaginas').appendChild(cv);
         await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
@@ -2237,7 +2451,7 @@ async function abrirVisor(ds){
     } finally { await doc.destroy(); }
   }catch(err){ if(yo === visorTarea) $('visorSub').textContent = 'No se pudo abrir: ' + err.message; }
 }
-function cerrarVisor(){ visorTarea++; $('visor').classList.add('oculto'); document.body.classList.remove('con-visor'); $('visorPaginas').innerHTML = ''; }
+function cerrarVisor(){ visorTarea++; visorReg = null; $('visor').classList.add('oculto'); document.body.classList.remove('con-visor'); $('visorPaginas').innerHTML = ''; }
 $('visorCerrar').addEventListener('click', cerrarVisor);
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('visor').classList.contains('oculto')) cerrarVisor(); });
 
@@ -2272,10 +2486,11 @@ function pintarRanking(){
 /** Ranking de localidades: con filtros (mapa) o sobre todo lo cargado (Resumen). */
 function armarRanking(conFiltros, cuantos){
   const m = new Map();
-  for(const r of registros){ if(conFiltros && !pasa(r, true)) continue; const d = r.derivado; if(d.tipo_documento !== 'RESOLUCION_INSCRIPCION') continue; const k = claveGrupo(d);
-    if(!m.has(k)) m.set(k, { nombre: k, dep: agrupacion === 'departamento' ? '' : (d.geo && d.geo.dep_nombre || ''), total: 0, eleg: 0 }); const f = m.get(k); f.total++; if(cl(d).startsWith('ELEGIBLE')) f.eleg++; }
+  for(const r of registros){ if(conFiltros && !pasa(r, true)) continue; const d = r.derivado; if(!evaluable(d)) continue; const k = claveGrupo(d);
+    if(!m.has(k)) m.set(k, { nombre: k, dep: agrupacion === 'departamento' ? '' : (d.geo && d.geo.dep_nombre || ''), total: 0, eleg: 0, est: 0 }); const f = m.get(k); f.total++; if(cl(d).startsWith('ELEGIBLE')){ f.eleg++; if(deLaPlanilla(r)) f.est++; } }
   const lista = Array.from(m.values()).sort((a, b) => b.eleg - a.eleg || b.total - a.total), max = Math.max(1, ...lista.map(x => x.eleg));
-  const html = lista.slice(0, cuantos).map(x => `<div class="item ${localidadSel === x.nombre ? 'on' : ''}" data-loc="${esc(x.nombre)}"><span>${esc(x.nombre)}<small>${esc(x.dep)}</small></span><div class="barra"><i style="width:${Math.round(x.eleg / max * 100)}%"></i></div><span class="cifra">${x.eleg}<small style="font-weight:400"> / ${x.total}</small></span></div>`).join('') || '<div class="vacio">Sin datos todavía.</div>';
+  const conEst = lista.some(x => x.est);
+  const html = lista.slice(0, cuantos).map(x => `<div class="item ${localidadSel === x.nombre ? 'on' : ''}" data-loc="${esc(x.nombre)}"><span>${esc(x.nombre)}<small>${esc([x.dep, x.est ? x.est + ' estimadas' : ''].filter(Boolean).join(' · '))}</small></span><div class="barra"><i style="width:${Math.round(x.eleg / max * 100)}%"></i></div><span class="cifra">${x.eleg}<small style="font-weight:400"> / ${x.total}</small></span></div>`).join('') + (conEst ? '<div class="mini" style="margin-top:6px">Anteriores al corte / total por lugar. Incluye lo estimado con la planilla de la UEST, sin la resolución leída.</div>' : '') || '<div class="vacio">Sin datos todavía.</div>';
   return html;
 }
 function enlazarRanking(){
@@ -2289,21 +2504,23 @@ document.querySelectorAll('#agrupar .chip, #agrupar2 .chip').forEach(b => b.addE
   pagina = 0; pintarTodo();
 }));
 function pintarPadron(){
-  const R = registros.map(r => r.derivado);
-  const cuenta = e => R.filter(d => d.inscripcion && d.inscripcion.estado === e).length;
+  // Las resoluciones leídas. Lo estimado con la planilla tiene su propio recuadro (Inventario y Resumen).
+  const R = registros.filter(r => !deLaPlanilla(r)).map(r => r.derivado);
+  const porEstado = {}; for(const d of R) if(d.inscripcion) porEstado[d.inscripcion.estado] = (porEstado[d.inscripcion.estado] || 0) + 1;
+  const cuenta = e => porEstado[e] || 0;
   const p = resumenSrv.padron || {};
   const cruzados = cuenta('INSCRIPTA') + cuenta('PROVISORIA') + cuenta('OBSERVADA');
   $('subRegistro').textContent = p.filas ? `Padrón ${p.archivo || ''} · ${p.filas} filas` : 'Padrón sin cargar';
-  const tarjetas = [['Inscriptas', cuenta('INSCRIPTA'), 'c-m', 'INSCRIPTA'], ['Provisorias u observadas', cuenta('PROVISORIA') + cuenta('OBSERVADA'), 'c-a', 'TRABADA'], ['No inscriptas', cuenta('NO_FIGURA_EN_PADRON'), 'c-r', 'NO_FIGURA_EN_PADRON'], ['Ambiguas', cuenta('AMBIGUO'), 'c-g', 'AMBIGUO'], ['Sin nombre para cruzar', cuenta('SIN_NOMBRE_PARA_CRUZAR'), 'c-g', 'SIN']];
-  $('padronTarjetas').innerHTML = (p.filas ? `<div class="tarjeta"><div class="t"><span>Padrón cargado</span></div><span class="n c-m" style="font-size:20px">${esc(p.archivo || '')}</span><span class="mini">${Number(p.filas) || 0} filas · ${p.cargado_en ? new Date(p.cargado_en).toLocaleString('es-AR') : ''}</span></div>` : `<div class="tarjeta"><div class="t"><span>Padrón</span></div><span class="n c-g" style="font-size:20px">sin cargar</span><span class="mini">cargá el .xls del Registro para cruzar</span></div>`)
+  const tarjetas = [['Inscriptas', cuenta('INSCRIPTA'), 'c-m', 'INSCRIPTA'], ['Provisorias u observadas', cuenta('PROVISORIA') + cuenta('OBSERVADA'), 'c-a', 'TRABADA'], ['No figuran en el Padrón', cuenta('NO_FIGURA_EN_PADRON'), 'c-r', 'NO_FIGURA_EN_PADRON'], ['Ambiguas', cuenta('AMBIGUO'), 'c-g', 'AMBIGUO'], ['Sin nombre para cruzar', cuenta('SIN_NOMBRE_PARA_CRUZAR'), 'c-g', 'SIN']];
+  $('padronTarjetas').innerHTML = (p.filas ? `<div class="tarjeta"><div class="t"><span>Padrón cargado</span></div><span class="n c-m" style="font-size:15px;overflow-wrap:anywhere">${esc(p.archivo || '')}</span><span class="mini">${Number(p.filas) || 0} filas · ${p.cargado_en ? fechaHora(p.cargado_en) : ''}</span></div>` : `<div class="tarjeta"><div class="t"><span>Padrón</span></div><span class="n c-g" style="font-size:20px">sin cargar</span><span class="mini">cargá el .xls del Registro para cruzar</span></div>`)
     + tarjetas.map(([t, n, c, f]) => `<div class="tarjeta ${n ? 'clicable' : ''}" ${n ? `data-verinsc="${f}" role="button" tabindex="0"` : ''}><div class="t"><span>${t}</span></div><span class="n ${c}">${n}</span>${n ? '<span class="mini">tocá para ver cuáles</span>' : ''}</div>`).join('');
   $('padronTarjetas').querySelectorAll('[data-verinsc]').forEach(el => el.addEventListener('click', () => verInscripcion(el.dataset.verinsc)));
   $('registroResumen').innerHTML = p.filas || cruzados ? `<div class="tarjetas" style="grid-template-columns:repeat(3,minmax(0,1fr))">
       <div class="clicable" data-verinsc="INSCRIPTA" role="button" tabindex="0" style="background:var(--suave);border-radius:8px;padding:10px 12px"><span class="mini">Inscriptas</span><div class="disp c-m" style="font-size:24px">${cuenta('INSCRIPTA')}</div></div>
       <div class="clicable" data-verinsc="TRABADA" role="button" tabindex="0" style="background:var(--suave);border-radius:8px;padding:10px 12px"><span class="mini">Observadas / provisorias</span><div class="disp c-a" style="font-size:24px">${cuenta('PROVISORIA') + cuenta('OBSERVADA')}</div></div>
-      <div class="clicable" data-verinsc="NO_FIGURA_EN_PADRON" role="button" tabindex="0" style="background:var(--suave);border-radius:8px;padding:10px 12px"><span class="mini">No inscriptas</span><div class="disp c-r" style="font-size:24px">${cuenta('NO_FIGURA_EN_PADRON')}</div></div></div>
-      <p class="mini" style="margin:0">${cuenta('NO_FIGURA_EN_PADRON') ? `${cuenta('NO_FIGURA_EN_PADRON')} resolución(es) dictadas nunca llegaron a inscribirse en el Registro Personal de Poseedores. Antes de la escritura hay que completar esa inscripción.` : 'Todas las cruzadas están inscriptas.'} ${cuenta('AMBIGUO') ? cuenta('AMBIGUO') + ' ambiguas para mirar a mano.' : ''}</p>`
-    : `<p class="mini" style="margin:0">Cargá el Padrón del Registro (el .xls de anotaciones de posesión) para saber cuáles de estas resoluciones quedaron efectivamente inscriptas.</p><div class="acciones"><button class="sec" data-ir="padron">Ir al Padrón</button></div>`;
+      <div class="clicable" data-verinsc="NO_FIGURA_EN_PADRON" role="button" tabindex="0" style="background:var(--suave);border-radius:8px;padding:10px 12px"><span class="mini">No figuran en el Padrón</span><div class="disp c-r" style="font-size:24px">${cuenta('NO_FIGURA_EN_PADRON')}</div></div></div>
+      <p class="mini" style="margin:0">${cuenta('NO_FIGURA_EN_PADRON') ? `${cuenta('NO_FIGURA_EN_PADRON')} resolución(es) leídas no aparecen en el Padrón cargado. El cruce es por nombre: confirmalas a mano antes de darlas por no inscriptas.` : 'Todas las resoluciones leídas que se cruzaron figuran en el Padrón.'} ${cuenta('AMBIGUO') ? cuenta('AMBIGUO') + ' ambiguas para mirar a mano.' : ''}</p>`
+    : `<p class="mini" style="margin:0">Cargá el Padrón del Registro (el .xls de anotaciones de posesión) para saber cuáles de estas resoluciones figuran inscriptas.</p><div class="acciones"><button class="sec" data-ir="padron">Ir al Padrón</button></div>`;
   $('registroResumen').querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
   $('registroResumen').querySelectorAll('[data-verinsc]').forEach(el => el.addEventListener('click', () => verInscripcion(el.dataset.verinsc)));
 }
@@ -2349,7 +2566,10 @@ function abrirExpediente(hash){
   const r = registros.find(x => x.hash === hash); if(!r) return;
   if(mapa) mapa.closePopup();
   limpiarFiltros();
-  $('buscar').value = r.derivado.expediente || ''; pagina = 0; pintarTodo(); ir('expedientes');
+  // Con número se la busca; sin número se va a la página donde está en la lista completa.
+  if(r.derivado.expediente){ $('buscar').value = r.derivado.expediente; pagina = 0; pintarTodo(); }
+  else { pagina = Math.max(0, Math.floor(ordenar(vista).indexOf(r) / POR_PAG)); pintarTabla(); }
+  ir('expedientes');
   setTimeout(() => {
     const idx = String(registros.indexOf(r));
     const fila = document.querySelector(`#filas tr.fila[data-i="${idx}"]`);
@@ -2367,8 +2587,9 @@ function verInscripcion(estado){
   $('fInsc').value = estado; pintarTodo(); ir('expedientes');
 }
 /** Los nombres de Catastro y los del inventario difieren en abreviaturas: Gral./General, Pte./Presidente. */
-const claveDep = n => P.normalizarTexto(String(n||'')).replace(/\./g,'')
-  .replace(/^GRAL /,'GENERAL ').replace(/^PTE /,'PRESIDENTE ').replace(/\s+/g,' ').trim();
+const CLAVE_DEP = new Map();   // son 26 departamentos: se normaliza cada nombre una sola vez
+const claveDep = n => { const k = String(n||''); if(!CLAVE_DEP.has(k)) CLAVE_DEP.set(k, P.normalizarTexto(k).replace(/\./g,'')
+  .replace(/^GRAL /,'GENERAL ').replace(/^PTE /,'PRESIDENTE ').replace(/\s+/g,' ').trim()); return CLAVE_DEP.get(k); };
 /** Colorea cada departamento de la provincia según cuántos expedientes con resolución tiene. */
 function pintarDepartamentos(locs){
   if(!window.DEPARTAMENTOS){ console.warn('Sin límites departamentales cargados'); return; }
@@ -2401,7 +2622,8 @@ function pintarDepartamentos(locs){
   } catch(err) { console.error('No se pudieron dibujar los departamentos:', err); }
 }
 function iniciarMapa(){
-  mapa = L.map('mapa', { scrollWheelZoom: true }).setView([-31.4, -64.2], 7);
+  // Con la planilla de la UEST son decenas de miles de puntos: se dibujan en un lienzo (canvas), no uno por uno.
+  mapa = L.map('mapa', { scrollWheelZoom: true, preferCanvas: true }).setView([-31.4, -64.2], 7);
   const calles = L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG:3857@png/{z}/{x}/{y}.png', { maxZoom: 18, tms: true, attribution: '© IGN Argentina' });
   const gris = L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_gris@EPSG:3857@png/{z}/{x}/{y}.png', { maxZoom: 18, tms: true, attribution: '© IGN Argentina' });
   const satelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imágenes © Esri' });
@@ -2422,7 +2644,7 @@ function pintarDepartamentosMapa(){
     capaDepMapa.clearLayers();
     const porDep = new Map();
     for(const r of vista){
-      const d = r.derivado; if(d.tipo_documento !== 'RESOLUCION_INSCRIPCION') continue;
+      const d = r.derivado; if(!evaluable(d)) continue;
       const k = claveDep(dep(d)); if(!k || k === claveDep('(SIN DEPARTAMENTO)')) continue;
       const f = porDep.get(k) || { total: 0, eleg: 0 };
       f.total++; if(cl(d).startsWith('ELEGIBLE')) f.eleg++;
@@ -2436,7 +2658,7 @@ function pintarDepartamentosMapa(){
         return { color: '#16436e', weight: 1.2,
           fillColor: t > .66 ? '#12492f' : t > .33 ? '#1d6b45' : t > .12 ? '#5a9b78' : '#b9d8c7', fillOpacity: .5 }; },
       onEachFeature: (f, c) => { const v = porDep.get(claveDep(f.properties.n)) || { total: 0, eleg: 0 };
-        c.bindTooltip(`<b>${esc(f.properties.n)}</b><br>${v.eleg} elegibles de ${v.total} leídas`, { sticky: true }); }
+        c.bindTooltip(`<b>${esc(f.properties.n)}</b><br>${v.eleg} elegibles de ${v.total}`, { sticky: true }); }
     }).addTo(capaDepMapa);
   } catch(err) { console.error('No se pudieron dibujar los departamentos en el mapa:', err); }
 }
@@ -2453,15 +2675,20 @@ function pintarMapa(){
     const [lat, lon] = k.split(',').map(Number); pts.push([lat, lon]);
     const cls = ds.map(cl);
     const col = cls.some(c => c === 'ELEGIBLE') ? COLOR.v : cls.some(c => c.endsWith('_BORDE')) ? COLOR.a : cls.every(c => c === 'NO_ELEGIBLE' || c === 'NO_APLICA') ? COLOR.g : COLOR.r;
-    const aprox = ds.every(d => d.geo.ubicacion_aproximada);
-    const html = `<div style="font:12.5px Public Sans,sans-serif;max-width:300px"><b>${esc(loc(ds[0]))}</b>${aprox ? '' : ' · ' + esc(mz(ds[0]))}<br>` +
-      (aprox ? `<span style="color:var(--ambar)">Ubicación aproximada: centro de la localidad. ${ds.length > 1 ? 'Estas resoluciones no traen' : 'La resolución no trae'} número de cuenta para ubicar la parcela.</span><br>` : '') +
-      '<div style="margin-top:4px;display:flex;flex-direction:column;gap:5px">' + rs.map(r => { const d = r.derivado;
-        return `<div><a href="#" data-abrir="${esc(r.hash)}" style="font-weight:700">${esc(d.expediente || 'sin número')}</a> — ${esc(d.rogante_principal || '')} — ${esc(cl(d).replace(/_/g, ' ').toLowerCase())}` +
+    const aprox = ds.every(d => d.geo.ubicacion_aproximada), est = rs.every(deLaPlanilla);
+    // El globo se arma recién al abrirlo, y con los primeros 25: en el centro de una localidad puede haber miles.
+    const html = () => `<div style="font:12.5px Public Sans,sans-serif;max-width:300px"><b>${esc(loc(ds[0]))}</b>${aprox ? '' : ' · ' + esc(mz(ds[0]))}<br>` +
+      (aprox ? `<span style="color:var(--ambar)">Ubicación aproximada: centro de la localidad, porque no hay parcela de Catastro para ${ds.length > 1 ? `estos ${ds.length} expedientes` : 'este expediente'}.</span><br>` : '') +
+      (est ? '<span class="mini">Estimado con la planilla de la UEST: no se leyó la resolución.</span><br>' : '') +
+      '<div style="margin-top:4px;display:flex;flex-direction:column;gap:5px">' + rs.slice(0, 25).map(r => { const d = r.derivado;
+        return `<div><a href="#" data-abrir="${esc(r.hash)}" style="font-weight:700">${esc(d.expediente || 'sin número')}</a> — ${esc(d.rogante_principal || '')} — ${esc(cl(d).replace(/_/g, ' ').toLowerCase())}${deLaPlanilla(r) ? ' (planilla)' : ''}` +
           (SERVIDOR && !WEB ? ` · <a href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">ver PDF</a>` : '') + '</div>'; }).join('') +
+      (rs.length > 25 ? `<div class="mini">y ${rs.length - 25} más: elegí la localidad en el panel de la derecha para verlos en Expedientes.</div>` : '') +
       `<div class="mini" style="margin-top:2px">Tocá el número para abrir el expediente.</div></div></div>`;
+    // Lleno: resolución leída. Claro: estimado con la planilla. Borde punteado: ubicación aproximada, por la localidad.
     L.circleMarker([lat, lon], aprox
-      ? { radius: 9 + Math.min(ds.length, 8), color: col, weight: 2.5, dashArray: '4 3', fillColor: col, fillOpacity: .18 }
+      ? { radius: 9 + Math.min(ds.length, 8), color: col, weight: 2.5, dashArray: '4 3', fillColor: col, fillOpacity: est ? .08 : .18 }
+      : est ? { radius: 7 + Math.min(ds.length, 8), color: col, weight: 2, fillColor: col, fillOpacity: .3 }
       : { radius: 7 + Math.min(ds.length, 8), color: '#fff', fillColor: col, fillOpacity: .9, weight: 1.5 }).bindPopup(html).addTo(capa);
   }
   const ubic = vista.filter(r => r.derivado.geo && r.derivado.geo.lat != null), nAprox = ubic.filter(r => r.derivado.geo.ubicacion_aproximada).length;
@@ -2473,15 +2700,21 @@ function pintarMapa(){
 $('expJson').addEventListener('click', () => descargar(JSON.stringify({ sistema: 'Relevamiento Ley Pierri', autor: 'Baltasar Corna Fantin', organismo: 'Escribanía General de Gobierno de Córdoba', fecha: new Date().toISOString(), origen: origenNombre, config: config(), resumen: resumenSrv, resultados: registros }, null, 1), 'relevamiento_ley_pierri.json', 'application/json'));
 $('expKml').addEventListener('click', () => {
   const grupos = new Map();
-  for(const r of vista){ const d = r.derivado; if(!d.geo || d.geo.lat == null) continue; const k = d.geo.lat.toFixed(6) + ',' + d.geo.lon.toFixed(6); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(d); }
+  for(const r of vista){ const d = r.derivado; if(!d.geo || d.geo.lat == null) continue; const k = d.geo.lat.toFixed(6) + ',' + d.geo.lon.toFixed(6); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(Object.assign({ _est: deLaPlanilla(r) }, d)); }
   const x = s => String(s == null ? '' : s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
   const marcas = Array.from(grupos.entries()).map(([k, ds]) => { const [lat, lon] = k.split(',');
-    const desc = ds.map(d => `${d.expediente} — ${d.rogante_principal || ''} — ${cl(d)} — posee desde ${d.posee_desde || '?'}`).join('\n');
-    return `<Placemark><name>${x(loc(ds[0]) + ' ' + mz(ds[0]) + ' (' + ds.length + ')')}</name><description>${x(desc)}</description><styleUrl>#${ds.some(d => cl(d) === 'ELEGIBLE') ? 'eleg' : 'otro'}</styleUrl><Point><coordinates>${lon},${lat},0</coordinates></Point></Placemark>`; }).join('\n');
-  descargar(`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Relevamiento Ley Pierri</name><description>Escribanía General de Gobierno de Córdoba · Baltasar Corna Fantin · {FECHA}</description><Style id="eleg"><IconStyle><color>ff456b1d</color><scale>1.1</scale></IconStyle></Style><Style id="otro"><IconStyle><color>ffa6948a</color><scale>0.9</scale></IconStyle></Style>\n${marcas}</Document></kml>`.replace('{FECHA}', new Date().toLocaleDateString('es-AR')), 'relevamiento_ley_pierri.kml', 'application/vnd.google-earth.kml+xml');
+    const desc = ds.map(d => `${d.expediente} — ${d.rogante_principal || ''} — ${cl(d)}${d._est ? ' (ESTIMADA con la planilla de la UEST, sin la resolución leída)' : ''} — posee desde ${d.posee_desde || '?'}`).join('\n');
+    const eleg = ds.some(d => cl(d) === 'ELEGIBLE'), est = ds.every(d => d._est);
+    return `<Placemark><name>${x(loc(ds[0]) + ' ' + mz(ds[0]) + ' (' + ds.length + ')')}</name><description>${x(desc)}</description><styleUrl>#${eleg ? (est ? 'est' : 'eleg') : 'otro'}</styleUrl><Point><coordinates>${lon},${lat},0</coordinates></Point></Placemark>`; }).join('\n');
+  descargar(`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Relevamiento Ley Pierri</name><description>Escribanía General de Gobierno de Córdoba · Baltasar Corna Fantin · {FECHA}</description><Style id="eleg"><IconStyle><color>ff456b1d</color><scale>1.1</scale></IconStyle></Style><Style id="otro"><IconStyle><color>ffa6948a</color><scale>0.9</scale></IconStyle></Style><Style id="est"><IconStyle><color>8c456b1d</color><scale>0.9</scale></IconStyle></Style>\n${marcas}</Document></kml>`.replace('{FECHA}', new Date().toLocaleDateString('es-AR')), 'relevamiento_ley_pierri.kml', 'application/vnd.google-earth.kml+xml');
 });
 function descargar(contenido, nombre, tipo){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([contenido], { type: tipo })); a.download = nombre; a.click(); URL.revokeObjectURL(a.href); }
-function avisar(t, err){ $('aviso').innerHTML = `<div class="msg ${err ? 'err' : ''}" style="margin-bottom:16px">${esc(t)}</div>`; setTimeout(() => { if($('aviso').textContent === t) $('aviso').innerHTML = ''; }, 9000); }
+/** Un aviso arriba de la pantalla, se esté donde se esté. Lo que salió bien se va solo; un error queda hasta cerrarlo. */
+function avisar(t, err){
+  $('aviso').innerHTML = `<div class="msg ${err ? 'err' : ''}" role="${err ? 'alert' : 'status'}"><span>${esc(t)}</span>${err ? '<button class="cerrar-aviso" title="Cerrar el aviso" aria-label="Cerrar el aviso">×</button>' : ''}</div>`;
+  if(!err) setTimeout(() => { const m = $('aviso').querySelector('.msg span'); if(m && m.textContent === t) $('aviso').innerHTML = ''; }, 9000);
+}
+$('aviso').addEventListener('click', e => { if(e.target.closest('.cerrar-aviso')) $('aviso').innerHTML = ''; });
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 // Modo demo o publicado: si esta página lleva datos embebidos (window.DEMO_DATOS), se muestran directamente, sin servidor.

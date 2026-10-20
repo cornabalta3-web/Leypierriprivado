@@ -53,6 +53,7 @@ Si algún día llegan 10.000 archivos juntos, se pueden procesar sin el navegado
 ## Si nunca mandan las resoluciones
 
 - Bajarlas del sistema de la UEST aunque sea de a lotes; el Embudo las recibe como vengan.
+- Cargar en la web la planilla de trámites de la UEST (SIA): estima la posesión de cada expediente sin los PDF y arma la lista de cuáles bajar primero.
 - Ir por el Padrón y Catastro si el Registro amplía la consulta con DNI o matrícula.
 - Un piloto de 100 resoluciones de una sola localidad para probar el circuito completo, incluido el relevamiento presencial, y con eso pedir el resto.
 
@@ -130,6 +131,14 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 
 **Padrón, inventario y Catastro**: los mismos botones que en el kit (**Padrón**, **Inventario**, **Reintentar Catastro** en el Mapa). Se guardan cifrados y el cruce se calcula al mirar, así que una carga nueva de resoluciones ya sale cruzada.
 
+**La planilla de trámites de la UEST, sin los PDF** (solo en la web; la carga solo el administrador)
+1. **Inventario**, recuadro **Planilla de trámites de la UEST (SIA)**, **Cargar planilla de trámites (.xlsx)**. Una planilla de 50.000 expedientes tarda alrededor de un minuto. Se guarda cifrada y solo con lo que sirve: no se guardan los testigos, el domicilio del iniciador ni los comentarios. Cargar una nueva reemplaza a la anterior.
+2. Cada expediente aparece en **Expedientes**, el **Mapa** y el **Resumen** con la posesión **estimada**: fecha de ingreso del trámite menos la antigüedad declarada al iniciarlo. Es lo que se declaró al empezar, no lo que fijó la resolución: puede no coincidir. Se distinguen con el filtro **Estimadas con la planilla**; las leídas, con **Leídas del PDF**.
+3. **Ubicar las parcelas en Catastro**: consulta las cuentas de a 2.000 y guarda cada tanda. Con toda la planilla son unas 34.000 cuentas y tarda varios minutos; si se corta, se vuelve a tocar y sigue donde quedó. Las que no tienen cuenta se ubican aproximadamente por la localidad.
+4. El Padrón cruza también estos expedientes, por el nombre del iniciador.
+5. **Bajar la lista para pedir los PDF**: un CSV, sin nombres ni DNI, con los anteriores al corte según la planilla; primero los que quedan en el borde, que es donde la resolución puede cambiar el resultado. Sirve para elegir qué bajar cada día cuando hay límite de descargas.
+6. Cuando se lee la resolución de un expediente de la planilla, manda la lectura y la estimación deja de aparecer como expediente aparte. La tarjeta **¿Cuánto acierta?** compara, en los expedientes que tienen las dos cosas, si la planilla y la resolución coinciden en si entra o no. Antes de usar la estimación para decidir, conviene que esa comparación tenga un número razonable de casos.
+
 **Si algo ya está en el kit**
 - **Subir el relevamiento del kit**: en el kit, **Expedientes**, **Guardar JSON**; en la web, **Cargar**, arrastrar ese JSON solo. Después borrar el JSON de Descargas: está sin cifrar.
 - Subir el JSON del kit reemplaza lo que vino del kit, pero no toca lo leído en la web ni las correcciones hechas en la web: se aplican encima (si una misma resolución se corrigió en los dos lados, manda la corrección más nueva).
@@ -145,7 +154,7 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 - Todos los sitios de GitHub Pages de la cuenta `cornabalta3-web` comparten la dirección `cornabalta3-web.github.io`, y con ella el almacenamiento del navegador. Por eso el token va cifrado. Aun así, conviene no publicar en esa cuenta páginas con código de terceros.
 - Los PDF van en una rama aparte del repositorio (`pdf`), que no se publica en la página: cada uno cifrado con su propia llave, y esas llaves viajan dentro de las lecturas cifradas. Al desactivar a alguien no se vuelven a cifrar los PDF (pesan gigas); sí todo lo demás, con las llaves adentro. Lo que esa persona ya pudo ver, lo pudo ver.
 - GitHub recomienda repositorios de menos de 1 GB y pide con fuerza no pasar de 5 GB. Unos 7.500 PDF de 300 KB cada uno son unos 2,3 GB: entra, pero no sobra. Si algún día GitHub pide achicarlo, los PDF se pueden mover a otro repositorio sin tocar el resto.
-- Cada carga y cada cambio de llave agregan al historial una copia del relevamiento cifrado. Con unos pocos MB por carga alcanza para años; si algún día el repositorio pesa demasiado, se recrea.
+- Cada carga y cada cambio de llave agregan al historial una copia del relevamiento cifrado. Con unos pocos MB por carga alcanza para años; si algún día el repositorio pesa demasiado, se recrea. La planilla de trámites cifrada pesa unos 3 MB, y ubicarla entera en Catastro suma unos 40 MB al historial (cada tanda guarda las parcelas de nuevo).
 
 ## Cargar miles de resoluciones de una vez
 

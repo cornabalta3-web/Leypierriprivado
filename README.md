@@ -80,6 +80,7 @@ El sistema trata datos personales de miles de ciudadanos: nombre, DNI, domicilio
 | `pierri_lector.js` | lectura de un PDF: carril texto y carril modelo |
 | `pierri_tomos.js` | tomos y carril texto, compartido entre el kit y la web |
 | `pierri_base.js` | Padrón, inventario y repetidos para la web, con las reglas del kit |
+| `pierri_sia.js` | la planilla de trámites de la UEST: estima la posesión de cada expediente sin el PDF (solo la web) |
 | `procesar_lote.js` | el motor de línea de comandos para carpetas grandes |
 | `cruzar_padron.js` | cruce con el padrón del Registro General |
 | `web/pierri_web.js` | la versión web: el sistema desde un link; lee los PDF en el navegador y guarda todo cifrado en GitHub |

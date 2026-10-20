@@ -27,6 +27,7 @@ Node 22.13 o superior, sin framework. Base SQLite en un único archivo, usando e
 | `pierri_lector.js` | lectura de un PDF en Node: capa de texto (pdfjs-dist), carril modelo y Catastro |
 | `pierri_tomos.js` | reconocer y cortar tomos, y armar el registro por el carril texto; lo usan el kit y la web |
 | `pierri_base.js` | Padrón, inventario, repetidos y correcciones en memoria, con las mismas reglas que las consultas de `pierri.js`; lo usa la web |
+| `pierri_sia.js` | la planilla de trámites de la UEST (SIA): lee las columnas que sirven y estima la posesión (ingreso − antigüedad declarada); solo la web |
 | `procesar_lote.js` | motor de línea de comandos para carpetas de miles de PDF, reanudable |
 | `cruzar_padron.js` | cruce con el padrón del Registro General |
 | `web/pierri_web.js` | versión web: hace en el navegador lo que pierri.js (usuarios, cifrado AES-256-GCM, leer PDF, guardar en GitHub) |
@@ -52,5 +53,7 @@ Un cambio que mejore un caso y rompa otro no es una mejora. La medición a ciega
 En producción incipiente, instalado en un equipo del Gobierno de la Provincia. Pendiente con la Dirección de Sistemas: ambientes, cifrado en reposo, antivirus sobre las cargas, y la excepción documentada al estándar de bases de datos E_SIG_002. Está detallado en `docs/BRECHAS_estandares_gobierno.md`.
 
 La versión web hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base". El carril modelo en la web se usa **solo con el botón** "Completar incompletas con el modelo" (nunca al cargar): la clave de API queda solo en la computadora del administrador, cifrada como el token, y las instrucciones del modelo (citan resoluciones reales) se cargan una vez y van cifradas en `datos/modelo.enc`, nunca en el código publicado. Lo completado va en `datos/completadas.enc`. El pedido a la API (`cuerpoModelo`, `respuestaModelo`, `fusionar`) es el mismo en el kit y en la web: vive en `pierri_tomos.js`. La lógica de Padrón e inventario está dos veces: en SQL en `pierri.js` y en memoria en `pierri_base.js`; un cambio en una va en las dos.
+
+La planilla de trámites de la UEST (SIA, `datos/sia.enc`) existe solo en la web. Cada expediente sin resolución leída aparece con `fuente: 'planilla'` y tipo `PLANILLA_UEST`, con la posesión **estimada** como fecha de ingreso menos la antigüedad declarada al iniciar el trámite. Es una estimación, no lo que fijó la resolución: no presentarla como resultado firme. Cuando se lee la resolución, manda la lectura; `compararConLeidas` mide cuánto acierta la planilla. No se guardan los testigos, el domicilio del iniciador ni los comentarios.
 
 En diseño, sin implementar: el lector de expedientes completos (cuerpos), para buscar en boletas, facturas, boletos y cesiones indicios de posesión, y el motivo de las bajas de la UEST. Está en `docs/DISENO_lector_expedientes.md`. Sus citas legales están marcadas [T]/[P]/[NV] y hay que cotejarlas con el texto oficial antes de usarlas.

@@ -222,13 +222,17 @@
     };
   }
   /** Lo leído y los tokens gastados, a partir de la respuesta de la API. null si el modelo no devolvió JSON válido. */
+  /** Los tokens que cobró una respuesta, aunque no haya traído los datos. */
+  function tokensDe(data) {
+    const u = (data && data.usage) || {};
+    return (u.input_tokens || 0) + (u.output_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+  }
   function respuestaModelo(data) {
     const texto = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n');
     const extraido = PierriCore.parsearJSON(texto);
     if (!extraido) return null;
-    const u = data.usage || {};
     extraido._fuente = 'modelo';
-    return { extraido, tokens: (u.input_tokens || 0) + (u.output_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) };
+    return { extraido, tokens: tokensDe(data) };
   }
   /** Convierte un error de la API en una frase que entienda cualquiera. `grave` = no tiene sentido seguir intentando. */
   function motivoModelo(err) {
@@ -238,6 +242,7 @@
     if (/403|permission/i.test(m)) return { texto: 'la clave no tiene permiso para usar el modelo', grave: true };
     if (/429|rate/i.test(m)) return { texto: 'demasiados pedidos seguidos; reintentar en unos minutos', grave: false };
     if (/red|fetch failed|ENOTFOUND|ECONN|network/i.test(m)) return { texto: 'no hay conexión a internet', grave: false };
+    if (/no devolvió JSON/i.test(m)) return { texto: 'el modelo contestó pero no pudo leerla', grave: false };
     return { texto: 'el modelo no respondió (' + m.slice(0, 120) + ')', grave: false };
   }
   function fusionar(deTexto, delModelo) {
@@ -259,7 +264,7 @@
   /** El nombre con que se controla una resolución ya guardada (en un tomo, el del expediente que se vio adentro). */
   function nombreControlDe(r) { return r.tomo ? (r.tomo.expedienteVisto ? `documento_${r.tomo.expedienteVisto.replace('/', '-')}_tomo.pdf` : r.archivo) : r.archivo; }
 
-  return { textoDeItems, MODELO_POR_DEFECTO, cuerpoModelo, respuestaModelo, motivoModelo, fusionar, nombreControlDe,
+  return { textoDeItems, MODELO_POR_DEFECTO, cuerpoModelo, respuestaModelo, tokensDe, motivoModelo, fusionar, nombreControlDe,
     RE_INICIO, RE_EXP, RE_EXP_TEMPRANO, RE_FIN, RE_FIN_FUERTE, RE_RESOLUTIVA, RE_ORDEN_INSCRIPCION, RE_ORDENAR,
     puntajeResolucion, esTomo, expedienteDelNombre, cortarTomo, mejorDe, unaPorExpediente,
     unidadesDe, leerTexto, registroBase, registroPorTexto, registroIncompleto,
