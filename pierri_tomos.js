@@ -256,7 +256,7 @@
     }
     if (/invalid x-api-key|API key is invalid|authentication_error/i.test(m)) return { texto: 'la clave de API no es válida', grave: true };
     if (/credit balance|billing/i.test(m)) return { texto: 'la cuenta de Anthropic no tiene crédito', grave: true };
-    if (/no devolvió JSON/i.test(m)) return { texto: 'la IA contestó pero no pudo leerla', grave: false, documento: true };
+    if (/no devolvió JSON/i.test(m)) return { texto: 'la IA contestó, pero no pudo leerla', grave: false, documento: true };
     if (/fetch failed|ENOTFOUND|ECONN|network|No hay conexión|error de red/i.test(m)) return { texto: 'no hay conexión a internet', grave: false };
     return { texto: 'la IA no respondió (' + m.slice(0, 120) + ')', grave: false };
   }

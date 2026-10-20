@@ -98,10 +98,14 @@
    * Lee la hoja de la planilla de trámites, tal como la da XLSX.utils.sheet_to_json(hoja, { header: 1, raw: true }).
    * Una fila por expediente: si la planilla lo repite, la fila de más abajo completa y corrige a la anterior.
    * @param {Array<Array>} matriz
+   * @param {{fecha1904: boolean}} [opciones]   el libro usa el sistema de fechas de 1904
    * @returns {{ filas: object[], descartadas: number, total: number }}
    */
-  function filasSIA(matriz) {
+  function filasSIA(matriz, opciones) {
     const filas = matriz || [];
+    // Con el sistema de fechas de 1904 el número de serie de Excel cuenta 1462 días menos.
+    const corrida = (opciones && opciones.fecha1904) ? v => fechaCelda(typeof v === 'number' ? v + 1462 : v) : fechaCelda;
+    const lector = Object.assign({}, LECTOR, { fecha_ingreso: corrida, resolucion_fecha: corrida });
     const norm = v => P.normalizarTexto(v == null ? '' : v);
     // La fila de títulos: la primera (de las veinte de arriba) que tenga las columnas obligatorias.
     let cab = -1;
@@ -110,9 +114,13 @@
       if (OBLIGATORIOS.every(k => CAMPOS[k].some(n => t.includes(n)))) cab = i;
     }
     if (cab < 0) {
-      const vistos = (filas[0] || []).filter(v => v != null && String(v).trim()).slice(0, 10).map(v => String(v).trim().slice(0, 30));
-      throw new Error('no reconozco la planilla: se esperan las columnas de número de expediente (NRO_EXP_SUAC), fecha de ingreso (FECHA_INGRESO) y antigüedad (ANTIGUEDAD), como en la planilla de trámites del SIA de la UEST'
-        + (vistos.length ? `. En la primera fila hay: ${vistos.join(' · ')}` : '. La primera fila está vacía'));
+      // Qué falta, y qué títulos parecidos hay en las veinte filas de arriba (no solo en la primera).
+      const arriba = filas.slice(0, 20).flatMap(f => (f || []).filter(v => v != null && String(v).trim()));
+      const nombre = { expediente: 'número de expediente (NRO_EXP_SUAC)', fecha_ingreso: 'fecha de ingreso (FECHA_INGRESO)', antiguedad: 'antigüedad (ANTIGUEDAD)' };
+      const faltan = OBLIGATORIOS.filter(k => !arriba.some(v => CAMPOS[k].includes(norm(v)))).map(k => nombre[k]);
+      const parecidos = [...new Set(arriba.map(v => String(v).trim().slice(0, 40)).filter(v => /EXP|INGRESO|ANTIG/.test(norm(v))))].slice(0, 8);
+      throw new Error('no reconozco la planilla: en las primeras 20 filas no hay una fila con los títulos de número de expediente (NRO_EXP_SUAC), fecha de ingreso (FECHA_INGRESO) y antigüedad (ANTIGUEDAD), como en la planilla de trámites del SIA de la UEST'
+        + (arriba.length ? `. No encontré: ${faltan.join(', ') || 'los tres en una misma fila'}` + (parecidos.length ? `. Títulos parecidos: ${parecidos.map(v => '«' + v + '»').join(', ')}` : '') : '. Las primeras 20 filas están vacías'));
     }
     const titulos = filas[cab].map(norm);
     const cols = {};
@@ -124,7 +132,7 @@
       total++;
       const fila = {};
       for (const [campo, js] of Object.entries(cols)) {
-        const leer = LECTOR[campo] || texto;
+        const leer = lector[campo] || texto;
         let valor = null;
         for (const j of js) { valor = leer(f[j]); if (valor != null) break; }
         fila[campo] = valor;

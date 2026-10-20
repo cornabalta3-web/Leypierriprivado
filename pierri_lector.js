@@ -130,7 +130,7 @@ async function procesarArchivo(buf, nombre, opciones) {
           if (falla.grave && opciones) opciones.modeloBloqueado = falla.texto;   // no insistir con cada archivo
         }
       } else {
-        const porque = opciones && opciones.modeloBloqueado ? ' (no se usó el modelo: ' + opciones.modeloBloqueado + ')' : ' (se completa con clave de API)';
+        const porque = opciones && opciones.modeloBloqueado ? ' (no se usó la IA: ' + opciones.modeloBloqueado + ')' : ' (se completa con clave de API)';
         registros.push(PierriTomos.registroIncompleto(base, u, r, cfg, tabla, vistos, porque, opciones && opciones.modeloBloqueado));
       }
     } catch (err) {

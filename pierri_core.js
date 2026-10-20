@@ -329,7 +329,7 @@
       const pd2 = calcularPoseeDesde(cruce);
       // Tolerancia de 4 meses: "sesenta años" y "sesenta años y tres meses" son la misma lectura.
       const coincide = !!(pd2.fecha && poseeDesde.fecha) && Math.abs(pd2.fecha - poseeDesde.fecha) <= 120 * 86400000;
-      add('posesion_cruce_texto', coincide, `modelo ${fmtFecha(poseeDesde.fecha)} / texto ${fmtFecha(pd2.fecha)} ("${cruce.frase}")`, true);
+      add('posesion_cruce_texto', coincide, `IA ${fmtFecha(poseeDesde.fecha)} / texto ${fmtFecha(pd2.fecha)} ("${cruce.frase}")`, true);
     }
     if (poseeDesde.fecha && fRes && poseeDesde.fecha > fRes) add('posesion_vs_resolucion', false, `posee desde ${fmtFecha(poseeDesde.fecha)} pero la resolución es del ${fmtFecha(fRes)}`, true);
     if (poseeDesde.fecha && ref && poseeDesde.fecha > ref) add('posesion_vs_referencia', false, 'la fecha de inicio es posterior a la de referencia', true);

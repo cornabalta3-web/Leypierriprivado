@@ -183,8 +183,8 @@ function main() {
   const huellaDe = txt => crypto.createHash('sha256').update(txt).digest('hex').slice(0, 12).replace(/\d/g, d => 'ghijklmnop'[d]);
   // El lector de planillas corre aparte (un worker) y no lo pide la página sino pierri_web.js: también lleva su huella.
   const planilla = fs.readFileSync(path.join(__dirname, 'web', 'leer_planilla.js'), 'utf8');
-  if (web.split("new Worker('leer_planilla.js')").length !== 2) throw new Error('no encuentro dónde pierri_web.js abre el lector de planillas');
-  web = web.replace("new Worker('leer_planilla.js')", `new Worker('leer_planilla.js?v=${huellaDe(planilla)}')`);
+  if (web.split("const LECTOR_PLANILLAS = 'leer_planilla.js';").length !== 2) throw new Error('no encuentro dónde pierri_web.js nombra el lector de planillas');
+  web = web.replace("const LECTOR_PLANILLAS = 'leer_planilla.js';", `const LECTOR_PLANILLAS = 'leer_planilla.js?v=${huellaDe(planilla)}';`);
   const scripts = MODULOS.map(f => `<script src="${f}?v=${huellaDe(fs.readFileSync(path.join(__dirname, f), 'utf8'))}"></script>`)
     .concat([`<script src="pierri_web.js?v=${huellaDe(web)}"></script>`]).join('\n');
   html = html.replace(anclaMain, () => `<script>window.PIERRI_WEB_REPO = ${repo};</script>\n${scripts}\n` + anclaMain);

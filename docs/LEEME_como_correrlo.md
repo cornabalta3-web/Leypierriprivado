@@ -3,7 +3,7 @@
 Una aplicación, una pantalla, una base de datos que acumula.
 
 - **pierri.js**: la aplicación. Se abre con un comando y aparece el Tablero en el navegador.
-- **El Embudo**: la zona del Tablero donde tirás los PDF, como vengan. Cada archivo cargado queda copiado en la carpeta `embudo`.
+- **Cargar resoluciones**: la pantalla del Tablero donde tirás los PDF, como vengan. Cada archivo cargado queda copiado en la carpeta `embudo`.
 - **pierri.db**: la base de datos. Todo lo procesado queda ahí. Se abre con DB Browser for SQLite (gratis) y se copia a otra computadora junto con la carpeta `embudo`.
 - **El Padrón**: la planilla del Registro General (`POS_al_….xls`). Se carga desde el Tablero y se cruza sola.
 
@@ -34,17 +34,17 @@ node pierri.js
 
 Se abre el navegador en http://localhost:3777 con el Tablero. Desde ahí:
 
-1. **Tirá los PDF al Embudo.** Uno, tres, o mil; sueltos o tomos. Cada uno se lee y aparece en la lista con su expediente y su clasificación. Un archivo cargado dos veces se ignora; un expediente con dos resoluciones se queda con la más nueva y marca la otra como repetida.
+1. **Tirá los PDF en Cargar resoluciones.** Uno, tres, o mil; sueltos o tomos. Cada uno se lee y aparece en la lista con su expediente y su clasificación. Un archivo cargado dos veces se ignora; un expediente con dos resoluciones se queda con la más nueva y marca la otra como repetida.
 2. **Cargá el Inventario de la UEST** en la pantalla Inventario: el CSV de expedientes digitalizados (de Y-Neura) y, si lo tenés, el del SUAC con iniciador y DNI. Se fusionan solos por número de expediente. Con eso sabés cuántos expedientes hay, cuáles tienen la resolución escaneada y, apretando "Ubicar cuentas en Catastro", dónde está cada lote, antes de leer un solo PDF. Tarda unos minutos la primera vez; si se corta, volvés a apretar y sigue.
 3. **Cargá el Padrón** con el botón. Cruza por nombre (solo cuando el nombre es único de los dos lados) y cada resolución queda como inscripta, provisoria, observada, ambigua o "no figura".
-4. **Poné la clave de API** en Configuración si querés que las que el texto no pudo leer (escaneos ilegibles, dos rogantes) las lea el modelo. Sin clave, todo lo que el texto resuelve se resuelve igual y gratis; lo demás queda marcado como incompleto. Con "Leer con IA las que quedaron sin leer" se leen después.
+4. **Poné la clave de API** en Configuración si querés que las que el texto no pudo leer (escaneos ilegibles, dos rogantes) las lea la IA. Sin clave, todo lo que el texto resuelve se resuelve igual y gratis; lo demás queda marcado como incompleto. Con "Leer con IA las que quedaron sin leer" se leen después.
 5. **Mirá y exportá.** Filtros, búsqueda, fecha de corte (recalcula al instante), ranking de localidades, mapa, planilla para Excel, KML para Google Maps.
 
 Para cerrar la aplicación: Ctrl+C en la terminal. La próxima vez, `node pierri.js` de nuevo y está todo como lo dejaste.
 
 ## Probar hoy, sin esperar a la UEST
 
-El kit trae `embudo_prueba.zip`: 60 resoluciones inventadas con la plantilla real y cuentas reales de Catastro (sueltas, escaneadas, un tomo, repetidas, desestimatorias, dos rogantes, familias). Descomprimilo y tirá los PDF al Embudo. También podés tirar los tres PDF reales que ya tenés y el Padrón.
+El kit trae `embudo_prueba.zip`: 60 resoluciones inventadas con la plantilla real y cuentas reales de Catastro (sueltas, escaneadas, un tomo, repetidas, desestimatorias, dos rogantes, familias). Descomprimilo y tirá los PDF en **Cargar resoluciones**. También podés tirar los tres PDF reales que ya tenés y el Padrón.
 
 ## Para lotes enormes desde la línea de comandos (opcional)
 
@@ -52,7 +52,7 @@ Si algún día llegan 10.000 archivos juntos, se pueden procesar sin el navegado
 
 ## Si nunca mandan las resoluciones
 
-- Bajarlas del sistema de la UEST aunque sea de a lotes; el Embudo las recibe como vengan.
+- Bajarlas del sistema de la UEST aunque sea de a lotes; **Cargar resoluciones** las recibe como vengan.
 - Cargar en la web la planilla de trámites de la UEST (SIA): estima la posesión de cada expediente sin los PDF y arma la lista de cuáles bajar primero.
 - Ir por el Padrón y Catastro si el Registro amplía la consulta con DNI o matrícula.
 - Un piloto de 100 resoluciones de una sola localidad para probar el circuito completo, incluido el relevamiento presencial, y con eso pedir el resto.
@@ -63,7 +63,7 @@ Si algún día llegan 10.000 archivos juntos, se pueden procesar sin el navegado
 |---|---|
 | `pierri.js` | La aplicación (servidor local + base de datos). |
 | `tablero_pierri.html` | El Tablero (lo sirve pierri.js; también se abre solo, con un JSONL). |
-| `pierri_lector.js` | El Lector: lee el PDF y manda al modelo lo que el texto no resolvió. |
+| `pierri_lector.js` | El Lector: lee el PDF y manda a la IA lo que el texto no resolvió. |
 | `pierri_tomos.js` | Reconoce tomos y expedientes y lee por texto. El Lector lo necesita: si se actualiza el kit copiando archivos, va junto con `pierri_lector.js`. |
 | `pierri_texto.js` | Carril de texto: reglas sobre la capa de texto del PDF. |
 | `pierri_core.js` | Reglas compartidas: elegibilidad, validaciones, Catastro, clasificación, planilla, prompt. |
@@ -92,7 +92,7 @@ Sirve para guardar versiones y trabajarlo con Claude Code, no para que la gente 
 
 El sistema también anda desde **https://cornabalta3-web.github.io/relevamiento-pierri/**, sin instalar nada. Cada persona entra con su usuario y su contraseña. Los datos se guardan cifrados en el repositorio público `relevamiento-pierri`: sin una contraseña válida no se pueden leer.
 
-En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base". Se leen los PDF, se guardan cifrados junto con el original, se ven, se corrigen, se cargan el Padrón, el inventario y Catastro, y lo que el texto no alcanza a leer se completa con el modelo, solo cuando se toca el botón.
+En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base". Se leen los PDF, se guardan cifrados junto con el original, se ven, se corrigen, se cargan el Padrón, el inventario y Catastro, y lo que el texto no alcanza a leer se completa con IA, solo cuando se toca el botón.
 
 **Puesta en marcha (una sola vez)**
 1. En GitHub: botón **+**, **New repository**, nombre `relevamiento-pierri`, **Public**, **Create repository**.
@@ -118,7 +118,7 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 1. **Cargar resoluciones** (en el menú): arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
 2. Cada PDF se lee en tu computadora, igual que en el kit sin clave de API: tomos, expedientes completos y sueltas. Se guarda en GitHub cifrado, el PDF original incluido, cada 250 archivos (o 60 MB) y al terminar. Lo que ya estaba se saltea: si se corta, se vuelve a elegir la misma carpeta y sigue.
 3. Con miles de PDF tarda (más o menos un segundo por archivo, según la conexión): la pestaña tiene que quedar abierta, pero la sesión no se cierra mientras trabaja. Si GitHub pide una pausa por la cantidad de pedidos, espera solo y sigue.
-4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo". Cargar nunca usa el modelo: se completan después, con el botón (ver abajo).
+4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo". Cargar resoluciones nunca usa la IA: se completan después, con el botón (ver abajo).
 
 **Ver y corregir**
 - En **Expedientes**, al abrir una resolución: **Ver la resolución original** la muestra al costado, solo sus páginas. La ven todos los usuarios.
@@ -127,7 +127,7 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 **Lectura con IA** (solo el administrador, en **Configuración**, recuadro **Lectura con IA**)
 1. Una sola vez: **Cargar instrucciones de la IA** con el archivo `instrucciones_modelo.json` (lo arma `node armar_web.js --instrucciones <archivo>` en el kit; normalmente te lo pasa Claude). Las instrucciones citan resoluciones reales: se guardan cifradas, y después hay que borrar el archivo.
 2. Pegar la clave de API de Anthropic y **Guardar**. Queda solo en esta computadora, cifrada con tu contraseña; no va al repositorio. Para dejar de usarla: borrar el campo y **Guardar**.
-3. **Leer con IA las que quedaron sin leer**: antes de empezar dice cuántas va a leer y pide confirmación, porque gasta tokens. Lee solo las que el texto no resolvió y tienen su PDF guardado. Nada más usa el modelo: ni cargar PDF ni mirar.
+3. **Leer con IA las que quedaron sin leer**: antes de empezar dice cuántas va a leer y pide confirmación, porque gasta tokens. Lee solo las que el texto no resolvió y tienen su PDF guardado. Nada más usa la IA: ni cargar PDF ni mirar.
 
 **Padrón, inventario y Catastro**: los mismos botones que en el kit (**Padrón**, **Inventario**, **Reintentar Catastro** en el Mapa). Se guardan cifrados y el cruce se calcula al mirar, así que una carga nueva de resoluciones ya sale cruzada.
 
@@ -137,12 +137,12 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 3. **Ubicar las parcelas en Catastro**: consulta las cuentas de a 2.000 y guarda cada tanda. Con toda la planilla son unas 34.000 cuentas y tarda varios minutos; si se corta, se vuelve a tocar y sigue donde quedó. Las que no tienen cuenta se ubican aproximadamente por la localidad.
 4. El Padrón cruza también estos expedientes, por el nombre del iniciador.
 5. **Bajar la lista para pedir los PDF**: un CSV, sin nombres ni DNI, con los anteriores al corte según la planilla; primero los que quedan en el borde, que es donde la resolución puede cambiar el resultado. Sirve para elegir qué bajar cada día cuando hay límite de descargas.
-6. Cuando se lee la resolución de un expediente de la planilla, manda la lectura y la estimación deja de aparecer como expediente aparte. La tarjeta **¿Cuánto acierta?** compara, en los expedientes que tienen las dos cosas, si la planilla y la resolución coinciden en si entra o no. Antes de usar la estimación para decidir, conviene que esa comparación tenga un número razonable de casos.
+6. Cuando se lee la resolución de un expediente de la planilla, manda la lectura y la estimación deja de aparecer como expediente aparte. La tarjeta **¿Cuánto acierta?** compara, en los expedientes que tienen las dos cosas, si la planilla y la resolución coinciden en si es anterior o posterior al corte. Antes de usar la estimación para decidir, conviene que esa comparación tenga un número razonable de casos.
 
 **Si algo ya está en el kit**
-- **Subir el relevamiento del kit**: en el kit, **Expedientes**, **Guardar JSON**; en la web, **Cargar**, arrastrar ese JSON solo. Después borrar el JSON de Descargas: está sin cifrar.
+- **Subir el relevamiento del kit**: en el kit, **Expedientes**, **Guardar JSON**; en la web, **Cargar resoluciones**, arrastrar ese JSON solo. Después borrar el JSON de Descargas: está sin cifrar.
 - Subir el JSON del kit reemplaza lo que vino del kit, pero no toca lo leído en la web ni las correcciones hechas en la web: se aplican encima (si una misma resolución se corrigió en los dos lados, manda la corrección más nueva).
-- Para ver en la web los PDF de lo que leyó el kit, subí esos PDF en **Cargar**: se reconocen, no se vuelven a leer y se guardan para verlos.
+- Para ver en la web los PDF de lo que leyó el kit, subí esos PDF en **Cargar resoluciones**: se reconocen, no se vuelven a leer y se guardan para verlos.
 
 **Lo que hay que saber**
 - La contraseña de cada uno es la única protección de la lectura: 12 caracteres o más, mejor una frase larga. No hay bloqueo por intentos fallidos, porque cualquiera puede bajarse los archivos cifrados y probar contraseñas en su propia computadora.

@@ -496,7 +496,7 @@ async function completarConModelo(maximo) {
       r.extraido = fusion; r.derivado = PierriCore.procesarRegistro(fusion, cfgElegibilidad(), TABLA, new Set(), { nombreArchivo: nombreControl });
       r.fuente = 'modelo'; r.tokens = tk; r.lectura = { fuente: 'modelo', completada_despues: true }; tokens += tk; n++;
       q.insRes.run(...filaDesde(r));
-    } catch (err) { r.error_modelo = String(err.message || err); fallas.push(String(err.message || err)); actualizarRegistro(r); }
+    } catch (err) { r.error_modelo = String(err.message || err); fallas.push(Lector.motivoModelo(err).texto); actualizarRegistro(r); }
   }
   if (n) { try { await Lector.ubicarEnCatastro(todosLosRegistros().filter(r => r.derivado).map(r => r.derivado), TABLA); } catch (e) {} recalcularTodo(); }
   const quedan = todosLosRegistros().filter(r => r.fuente === 'texto_incompleto' && !r.error).length;

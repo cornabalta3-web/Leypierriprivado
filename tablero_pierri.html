@@ -271,8 +271,8 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
   <div id="aviso"></div>
 
   <section class="vista" id="v-cargar">
-    <div class="cab"><div><h1>Cargar resoluciones (PDF)</h1><p>Acá entra la documentación de la Unidad Ejecutora y sale clasificada según entre o no en la Ley Pierri. Admite resoluciones sueltas, expedientes individuales completos y tomos. De cada expediente toma una sola resolución, la que ordena la inscripción, y descarta las fojas de trámite y los repetidos.</p></div></div>
-    <div class="zona" id="cargar" tabindex="0" role="button" aria-label="Cargar">
+    <div class="cab"><div><h1>Cargar resoluciones (PDF)</h1><p>Acá entra la documentación de la Unidad Ejecutora y sale clasificada según la posesión sea anterior o posterior al corte. Admite resoluciones sueltas, expedientes individuales completos y tomos. De cada expediente toma una sola resolución, la que ordena la inscripción, y descarta las fojas de trámite y los repetidos.</p></div></div>
+    <div class="zona" id="cargar" tabindex="0" role="button" aria-label="Cargar resoluciones (PDF)">
       <strong id="cargarTitulo">Arrastrá acá los PDF o tocá para elegirlos</strong>
       <span id="cargarSub">Resoluciones sueltas, expedientes completos o tomos: de cada expediente se ubica la resolución que ordena la inscripción y se lee. Un archivo cargado dos veces se ignora.</span>
     </div>
@@ -322,7 +322,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
   <section class="vista oculto" id="v-resumen">
     <div class="cab">
       <div><h1>Resumen del relevamiento</h1><p id="avisoCorte"></p></div>
-      <div class="acciones"><button class="sec" data-ir="config">Cambiar corte</button><button data-ir="cargar">Cargar documentos</button></div>
+      <div class="acciones"><button class="sec" data-ir="config">Cambiar corte</button><button data-ir="cargar">Cargar resoluciones</button></div>
     </div>
     <div class="embudo" id="cumpleEmbudo" aria-label="La cadena del relevamiento"></div>
     <div class="cumple" id="cumplePaneles"></div>
@@ -440,7 +440,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
       <div class="tabla-scroll" style="max-height:340px;overflow:auto"><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th class="col-sec">Origen</th></tr></thead><tbody id="tablaAuditoria"><tr><td colspan="5" class="vacio">Tocá el botón para cargarlos.</td></tr></tbody></table></div>
     </div>
     <div class="dos">
-      <div class="panel"><div class="cabp"><h2>Criterio de elegibilidad</h2></div><div class="cuerpo">
+      <div class="panel"><div class="cabp"><h2>Criterio de antigüedad</h2></div><div class="cuerpo">
         <div class="controles">
           <div class="grupo"><label for="regla">Regla</label><select id="regla"><option value="CORTE_FIJO">Posesión anterior al corte (ley vigente)</option><option value="PLAZO_MOVIL">Diez años antes de la presentación (proyecto)</option></select></div>
           <div class="grupo"><label for="corte">Fecha de corte</label><input id="corte" type="date" value="2006-01-01"></div>
@@ -795,7 +795,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
       const pd2 = calcularPoseeDesde(cruce);
       // Tolerancia de 4 meses: "sesenta años" y "sesenta años y tres meses" son la misma lectura.
       const coincide = !!(pd2.fecha && poseeDesde.fecha) && Math.abs(pd2.fecha - poseeDesde.fecha) <= 120 * 86400000;
-      add('posesion_cruce_texto', coincide, `modelo ${fmtFecha(poseeDesde.fecha)} / texto ${fmtFecha(pd2.fecha)} ("${cruce.frase}")`, true);
+      add('posesion_cruce_texto', coincide, `IA ${fmtFecha(poseeDesde.fecha)} / texto ${fmtFecha(pd2.fecha)} ("${cruce.frase}")`, true);
     }
     if (poseeDesde.fecha && fRes && poseeDesde.fecha > fRes) add('posesion_vs_resolucion', false, `posee desde ${fmtFecha(poseeDesde.fecha)} pero la resolución es del ${fmtFecha(fRes)}`, true);
     if (poseeDesde.fecha && ref && poseeDesde.fecha > ref) add('posesion_vs_referencia', false, 'la fecha de inicio es posterior a la de referencia', true);
@@ -1514,7 +1514,7 @@ async function cargarDesdeServidor(volverATraer){
   if(resumenSrv.aviso_datos) avisar(resumenSrv.aviso_datos, true);
   const res = resumenSrv;
   $('origen').innerHTML = `<span><b>${Number(res.archivos) || 0}</b> archivos cargados</span><span><b>${Number(res.resoluciones) || 0}</b> resoluciones válidas</span><span>${Number(res.repetidas) || 0} repetidas · ${Number(res.incompletas) || 0} incompletas · ${Number(res.errores) || 0} con error</span><span>tokens ${Number(res.tokens || 0).toLocaleString('es-AR')}</span>`;
-  $('subApp').textContent = d.config && d.config.key ? `clave cargada (${d.config.key}) · ${d.config.modelo}` : 'sin clave: se lee solo por texto';
+  $('subApp').textContent = d.config && d.config.key ? `clave cargada (${d.config.key}) · ${({ 'claude-haiku-4-5-20251001': 'Haiku 4.5', 'claude-sonnet-4-6': 'Sonnet 4.6' })[d.config.modelo] || d.config.modelo}` : 'sin clave: se lee solo por texto';
   if(WEB) $('subInstr').textContent = res.instrucciones_modelo ? 'instrucciones cargadas' : 'faltan: sin ellas no se puede usar la IA (se cargan una sola vez)';
   if(d.config){ $('regla').value = d.config.regla || 'CORTE_FIJO'; $('corte').value = d.config.fechaCorte || '2006-01-01'; $('margen').value = d.config.margenBordeMeses ?? 12; $('modelo').value = d.config.modelo || 'claude-haiku-4-5-20251001'; if(d.config.key) $('apiKey').value = d.config.key; }
   pintarTodo();
@@ -1822,7 +1822,7 @@ if(SERVIDOR){
       const salteadas = inc.filter(r => r.pdf_web && window.PIERRI_WEB.modeloSalteada(r.hash)).length, pend = window.PIERRI_WEB.modeloSinGuardar(), sinGuardar = pend.resoluciones;
       const conPdf = inc.filter(r => r.pdf_web).length - salteadas - sinGuardar;
       if((sinGuardar || pend.tokens) && conPdf <= 0){ /* solo falta guardar lo ya leído o cobrado: no se cobra nada */ }
-      else if(!conPdf){ avisar(salteadas ? `Las ${salteadas} que quedan sin leer ya se probaron con IA en esta sesión y no las pudo leer: se vuelven a intentar al volver a ingresar.` : inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en "Cargar resoluciones", en el menú.` : 'No hay resoluciones sin leer del todo.'); return; }
+      else if(!conPdf){ avisar(salteadas ? `Las ${salteadas} que quedan sin leer ya se mandaron a la IA en esta sesión y no las pudo leer: se vuelven a intentar al volver a ingresar.` : inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en "Cargar resoluciones", en el menú.` : 'No hay resoluciones sin leer del todo.'); return; }
       else if(!confirm(`Se van a leer con IA ${conPdf} resolución(es) que el texto no resolvió${sinGuardar ? ` (antes se ${sinGuardar === 1 ? 'guarda 1 ya leída, sin volver a cobrarla' : `guardan ${sinGuardar} ya leídas, sin volver a cobrarlas`})` : ''}${salteadas ? `; ${salteadas === 1 ? 'otra ya no se pudo leer en esta sesión y se saltea' : `otras ${salteadas} ya no se pudieron leer en esta sesión y se saltean`}` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
     }
     const b = $('btnCompletar'); b.disabled = true;
@@ -1908,7 +1908,7 @@ if(SERVIDOR){
   });
   $('btnAuditoria').addEventListener('click', async () => {
     try{ const r = await api('/api/auditoria?n=300');
-      $('tablaAuditoria').innerHTML = r.registros.map(x => `<tr><td class="mini" style="white-space:nowrap">${esc(fechaCarga(x.fecha))}</td><td>${esc(x.usuario)}</td><td>${esc(String(x.accion).replace(/_/g, ' '))}</td><td class="mini">${esc(x.detalle || '')}</td><td class="col-sec mini">${esc(x.ip || '')}</td></tr>`).join('') || '<tr><td colspan="5" class="vacio">Sin movimientos.</td></tr>';
+      $('tablaAuditoria').innerHTML = r.registros.map(x => `<tr><td class="mini" style="white-space:nowrap">${esc(fechaCarga(x.fecha))}</td><td>${esc(x.usuario)}</td><td>${esc(x.accion === 'completar_con_modelo' ? 'leer con IA' : String(x.accion).replace(/_/g, ' '))}</td><td class="mini">${esc(x.detalle || '')}</td><td class="col-sec mini">${esc(x.ip || '')}</td></tr>`).join('') || '<tr><td colspan="5" class="vacio">Sin movimientos.</td></tr>';
     }catch(err){ avisar(err.message, true); }
   });
   document.querySelectorAll('#filtroArchivos .chip').forEach(b => b.addEventListener('click', () => {
@@ -2231,7 +2231,7 @@ function pintarMetricas(){
     ? `${RL.length} documentos leídos · ${n} evaluadas · corte: posesión anterior al ${cfg.fechaCorte.split('-').reverse().join('/')}`
     : `${RL.length} documentos leídos · ${n} evaluadas · criterio: diez años de posesión al día de hoy`) + ademas;
   $('avisoCorte').textContent = txt;
-  $('avisoCorte2').textContent = (!n ? 'Todavía no hay resoluciones leídas.' : `Resoluciones leídas: con el criterio actual entran ${eleg} de ${n} evaluadas; con el otro, ${elegAlt}.`)
+  $('avisoCorte2').textContent = (!n ? 'Todavía no hay resoluciones leídas.' : `Resoluciones leídas: con el criterio actual, ${eleg} de ${n} evaluadas son anteriores al corte; con el otro, ${elegAlt}.`)
     + (nPlan ? ` Estimadas con la planilla de la UEST: ${elegPlan} de ${nPlanEval}; con el otro criterio, ${elegAltPlan}.` : '');
 }
 function tagDe(c){
@@ -2404,7 +2404,7 @@ function pintarPlanilla(){
     tarjeta('En el mapa', f(parcela + aprox), 'c-m', `${f(parcela)} por la parcela de Catastro · ${f(aprox)} aproximadas por la localidad${sinConsultar ? ` · ${f(sinConsultar)} cuentas sin consultar` : ''}`) +
     // Con pocos casos un porcentaje engaña: hasta 30 comparados se muestra "tantos de tantos".
     tarjeta('¿Cuánto acierta?', v.comparadas >= 30 ? pc(v.coinciden, v.comparadas) + ' %' : v.comparadas ? `${f(v.coinciden)} de ${f(v.comparadas)}` : '—', 'c-m', v.comparadas
-      ? `${v.comparadas >= 30 ? `en ${f(v.comparadas)} expedientes` : 'expedientes'} con la resolución leída en que coincide si entra o no${v.diferencia_mediana_anios != null ? ` · diferencia típica en el año de inicio: ${v.diferencia_mediana_anios} año${v.diferencia_mediana_anios === 1 ? '' : 's'}` : ''}${v.comparadas < 30 ? ' · todavía son pocos para sacar conclusiones' : ''}`
+      ? `${v.comparadas >= 30 ? `en ${f(v.comparadas)} expedientes` : 'expedientes'} con la resolución leída en que coincide si es anterior o posterior al corte${v.diferencia_mediana_anios != null ? ` · diferencia típica en el año de inicio: ${v.diferencia_mediana_anios} año${v.diferencia_mediana_anios === 1 ? '' : 's'}` : ''}${v.comparadas < 30 ? ' · todavía son pocos para sacar conclusiones' : ''}`
       : 'todavía no hay resoluciones leídas de expedientes de la planilla: cuando se lean, se mide acá');
   $('siaTarjetas').querySelectorAll('[data-siaver]').forEach(el => el.addEventListener('click', () => {
     ['fDep','fLoc','fSec','fInsc','fAnioD','fAnioH'].forEach(id => $(id).value = ''); $('buscar').value = ''; localidadSel = null;
@@ -2416,10 +2416,10 @@ function pintarPlanilla(){
  * resolución leída o es una estimación; a una estimación sin cruzar no se le pone "ORDENADA": no hay resolución leída.
  */
 function planillaExcel(lista){
-  if(!lista.some(deLaPlanilla)) return P.aCSV(lista);
-  const cols = ['origen'].concat(P.COLUMNAS_PLANILLA);
+  const conPlan = lista.some(deLaPlanilla);
+  const cols = (conPlan ? ['origen'] : []).concat(P.COLUMNAS_PLANILLA);
   const c = v => { const t = v == null ? '' : String(v); return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
-  const filas = lista.filter(r => r.derivado).map(r => { const f = P.aFilaPlanilla(r);
+  const filas = lista.filter(r => r.derivado).map(r => { const f = P.aFilaPlanilla(r); f.clasificacion = nombreClase(f.clasificacion);
     f.origen = deLaPlanilla(r) ? 'estimada con la planilla de la UEST' : 'resolución leída';
     if(deLaPlanilla(r) && !r.derivado.inscripcion) f.inscripcion = '';
     return cols.map(k => c(f[k])).join(';'); });

@@ -1103,12 +1103,12 @@
     let d;
     try { d = JSON.parse((typeof cuerpo === 'string' ? cuerpo : await cuerpo.text()).replace(/^\ufeff/, '')); } catch (e) { throw new Error('El archivo no es un JSON válido.'); }
     if (!d || typeof d.prompt_sistema !== 'string' || d.prompt_sistema.length < 500 || typeof d.prompt_usuario !== 'string' || !d.prompt_usuario)
-      throw new Error('Ese archivo no son las instrucciones de la IA (instrucciones_modelo.json).');
+      throw new Error('Ese archivo no tiene las instrucciones de la IA (instrucciones_modelo.json).');
     const inst = { prompt_sistema: d.prompt_sistema, prompt_usuario: d.prompt_usuario, version: String(d.version || ''), cargado_en: ahora() };
     let escrito = null;
     await ocupado(() => transaccion(async estado => {
       const ab = await abrirEstado(estado, s);
-      anotar(ab.boveda, s, 'carga_instrucciones', 'instrucciones del modelo' + (inst.version ? ' ' + inst.version : ''));
+      anotar(ab.boveda, s, 'carga_instrucciones', 'instrucciones de la IA' + (inst.version ? ' ' + inst.version : ''));
       escrito = ab.dek;
       return { [RUTAS.instrucciones]: await sellarDatos(ab.dek, inst), [RUTAS.admin]: await sellarBovedaDe(ab, s) };
     }, 'Actualización del relevamiento'));
@@ -1267,7 +1267,7 @@
     const s = exigir('ver');
     const c = await cacheDatos(s);
     const a = indices(c).archivos[String(h || '')];
-    if (!a || !a.pdf) throw new Error('Este PDF todavía no está guardado en la web. Subilo en "Filtro Ley Pierri" (la carga de PDF, en el menú): si ya estaba leído, se guarda sin volver a leerlo.');
+    if (!a || !a.pdf) throw new Error('Este PDF todavía no está guardado en la web. Subilo en "Cargar resoluciones", en el menú: si ya estaba leído, se guarda sin volver a leerlo.');
     return { nombre: a.nombre, bytes: await traerPDF(a) };
   }
 
@@ -1302,22 +1302,38 @@
    * Lee la planilla del Padrón en un proceso aparte (leer_planilla.js, con SheetJS): si el archivo viniera armado para
    * atacar la librería, no alcanza la página, que es donde están las llaves y el token. Vuelven solo las filas.
    */
+  // La dirección del lector: armar_web.js le agrega la huella de su versión (?v=...).
+  const LECTOR_PLANILLAS = 'leer_planilla.js';
+  const VERSION_LECTOR = 2;
+  /** Devuelve { v, hoja, hojas, filas } tal como lo manda el lector. */
   function leerPlanilla(bytes, modo) {
     return new Promise((ok, mal) => {
-      const w = new Worker('leer_planilla.js');
+      const w = new Worker(LECTOR_PLANILLAS);
       const fin = (f, x) => { clearTimeout(t); w.terminate(); f(x); };
       const t = setTimeout(() => fin(mal, new Error('la planilla tardó demasiado en leerse')), modo ? 300000 : 120000);
       w.onmessage = e => {
-        if (e.data && e.data.error) return fin(mal, new Error(e.data.error));
-        const filas = (e.data && e.data.filas) || [];
-        // Un lector viejo guardado en el navegador devuelve otra forma (o nada): se avisa en vez de "no reconozco la planilla".
-        if (modo && (!filas.length || !Array.isArray(filas[0]))) return fin(mal, new Error('el navegador usó una versión vieja del lector de planillas (o el archivo está vacío). Apretá Ctrl+F5 y volvé a probar'));
-        fin(ok, filas);
+        const r = e.data || {};
+        if (r.v !== VERSION_LECTOR) return fin(ok, { viejo: true, filas: modo ? [] : (r.filas || []) });
+        if (r.error) return fin(mal, new Error(r.error));
+        fin(ok, r);
       };
       w.onerror = e => { e.preventDefault(); fin(mal, new Error(e.message || 'no se pudo leer (¿la computadora se quedó sin memoria?)')); };
       if (modo) w.postMessage({ bytes: bytes.buffer, modo }, [bytes.buffer]);
       else w.postMessage(bytes.buffer, [bytes.buffer]);
     });
+  }
+  /**
+   * Lee el archivo con el lector de esta versión. Si el navegador tenía guardado uno anterior (GitHub Pages deja guardar
+   * diez minutos), lo vuelve a pedir al servidor y prueba otra vez: Ctrl+F5 no alcanza, porque el lector se abre
+   * después de cargada la página y la recarga forzada no lo alcanza.
+   */
+  async function leerConLector(cuerpo, modo) {
+    for (let intento = 0; intento < 2; intento++) {
+      const r = await leerPlanilla(new Uint8Array(await cuerpo.arrayBuffer()), modo);
+      if (!r.viejo || (!modo && r.filas.length)) return r;   // el Padrón lo lee igual un lector anterior
+      await fetch(LECTOR_PLANILLAS, { cache: 'reload' }).catch(() => {});
+    }
+    throw new Error('al navegador le sigue llegando la versión anterior del lector de planillas: el sitio se está actualizando. Esperá diez minutos y volvé a probar');
   }
   /** Guarda un archivo cifrado con la DEK, leyendo el último estado. cambiar(actual) devuelve el contenido nuevo. */
   async function guardarUno(s, clave, cambiar, accion, detalle) {
@@ -1337,7 +1353,7 @@
     const s = exigir('cargar'); exigirToken();
     const nombre = limpiar(String(nombreCrudo || 'padron.xls')).slice(0, 200);
     let filasHoja;
-    try { filasHoja = await leerPlanilla(new Uint8Array(await cuerpo.arrayBuffer())); }
+    try { filasHoja = (await leerConLector(cuerpo)).filas; }
     catch (e) { throw new Error('no se pudo leer la planilla del Padrón: ' + (e.message || e)); }
     if (!filasHoja.length) throw new Error('la planilla está vacía');
     const filas = window.PierriBase.filasPadron(filasHoja);
@@ -1433,8 +1449,11 @@
     progreso(`Leyendo ${nombre} (una planilla grande tarda un minuto)…`);
     await ocupado(async () => {
       try {
-        try { leida = window.PierriSIA.filasSIA(await leerPlanilla(new Uint8Array(await cuerpo.arrayBuffer()), 'matriz')); }
-        catch (e) { throw new Error(String(e.message || e)); }
+        const hojas = await leerConLector(cuerpo, 'matriz');
+        const cuales = hojas.hojas && hojas.hojas.length > 1 ? ` (el archivo tiene las hojas ${hojas.hojas.map(h => '«' + h + '»').join(', ')}${hojas.hoja ? '; se leyó «' + hojas.hoja + '»' : ''})` : '';
+        if (!hojas.filas.length) throw new Error('la planilla está vacía' + cuales);
+        try { leida = window.PierriSIA.filasSIA(hojas.filas, { fecha1904: hojas.fecha1904 }); }
+        catch (e) { throw new Error(String(e.message || e) + cuales); }
         if (!leida.filas.length) throw new Error('la planilla no tiene ningún expediente con número válido');
         progreso(`Guardando ${leida.filas.length.toLocaleString('es-AR')} expedientes cifrados…`);
         await guardarUno(s, 'sia', () => ({ archivo: nombre, cargado_en: ahora(), filas: leida.filas }), 'carga_planilla_sia', `${nombre}: ${leida.filas.length} expedientes`);
