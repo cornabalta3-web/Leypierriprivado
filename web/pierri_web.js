@@ -950,7 +950,7 @@
       try {
         const lect = X.extraerDeTexto(u.texto, u.nombreControl);
         registros.push(lect.suficiente ? T.registroPorTexto(base, u, lect, cfg, tabla(), vistos)
-          : T.registroIncompleto(base, u, lect, cfg, tabla(), vistos, ' (en la web se lee solo por texto: falta leerla con el modelo)', null));
+          : T.registroIncompleto(base, u, lect, cfg, tabla(), vistos, ' (se lee solo por texto: falta leerla con IA)', null));
       } catch (err) { registros.push(Object.assign(base, { error: String(err.message || err) })); }
     }
     // La ubicación (Catastro y, si no hay parcela, la localidad) se calcula al mirar, en el mismo orden que el kit.
@@ -1069,7 +1069,7 @@
   }
 
   // ───────────── Lectura con el modelo (solo con el botón) ─────────────
-  // La web nunca llama al modelo sola: solo cuando el administrador toca "Completar incompletas con el modelo".
+  // La web nunca llama al modelo sola: solo cuando el administrador toca "Leer con IA las que quedaron sin leer".
   // Lee nada más las resoluciones que el texto no resolvió y que tienen su PDF guardado.
   const ENCABEZADOS_API = k => ({ 'x-api-key': k, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' });
   function modeloElegido() {
@@ -1103,7 +1103,7 @@
     let d;
     try { d = JSON.parse((typeof cuerpo === 'string' ? cuerpo : await cuerpo.text()).replace(/^\ufeff/, '')); } catch (e) { throw new Error('El archivo no es un JSON válido.'); }
     if (!d || typeof d.prompt_sistema !== 'string' || d.prompt_sistema.length < 500 || typeof d.prompt_usuario !== 'string' || !d.prompt_usuario)
-      throw new Error('Ese archivo no son las instrucciones del modelo (instrucciones_modelo.json).');
+      throw new Error('Ese archivo no son las instrucciones de la IA (instrucciones_modelo.json).');
     const inst = { prompt_sistema: d.prompt_sistema, prompt_usuario: d.prompt_usuario, version: String(d.version || ''), cargado_en: ahora() };
     let escrito = null;
     await ocupado(() => transaccion(async estado => {
@@ -1158,7 +1158,7 @@
   // Lo leído con el modelo (y lo cobrado sin datos) que GitHub no guardó: se guarda en la vuelta siguiente, con "Guardar
   // lo pendiente" o al cerrar la sesión, sin volver a pagarlo.
   let PEND_MODELO = { registros: {}, tokens: 0, noLeidas: 0 };
-  /** "Completar incompletas con el modelo": hasta LOTE_MODELO por vez, en la cola con las cargas. */
+  /** "Leer con IA las que quedaron sin leer": hasta LOTE_MODELO por vez, en la cola con las cargas. */
   function completar() {
     const s = exigir('cargar'); exigirToken();
     return enCola(() => ocupado(() => completarAhora(s)));
@@ -1167,7 +1167,7 @@
     if (!s.claveApi) return { completadas: 0, pendientes: 0, motivo: 'sin clave' };
     await datos();
     const c = CACHE, T = window.PierriTomos, P = window.PierriCore;
-    if (!c.instrucciones || !c.instrucciones.prompt_sistema) throw new Error('Faltan las instrucciones del modelo: cargalas una vez en Configuración.');
+    if (!c.instrucciones || !c.instrucciones.prompt_sistema) throw new Error('Faltan las instrucciones de la IA: cargalas una vez en Configuración.');
     // Primero se guarda lo que ya se pagó y GitHub no guardó; si GitHub sigue fallando, no se lee (ni se cobra) nada nuevo.
     const antes = PEND_MODELO, guardadasAntes = Object.keys(antes.registros).length;
     if (guardadasAntes || antes.tokens) { await guardarModelo(s, antes.registros, antes.tokens, modeloElegido(), antes.noLeidas || 0, antes.id); await datos(); }
@@ -1183,7 +1183,7 @@
     let n = 0, tokens = 0, noLeidas = 0, corte = null;
     for (let i = 0; i < lote.length; i++) {
       const r = lote[i];
-      progreso(`Leyendo con el modelo ${i + 1} de ${lote.length}: ${(r.derivado && r.derivado.expediente) || r.archivo}…`);
+      progreso(`Leyendo con IA ${i + 1} de ${lote.length}: ${(r.derivado && r.derivado.expediente) || r.archivo}…`);
       try {
         let bytes;
         // Si el PDF guardado no se puede traer o abrir, es un problema de ese documento (salvo que falte la conexión).
@@ -1229,7 +1229,7 @@
       const cuentas = [...new Set(Object.values(nuevas).map(r => r.derivado.geo && r.derivado.geo.cuenta_normalizada).filter(Boolean).map(x => x.replace(/\D/g, '')))]
         .filter(x => x.length === 12 && !(c.catastro && c.catastro[x]));
       if (cuentas.length && !catastroCaido()) { try { parcelas = await consultarParcelas(cuentas); } catch (e) { CATASTRO_CAIDO = Date.now(); } }
-      progreso('Guardando lo leído con el modelo…');
+      progreso('Guardando lo leído con IA…');
       let escrito = null;
       await transaccion(async estado => {
         const ab = await abrirEstado(estado, s);
@@ -1253,7 +1253,7 @@
         if (e && e.yaGuardado) return;
         PEND_MODELO = { registros: nuevas, tokens, noLeidas, id };
         progreso('');
-        throw new Error(`GitHub no guardó lo leído con el modelo (${e.message}). Quedó en esta pestaña: tocá de nuevo "Completar incompletas con el modelo" y se guarda sin volver a cobrarlo.`);
+        throw new Error(`GitHub no guardó lo leído con IA (${e.message}). Quedó en esta pestaña: tocá de nuevo "Leer con IA las que quedaron sin leer" y se guarda sin volver a cobrarlo.`);
       });
       PEND_MODELO = { registros: {}, tokens: 0, noLeidas: 0 };
       const cambios = { completadas: escrito.completadas };
@@ -1307,7 +1307,13 @@
       const w = new Worker('leer_planilla.js');
       const fin = (f, x) => { clearTimeout(t); w.terminate(); f(x); };
       const t = setTimeout(() => fin(mal, new Error('la planilla tardó demasiado en leerse')), modo ? 300000 : 120000);
-      w.onmessage = e => (e.data && e.data.error) ? fin(mal, new Error(e.data.error)) : fin(ok, (e.data && e.data.filas) || []);
+      w.onmessage = e => {
+        if (e.data && e.data.error) return fin(mal, new Error(e.data.error));
+        const filas = (e.data && e.data.filas) || [];
+        // Un lector viejo guardado en el navegador devuelve otra forma (o nada): se avisa en vez de "no reconozco la planilla".
+        if (modo && (!filas.length || !Array.isArray(filas[0]))) return fin(mal, new Error('el navegador usó una versión vieja del lector de planillas (o el archivo está vacío). Apretá Ctrl+F5 y volvé a probar'));
+        fin(ok, filas);
+      };
       w.onerror = e => { e.preventDefault(); fin(mal, new Error(e.message || 'no se pudo leer (¿la computadora se quedó sin memoria?)')); };
       if (modo) w.postMessage({ bytes: bytes.buffer, modo }, [bytes.buffer]);
       else w.postMessage(bytes.buffer, [bytes.buffer]);
@@ -1428,7 +1434,7 @@
     await ocupado(async () => {
       try {
         try { leida = window.PierriSIA.filasSIA(await leerPlanilla(new Uint8Array(await cuerpo.arrayBuffer()), 'matriz')); }
-        catch (e) { throw new Error('no se pudo leer la planilla: ' + (e.message || e)); }
+        catch (e) { throw new Error(String(e.message || e)); }
         if (!leida.filas.length) throw new Error('la planilla no tiene ningún expediente con número válido');
         progreso(`Guardando ${leida.filas.length.toLocaleString('es-AR')} expedientes cifrados…`);
         await guardarUno(s, 'sia', () => ({ archivo: nombre, cargado_en: ahora(), filas: leida.filas }), 'carga_planilla_sia', `${nombre}: ${leida.filas.length} expedientes`);

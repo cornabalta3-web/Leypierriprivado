@@ -109,7 +109,11 @@
       const t = (filas[i] || []).map(norm);
       if (OBLIGATORIOS.every(k => CAMPOS[k].some(n => t.includes(n)))) cab = i;
     }
-    if (cab < 0) throw new Error('no reconozco la planilla: se esperan las columnas de número de expediente (NRO_EXP_SUAC), fecha de ingreso (FECHA_INGRESO) y antigüedad (ANTIGUEDAD), como en la planilla de trámites del SIA de la UEST');
+    if (cab < 0) {
+      const vistos = (filas[0] || []).filter(v => v != null && String(v).trim()).slice(0, 10).map(v => String(v).trim().slice(0, 30));
+      throw new Error('no reconozco la planilla: se esperan las columnas de número de expediente (NRO_EXP_SUAC), fecha de ingreso (FECHA_INGRESO) y antigüedad (ANTIGUEDAD), como en la planilla de trámites del SIA de la UEST'
+        + (vistos.length ? `. En la primera fila hay: ${vistos.join(' · ')}` : '. La primera fila está vacía'));
+    }
     const titulos = filas[cab].map(norm);
     const cols = {};
     for (const [campo, nombres] of Object.entries(CAMPOS)) cols[campo] = nombres.flatMap(n => titulos.flatMap((t, j) => t === n ? [j] : []));

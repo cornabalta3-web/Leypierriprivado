@@ -37,7 +37,7 @@ Se abre el navegador en http://localhost:3777 con el Tablero. Desde ahí:
 1. **Tirá los PDF al Embudo.** Uno, tres, o mil; sueltos o tomos. Cada uno se lee y aparece en la lista con su expediente y su clasificación. Un archivo cargado dos veces se ignora; un expediente con dos resoluciones se queda con la más nueva y marca la otra como repetida.
 2. **Cargá el Inventario de la UEST** en la pantalla Inventario: el CSV de expedientes digitalizados (de Y-Neura) y, si lo tenés, el del SUAC con iniciador y DNI. Se fusionan solos por número de expediente. Con eso sabés cuántos expedientes hay, cuáles tienen la resolución escaneada y, apretando "Ubicar cuentas en Catastro", dónde está cada lote, antes de leer un solo PDF. Tarda unos minutos la primera vez; si se corta, volvés a apretar y sigue.
 3. **Cargá el Padrón** con el botón. Cruza por nombre (solo cuando el nombre es único de los dos lados) y cada resolución queda como inscripta, provisoria, observada, ambigua o "no figura".
-4. **Poné la clave de API** en Configuración si querés que las que el texto no pudo leer (escaneos ilegibles, dos rogantes) las lea el modelo. Sin clave, todo lo que el texto resuelve se resuelve igual y gratis; lo demás queda marcado como incompleto. Con "Completar incompletas con el modelo" se leen después.
+4. **Poné la clave de API** en Configuración si querés que las que el texto no pudo leer (escaneos ilegibles, dos rogantes) las lea el modelo. Sin clave, todo lo que el texto resuelve se resuelve igual y gratis; lo demás queda marcado como incompleto. Con "Leer con IA las que quedaron sin leer" se leen después.
 5. **Mirá y exportá.** Filtros, búsqueda, fecha de corte (recalcula al instante), ranking de localidades, mapa, planilla para Excel, KML para Google Maps.
 
 Para cerrar la aplicación: Ctrl+C en la terminal. La próxima vez, `node pierri.js` de nuevo y está todo como lo dejaste.
@@ -115,7 +115,7 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 **El permiso de GitHub (token)** queda guardado solo en tu computadora, cifrado con tu contraseña, nunca en el repositorio: adivinar tu contraseña permitiría leer, pero no escribir. Para usar otra computadora, o cuando el token vence: **Configuración**, **Permiso de GitHub**, pegarlo y **Guardar en esta computadora**. En una computadora prestada, al terminar: **Olvidar** y **Cerrar sesión**.
 
 **Cargar resoluciones desde la web** (solo el administrador)
-1. **Cargar** (el Embudo): arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
+1. **Cargar resoluciones** (en el menú): arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
 2. Cada PDF se lee en tu computadora, igual que en el kit sin clave de API: tomos, expedientes completos y sueltas. Se guarda en GitHub cifrado, el PDF original incluido, cada 250 archivos (o 60 MB) y al terminar. Lo que ya estaba se saltea: si se corta, se vuelve a elegir la misma carpeta y sigue.
 3. Con miles de PDF tarda (más o menos un segundo por archivo, según la conexión): la pestaña tiene que quedar abierta, pero la sesión no se cierra mientras trabaja. Si GitHub pide una pausa por la cantidad de pedidos, espera solo y sigue.
 4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo". Cargar nunca usa el modelo: se completan después, con el botón (ver abajo).
@@ -124,16 +124,16 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 - En **Expedientes**, al abrir una resolución: **Ver la resolución original** la muestra al costado, solo sus páginas. La ven todos los usuarios.
 - La caja **Revisada** (solo el administrador): tilde, fecha de posesión corregida, tipo, quién y observación. Se guarda al instante y queda en la auditoría.
 
-**Lectura con el modelo** (solo el administrador, en **Configuración**, recuadro **Lectura con el modelo**)
-1. Una sola vez: **Cargar instrucciones del modelo** con el archivo `instrucciones_modelo.json` (lo arma `node armar_web.js --instrucciones <archivo>` en el kit; normalmente te lo pasa Claude). Las instrucciones citan resoluciones reales: se guardan cifradas, y después hay que borrar el archivo.
+**Lectura con IA** (solo el administrador, en **Configuración**, recuadro **Lectura con IA**)
+1. Una sola vez: **Cargar instrucciones de la IA** con el archivo `instrucciones_modelo.json` (lo arma `node armar_web.js --instrucciones <archivo>` en el kit; normalmente te lo pasa Claude). Las instrucciones citan resoluciones reales: se guardan cifradas, y después hay que borrar el archivo.
 2. Pegar la clave de API de Anthropic y **Guardar**. Queda solo en esta computadora, cifrada con tu contraseña; no va al repositorio. Para dejar de usarla: borrar el campo y **Guardar**.
-3. **Completar incompletas con el modelo**: antes de empezar dice cuántas va a leer y pide confirmación, porque gasta tokens. Lee solo las que el texto no resolvió y tienen su PDF guardado. Nada más usa el modelo: ni cargar PDF ni mirar.
+3. **Leer con IA las que quedaron sin leer**: antes de empezar dice cuántas va a leer y pide confirmación, porque gasta tokens. Lee solo las que el texto no resolvió y tienen su PDF guardado. Nada más usa el modelo: ni cargar PDF ni mirar.
 
 **Padrón, inventario y Catastro**: los mismos botones que en el kit (**Padrón**, **Inventario**, **Reintentar Catastro** en el Mapa). Se guardan cifrados y el cruce se calcula al mirar, así que una carga nueva de resoluciones ya sale cruzada.
 
 **La planilla de trámites de la UEST, sin los PDF** (solo en la web; la carga solo el administrador)
 1. **Inventario**, recuadro **Planilla de trámites de la UEST (SIA)**, **Cargar planilla de trámites (.xlsx)**. Una planilla de 50.000 expedientes tarda alrededor de un minuto. Se guarda cifrada y solo con lo que sirve: no se guardan los testigos, el domicilio del iniciador ni los comentarios. Cargar una nueva reemplaza a la anterior.
-2. Cada expediente aparece en **Expedientes**, el **Mapa** y el **Resumen** con la posesión **estimada**: fecha de ingreso del trámite menos la antigüedad declarada al iniciarlo. Es lo que se declaró al empezar, no lo que fijó la resolución: puede no coincidir. Se distinguen con el filtro **Estimadas con la planilla**; las leídas, con **Leídas del PDF**.
+2. Cada expediente aparece en **Expedientes**, el **Mapa** y el **Resumen** con la posesión **estimada**: fecha de ingreso del trámite menos la antigüedad declarada al iniciarlo. Es lo que se declaró al empezar, no lo que fijó la resolución: puede no coincidir. Se distinguen por la etiqueta **estimado** y con el filtro **Estimadas con la planilla**; las leídas, con **Leídas del PDF**.
 3. **Ubicar las parcelas en Catastro**: consulta las cuentas de a 2.000 y guarda cada tanda. Con toda la planilla son unas 34.000 cuentas y tarda varios minutos; si se corta, se vuelve a tocar y sigue donde quedó. Las que no tienen cuenta se ubican aproximadamente por la localidad.
 4. El Padrón cruza también estos expedientes, por el nombre del iniciador.
 5. **Bajar la lista para pedir los PDF**: un CSV, sin nombres ni DNI, con los anteriores al corte según la planilla; primero los que quedan en el borde, que es donde la resolución puede cambiar el resultado. Sirve para elegir qué bajar cada día cuando hay límite de descargas.

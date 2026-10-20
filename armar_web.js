@@ -170,7 +170,7 @@ function main() {
   if (iInst > 0) return instrucciones(process.argv[iInst + 1] || 'instrucciones_modelo.json');
   const O = args();
   let html = fs.readFileSync(path.join(__dirname, 'tablero_pierri.html'), 'utf8');
-  const web = fs.readFileSync(path.join(__dirname, 'web', 'pierri_web.js'), 'utf8');
+  let web = fs.readFileSync(path.join(__dirname, 'web', 'pierri_web.js'), 'utf8');
   const s = sacarDatosDelModelo(html);
   html = s.html;
 
@@ -181,6 +181,10 @@ function main() {
   // script viejo guardado de antes (GitHub Pages deja guardar los archivos hasta 10 minutos).
   // (en letras: una tira de dígitos parecería un número de documento para el barrido)
   const huellaDe = txt => crypto.createHash('sha256').update(txt).digest('hex').slice(0, 12).replace(/\d/g, d => 'ghijklmnop'[d]);
+  // El lector de planillas corre aparte (un worker) y no lo pide la página sino pierri_web.js: también lleva su huella.
+  const planilla = fs.readFileSync(path.join(__dirname, 'web', 'leer_planilla.js'), 'utf8');
+  if (web.split("new Worker('leer_planilla.js')").length !== 2) throw new Error('no encuentro dónde pierri_web.js abre el lector de planillas');
+  web = web.replace("new Worker('leer_planilla.js')", `new Worker('leer_planilla.js?v=${huellaDe(planilla)}')`);
   const scripts = MODULOS.map(f => `<script src="${f}?v=${huellaDe(fs.readFileSync(path.join(__dirname, f), 'utf8'))}"></script>`)
     .concat([`<script src="pierri_web.js?v=${huellaDe(web)}"></script>`]).join('\n');
   html = html.replace(anclaMain, () => `<script>window.PIERRI_WEB_REPO = ${repo};</script>\n${scripts}\n` + anclaMain);
@@ -205,7 +209,6 @@ function main() {
   barrer('index.html', html, s.huellas);
   barrer('pierri_web.js', web, s.huellas);
   const modulos = MODULOS.map(f => [f, sinComentarios(f, fs.readFileSync(path.join(__dirname, f), 'utf8'))]);
-  const planilla = fs.readFileSync(path.join(__dirname, 'web', 'leer_planilla.js'), 'utf8');
   barrer('leer_planilla.js', planilla, s.huellas);
   const enVendor = listar(path.join(__dirname, 'web', 'vendor')).sort();
   const sobran = enVendor.filter(f => !VENDOR.includes(f)), faltan = VENDOR.filter(f => !enVendor.includes(f));
