@@ -663,8 +663,8 @@ const servidor = http.createServer(async (req, res) => {
       if (req.method === 'POST') {
         const c = JSON.parse((await leerCuerpo(req)).toString('utf8') || '{}');
         try {
-          if (c.accion === 'crear') { crearUsuario({ usuario: c.usuario, nombre: c.nombre, rol: c.rol, clave: c.clave, debeCambiar: true }); auditar(req, sesion, 'usuario_alta', `${c.usuario} (${c.rol})`); }
-          else if (c.accion === 'rol') { if (!ROLES[c.rol]) throw new Error('Perfil desconocido.'); db.prepare('UPDATE usuarios SET rol = ?, actualizado_en = ? WHERE usuario = ?').run(c.rol, ahora(), c.usuario); auditar(req, sesion, 'usuario_perfil', `${c.usuario} → ${c.rol}`); }
+          if (c.accion === 'crear') { crearUsuario({ usuario: c.usuario, nombre: c.nombre, rol: c.rol, clave: c.clave, debeCambiar: true }); auditar(req, sesion, 'usuario_alta', `${c.usuario} (${ROLES[c.rol] || c.rol})`); }
+          else if (c.accion === 'rol') { if (!ROLES[c.rol]) throw new Error('Perfil desconocido.'); db.prepare('UPDATE usuarios SET rol = ?, actualizado_en = ? WHERE usuario = ?').run(c.rol, ahora(), c.usuario); auditar(req, sesion, 'usuario_perfil', `${c.usuario} → ${ROLES[c.rol]}`); }
           else if (c.accion === 'activo') {
             if (c.usuario === sesion.usuario) throw new Error('No podés desactivar tu propia cuenta.');
             db.prepare('UPDATE usuarios SET activo = ?, actualizado_en = ? WHERE usuario = ?').run(c.activo ? 1 : 0, ahora(), c.usuario);

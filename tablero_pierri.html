@@ -52,6 +52,7 @@ button.chip.on{border-color:var(--acento);background:var(--marca);color:#fff}
 button:disabled{opacity:.45;cursor:not-allowed}
 input,select{font:inherit;font-size:13.5px;padding:9px 11px;border:1px solid var(--linea2);border-radius:var(--r2);background:var(--blanco);color:var(--texto)}
 input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--marca);outline-offset:1px}
+input:disabled,select:disabled{background:var(--suave);color:var(--texto2);cursor:not-allowed;opacity:1}
 .oculto{display:none!important}
 
 .app{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:100vh}
@@ -115,7 +116,11 @@ button.chip.a.on{border-color:#c9911e;background:var(--ambar2);color:var(--ambar
 .cifra-media{font-family:"Manrope",sans-serif;font-size:44px;font-weight:800;line-height:1;letter-spacing:-.02em}
 .tarjeta.clicable:focus-visible{outline:2px solid var(--marca);outline-offset:1px}
 .tarjeta.est{border-style:dashed;border-color:var(--linea2)}
-#siaProgreso:empty,#invProgreso:empty{display:none}
+#siaProgreso:empty,#invProgreso:empty,#padronProgreso:empty,#usuariosProgreso:empty{display:none}
+/* Lo que hace el botón además de cargar ("reemplaza al anterior"), en letra más liviana. */
+button .boton-nota{font-weight:400;opacity:.85}
+/* Mientras se guarda un cambio de usuarios, la tabla no acepta otro: se ve apagada. */
+#tablaUsuarios.ocupado a,#tablaUsuarios.ocupado select{pointer-events:none;opacity:.45}
 .acciones-pendientes{display:flex;flex-direction:column;gap:9px}
 .rotulo{font-size:11.5px;color:var(--texto2);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .grid-acciones{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
@@ -220,7 +225,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--blanco);color:var(--texto)}
 .leaflet-container a.leaflet-popup-close-button{color:var(--texto2)}
 .leaflet-popup-content a{color:var(--acento)}
-@media (max-width:760px){#filas td,#recientes td{white-space:normal}#filas .tag,#recientes .tag{white-space:normal}.detalle dl{grid-template-columns:1fr}.detalle dd{overflow-wrap:anywhere;margin-bottom:6px}}
+@media (max-width:760px){#filas td,#recientes td{white-space:normal}#filas .tag,#recientes .tag,#tablaArchivos .tag,#progresoCuerpo .tag{white-space:normal}.detalle dl{grid-template-columns:1fr}.detalle dd{overflow-wrap:anywhere;margin-bottom:6px}}
 .tema{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;padding:7px 10px;font-size:12px;border-radius:6px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;min-height:34px}
 .tema:hover{background:rgba(255,255,255,.1)}
 /* ¿Está cumpliendo? — la cadena del relevamiento y tres preguntas: avance, calidad, resultado */
@@ -328,11 +333,11 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
     <input id="filePdf" type="file" accept="application/pdf,.pdf" multiple class="oculto">
     <input id="carpetaPdf" type="file" webkitdirectory multiple class="oculto">
     <input id="file" type="file" accept=".jsonl,.json,application/json" class="oculto">
-    <div class="panel oculto" id="progreso"><div class="cabp"><h2>Últimas cargas</h2><span class="sub" id="progresoSub"></span></div><div class="mini oculto" id="progresoWeb" style="margin:10px 18px 0"></div><div class="msg oculto" id="balanceCarga" style="margin:12px 18px 0"></div><div class="acciones oculto" id="pendienteWeb" style="margin:10px 18px 0"><button id="btnGuardarPendiente">Guardar lo pendiente</button><span class="mini">Hay lectura que todavía no se guardó en GitHub (PDF leídos o lo leído con IA).</span></div><div class="cuerpo" id="progresoCuerpo" style="gap:0"></div></div>
+    <div class="panel oculto" id="progreso"><div class="cabp"><h2>Archivos de esta carga</h2><span class="sub" id="progresoSub"></span></div><div class="mini oculto" id="progresoWeb" style="margin:10px 18px 0"></div><div class="msg oculto" id="balanceCarga" style="margin:12px 18px 0"></div><div class="acciones oculto" id="pendienteWeb" style="margin:10px 18px 0"><button id="btnGuardarPendiente">Guardar lo pendiente</button><span class="mini">Hay lectura que todavía no se guardó en GitHub (PDF leídos o lo leído con IA).</span></div><div class="cuerpo" id="progresoCuerpo" style="gap:0"></div></div>
     <div class="origen" id="origen"></div>
     <div class="panel oculto" id="panelArchivos"><div class="cabp"><h2>Qué aportó cada archivo</h2><span class="sub" id="subArchivos"></span></div>
       <div class="cuerpo" style="gap:6px"><div class="acciones" id="filtroArchivos">
-        <button class="chip on" data-a="todos">Todos</button><button class="chip" data-a="suman">Suman un expediente</button>
+        <button class="chip on" data-a="todos">Todos</button><button class="chip" data-a="suman">Suman expedientes nuevos</button>
         <button class="chip" data-a="repetidos">Del mismo expediente que otro</button><button class="chip" data-a="nada">No aportan nada</button></div></div>
       <div class="tabla-scroll" style="max-height:460px;overflow:auto"><table><thead><tr><th>Archivo</th><th>Qué aportó al relevamiento</th></tr></thead><tbody id="tablaArchivos"></tbody></table></div></div>
     <div class="acciones"><button class="sec" id="btnArchivos">Ver qué aportó cada archivo</button></div>
@@ -362,9 +367,9 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
 
   <section class="vista oculto" id="v-inventario">
     <div class="cab"><div><h1>Inventario de expedientes digitalizados</h1><p>El CSV que manda la UEST: qué expedientes están digitalizados, cuáles tienen la resolución escaneada y dónde está cada lote según Catastro, antes de leer un solo PDF.</p></div>
-      <div class="acciones"><button id="btnInventario">Cargar inventario (.csv)</button><button id="btnUbicarInv" class="sec oculto">Ubicar en Catastro (inventario)</button></div></div>
+      <div class="acciones"><button id="btnInventario">Cargar inventario (.csv)<span class="boton-nota"> — reemplaza al del mismo formato</span></button><button id="btnUbicarInv" class="sec oculto">Ubicar en Catastro (inventario)</button></div></div>
     <input id="fileInventario" type="file" accept=".csv,text/csv" class="oculto">
-    <p id="invVacio" style="margin:0;color:var(--texto2)">Todavía no se cargó el inventario. Cargá el CSV de expedientes digitalizados que manda la UEST con "Cargar inventario (.csv)": se suma al que ya estaba.</p>
+    <p id="invVacio" style="margin:0;color:var(--texto2)">Todavía no se cargó el inventario. Cargá el CSV de expedientes digitalizados que manda la UEST con "Cargar inventario (.csv)".</p>
     <div id="invProgreso" class="mini"></div>
     <div class="oculto" id="invDetalle" style="display:flex;flex-direction:column;gap:18px">
     <div class="tarjetas" id="invTarjetas"></div>
@@ -379,7 +384,7 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
       <div><b>Con resolución</b>: la UEST escaneó la resolución (estado "Solo resolución" o "Resolución+Cuerpo"). Son las que el sistema puede clasificar; el resto solo tiene el cuerpo del expediente digitalizado.</div>
       <div><b>Con cuenta válida</b>: el inventario trae el número de cuenta de Rentas a 12 dígitos; con eso Catastro devuelve la parcela sin abrir el PDF. Las que no lo traen lo aportará la resolución cuando se lea.</div>
       <div><b>Baldías</b>: Catastro dice que la parcela no tiene construcción; Pierri exige inmueble edificado, así que van al final de la cola.</div>
-      <div><b>Dos formatos de CSV</b>: el de expedientes digitalizados (con el estado de la resolución y la cuenta) y el del SUAC (iniciador, DNI, fecha de ingreso). Se pueden cargar los dos; se fusionan por número de expediente.</div>
+      <div><b>Dos formatos de CSV</b>: el de expedientes digitalizados (con el estado de la resolución y la cuenta) y el del SUAC (iniciador, DNI, fecha de ingreso). Se pueden cargar los dos; se fusionan por número de expediente. Un CSV nuevo reemplaza al anterior del mismo formato y se combina con el del otro.</div>
     </div></div>
     </div>
   </section>
@@ -471,7 +476,7 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
 
   <section class="vista oculto" id="v-mapa">
     <div class="cab"><div><h1>Localidades y mapa</h1><p id="subMapa"></p></div>
-      <div class="acciones"><button id="expKml" class="sec">KML para Google Maps</button><button id="btnCatastro" class="sec">Ubicar en Catastro</button></div></div>
+      <div class="acciones"><button id="expKml" class="sec">Bajar para Google Maps (.kml)</button><button id="btnCatastro" class="sec">Ubicar en Catastro</button></div></div>
     <div class="dos" style="grid-template-columns:minmax(0,1fr) 320px">
       <div class="panel"><div class="cuerpo">
         <div id="mapa"></div>
@@ -484,8 +489,9 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
 
   <section class="vista oculto" id="v-padron">
     <div class="cab"><div><h1>Padrón del Registro</h1><p>La planilla de anotaciones de posesión del Registro General. Se cruza por nombre, solo cuando el nombre es único de los dos lados y el año cierra.</p></div>
-      <div class="acciones"><button id="btnPadron">Cargar Padrón (.xls)</button></div></div>
+      <div class="acciones"><button id="btnPadron">Cargar Padrón (.xls)<span class="boton-nota"> — reemplaza al anterior</span></button></div></div>
     <input id="filePadron" type="file" accept=".xls,.xlsx" class="oculto">
+    <div id="padronProgreso" class="mini"></div>
     <div class="tarjetas" id="padronTarjetas"></div>
     <div class="panel"><div class="cabp"><h2>Qué significa cada estado</h2></div><div class="cuerpo mini" style="gap:6px">
       <div><b>Inscripta</b>: la anotación existe y es definitiva. <b>Provisoria / Observada</b>: la anotación quedó trabada; hay que destrabarla antes de escriturar.</div>
@@ -495,17 +501,26 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
   </section>
 
   <section class="vista oculto" id="v-config">
-    <div class="cab"><div><h1>Configuración</h1><p>El criterio se puede cambiar cuando quieras: recalcula todo al instante sin volver a leer los PDF.</p></div></div>
+    <div class="cab"><div><h1>Configuración</h1><p id="configSub">El criterio de antigüedad vale para todos los usuarios: al cambiarlo se guarda y se recalcula todo al instante, sin volver a leer los PDF.</p></div></div>
+    <div class="panel" id="panelCriterio"><div class="cabp"><h2>Criterio de antigüedad</h2><span class="sub" id="subCriterio">vale para todos los usuarios</span></div><div class="cuerpo">
+      <div class="controles">
+        <div class="grupo"><label for="regla">Regla</label><select id="regla"><option value="CORTE_FIJO">Posesión anterior al corte (ley vigente)</option><option value="PLAZO_MOVIL">Diez años antes de la presentación (proyecto)</option></select></div>
+        <div class="grupo"><label for="corte">Fecha de corte</label><input id="corte" type="text" class="fecha" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" value="01/01/2006" style="width:130px"></div>
+        <div class="grupo"><label for="margen">Margen de borde (meses)</label><input id="margen" type="number" min="0" max="36" value="12" style="width:90px"></div>
+      </div>
+      <p class="mini" id="textoCriterio" style="margin:0"></p>
+      <p class="mini" id="avisoCorte2" style="margin:0"></p>
+    </div></div>
     <div class="panel oculto" id="panelToken"><div class="cabp"><h2>Permiso de GitHub</h2><span class="sub" id="subToken"></span></div>
       <div class="cuerpo">
         <div class="controles">
-          <div class="grupo" style="flex:1;min-width:240px"><label for="tokenWeb">Token (empieza con github_pat_)</label><input id="tokenWeb" type="password" autocomplete="off"></div>
+          <div class="grupo" style="flex:1;min-width:240px"><label for="tokenWeb">Permiso de GitHub (token, empieza con github_pat_)</label><input id="tokenWeb" type="password" autocomplete="off"></div>
           <button id="btnToken">Guardar en esta computadora</button><button id="btnOlvidarToken" class="sec">Olvidar</button>
         </div>
         <p class="mini" style="margin:6px 0 0">Hace falta para guardar cambios (usuarios y datos). Queda solo en esta computadora: no se sube a ningún lado. Si vence o se filtra, revocalo en GitHub y cargá uno nuevo acá.</p>
       </div>
     </div>
-    <div class="panel solo-admin oculto" id="panelUsuarios"><div class="cabp"><h2>Usuarios y perfiles</h2><span class="sub">consulta ve y exporta · revisión corrige · administración configura</span></div>
+    <div class="panel solo-admin oculto" id="panelUsuarios"><div class="cabp"><h2>Usuarios y perfiles</h2><span class="sub" id="subUsuarios">consulta ve y baja la lista · revisión corrige · administración configura</span></div>
       <div class="cuerpo">
         <div class="controles">
           <div class="grupo"><label for="nuUsuario">Usuario</label><input id="nuUsuario" placeholder="nombre.apellido"></div>
@@ -515,32 +530,23 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
           <button id="btnCrearUsuario">Crear usuario</button>
         </div>
         <p class="mini" style="margin:6px 0 0">La persona tendrá que cambiarla la primera vez que entre.</p>
+        <div id="usuariosProgreso" class="mini" role="status"></div>
       </div>
-      <div class="tabla-scroll"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead><tbody id="tablaUsuarios"></tbody></table></div>
+      <div class="tabla-scroll"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th class="col-acceso">Último acceso</th><th>Estado</th><th></th></tr></thead><tbody id="tablaUsuarios"></tbody></table></div>
     </div>
     <div class="panel solo-admin oculto" id="panelAuditoria"><div class="cabp"><h2>Auditoría</h2><button class="sec" id="btnAuditoria" style="padding:5px 10px;font-size:12px">Ver los últimos movimientos</button></div>
       <div class="tabla-scroll" style="max-height:340px;overflow:auto"><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th class="col-sec">Origen</th></tr></thead><tbody id="tablaAuditoria"><tr><td colspan="5" class="vacio">Tocá el botón para cargarlos.</td></tr></tbody></table></div>
     </div>
-    <div class="dos">
-      <div class="panel"><div class="cabp"><h2>Criterio de antigüedad</h2></div><div class="cuerpo">
-        <div class="controles">
-          <div class="grupo"><label for="regla">Regla</label><select id="regla"><option value="CORTE_FIJO">Posesión anterior al corte (ley vigente)</option><option value="PLAZO_MOVIL">Diez años antes de la presentación (proyecto)</option></select></div>
-          <div class="grupo"><label for="corte">Fecha de corte</label><input id="corte" type="date" value="2006-01-01"></div>
-          <div class="grupo"><label for="margen">Margen de borde (meses)</label><input id="margen" type="number" min="0" max="36" value="12" style="width:90px"></div>
-        </div>
-        <p class="mini" id="avisoCorte2" style="margin:0"></p>
-      </div></div>
-      <div class="panel" id="panelApp"><div class="cabp"><h2>Lectura con IA (Claude, de Anthropic)</h2><span class="sub" id="subApp"></span></div><div class="cuerpo">
-        <div class="controles">
-          <div class="grupo" style="flex:1;min-width:240px"><label for="apiKey">Clave de API de Anthropic</label><input id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off"></div>
-          <div class="grupo"><label for="modelo">Versión de la IA</label><select id="modelo"><option value="claude-haiku-4-5-20251001">Haiku 4.5</option><option value="claude-sonnet-4-6">Sonnet 4.6</option></select></div>
-        </div>
-        <div class="acciones"><button id="btnGuardarConfig">Guardar</button><button id="btnCompletar" class="sec">Leer con IA las que quedaron sin leer</button><button id="btnRecargar" class="sec">Actualizar</button><button id="btnReleer" class="sec">Volver a leer todo</button><button id="btnVaciar" class="sec" style="color:var(--rojo);border-color:#dcb8b2">Empezar de cero</button></div>
-        <div class="acciones oculto" id="filaInstr"><button class="sec" id="btnInstr">Cargar instrucciones de la IA</button><span class="mini" id="subInstr"></span></div>
-        <input id="fileInstr" type="file" accept=".json,application/json" class="oculto">
-        <p class="mini" style="margin:0" id="textoApp">Sin clave se lee solo por texto, gratis. Con clave, lo que el texto no resuelve (escaneos ilegibles, dos rogantes) lo lee la IA. La clave queda en <b>config.json</b>, solo en esta computadora. La base es <b>pierri.db</b>, al lado de pierri.js.</p>
-      </div></div>
-    </div>
+    <div class="panel" id="panelApp"><div class="cabp"><h2>Lectura con IA (Claude, de Anthropic)</h2><span class="sub" id="subApp"></span></div><div class="cuerpo">
+      <div class="controles">
+        <div class="grupo" style="flex:1;min-width:240px"><label for="apiKey">Clave de API de Anthropic</label><input id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off"></div>
+        <div class="grupo"><label for="modelo">Versión de la IA</label><select id="modelo"><option value="claude-haiku-4-5-20251001">Haiku 4.5</option><option value="claude-sonnet-4-6">Sonnet 4.6</option></select></div>
+      </div>
+      <div class="acciones"><button id="btnGuardarConfig">Guardar</button><button id="btnCompletar" class="sec">Leer con IA las que quedaron sin leer</button><button id="btnReleer" class="sec">Volver a leer todo</button><button id="btnVaciar" class="sec" style="color:var(--rojo);border-color:#dcb8b2">Empezar de cero</button></div>
+      <div class="acciones oculto" id="filaInstr"><button class="sec" id="btnInstr">Cargar instrucciones de la IA</button><span class="mini" id="subInstr"></span></div>
+      <input id="fileInstr" type="file" accept=".json,application/json" class="oculto">
+      <p class="mini" style="margin:0" id="textoApp">Sin clave se lee solo por texto, gratis. Con clave, lo que el texto no resuelve (escaneos ilegibles, dos rogantes) lo lee la IA. La clave queda guardada solo en esta computadora, en la carpeta del programa (config.json), igual que los datos (pierri.db).</p>
+    </div></div>
   </section>
 </main>
 </div>
@@ -1542,6 +1548,8 @@ ${JSON.stringify(EJEMPLOS[2], null, 1)}`;
 'use strict';
 const P = window.PierriCore;
 const $ = id => document.getElementById(id);
+// El criterio confirmado (ver ponerCriterio). Va con las globales: se usa al arrancar.
+let CRITERIO = { regla: 'CORTE_FIJO', fechaCorte: '2006-01-01', margenBordeMeses: 12, fijado: null };
 let registros = [], vista = [], localidadSel = null, agrupacion = 'localidad', orden = { k: 'localidad', asc: true }, pagina = 0, POR_PAG = 100, guardados = null, mapa = null, capa = null, origenNombre = '', resumenSrv = {};
 // Versión web (GitHub Pages): pierri_web.js hace en el navegador lo que en el kit hace pierri.js. El Tablero la trata como servidor.
 const WEB = !!window.PIERRI_WEB;
@@ -1602,10 +1610,13 @@ async function cargarDesdeServidor(volverATraer){
   resumenSrv = d.resumen || {};
   if(resumenSrv.aviso_datos) avisar(resumenSrv.aviso_datos, true);
   const res = resumenSrv;
-  $('origen').innerHTML = `<span><b>${Number(res.archivos) || 0}</b> archivos cargados</span><span><b>${Number(res.resoluciones) || 0}</b> resoluciones válidas</span><span>${Number(res.repetidas) || 0} repetidas · ${Number(res.incompletas) || 0} incompletas · ${Number(res.errores) || 0} con error</span><span>tokens ${Number(res.tokens || 0).toLocaleString('es-AR')}</span>`;
+  // La tira de la carga: "10 archivos · 13 resoluciones (2 sin leer) · 0 repetidas · 0 con error". El costo de la IA
+  // no va acá (la ve todo el mundo): lo dice el aviso al administrador cuando la usa.
+  const nArch = Number(res.archivos) || 0, nRes = Number(res.resoluciones) || 0, nInc = Number(res.incompletas) || 0;
+  $('origen').innerHTML = nArch || nRes ? `<span><b>${miles(nArch)}</b> ${nArch === 1 ? 'archivo' : 'archivos'} · <b>${miles(nRes)}</b> ${nRes === 1 ? 'resolución' : 'resoluciones'}${nInc ? ` (${miles(nInc)} sin leer)` : ''} · ${plural(res.repetidas, 'repetida', 'repetidas')} · ${miles(res.errores)} con error</span>` : '';
   $('subApp').textContent = d.config && d.config.key ? `clave cargada (${d.config.key}) · ${({ 'claude-haiku-4-5-20251001': 'Haiku 4.5', 'claude-sonnet-4-6': 'Sonnet 4.6' })[d.config.modelo] || d.config.modelo}` : 'sin clave: se lee solo por texto';
   if(WEB) $('subInstr').textContent = res.instrucciones_modelo ? 'instrucciones cargadas' : 'faltan: sin ellas no se puede usar la IA (se cargan una sola vez)';
-  if(d.config){ $('regla').value = d.config.regla || 'CORTE_FIJO'; $('corte').value = d.config.fechaCorte || '2006-01-01'; $('margen').value = d.config.margenBordeMeses ?? 12; $('modelo').value = d.config.modelo || 'claude-haiku-4-5-20251001'; if(d.config.key) $('apiKey').value = d.config.key; }
+  if(d.config){ ponerCriterio(d.config); $('modelo').value = d.config.modelo || 'claude-haiku-4-5-20251001'; if(d.config.key) $('apiKey').value = d.config.key; }
   pintarTodo();
 }
 let avisoModelo = null;
@@ -1616,7 +1627,7 @@ async function verArchivos(){
   const suman = infoArchivos.filter(a => a.suma.length).length, rep = infoArchivos.filter(a => !a.suma.length && a.repetidas.length).length;
   const nada = infoArchivos.length - suman - rep;
   const exps = new Set(infoArchivos.flatMap(a => a.suma)).size;
-  $('subArchivos').textContent = `${infoArchivos.length} archivos → ${exps} expedientes en el relevamiento · ${suman} suman uno · ${rep} son del mismo expediente que otro · ${nada} no aportan nada`;
+  $('subArchivos').textContent = `${plural(infoArchivos.length, 'archivo', 'archivos')} → ${plural(exps, 'expediente', 'expedientes')} en el relevamiento · ${miles(suman)} ${suman === 1 ? 'suma expedientes nuevos' : 'suman expedientes nuevos'} · ${miles(rep)} ${rep === 1 ? 'es del mismo expediente que otro' : 'son del mismo expediente que otro'} · ${miles(nada)} no ${nada === 1 ? 'aporta' : 'aportan'} nada`;
   $('panelArchivos').classList.remove('oculto'); pintarArchivos();
 }
 function pintarArchivos(){
@@ -1625,8 +1636,8 @@ function pintarArchivos(){
     const partes = [];
     if(a.suma.length) partes.push(`<span class="tag p-v">suma ${esc(a.suma.map(e => e === '?' ? 'una resolución sin número de expediente legible' : e).join(', '))}</span>`);
     for(const x of a.repetidas) partes.push(`<span class="tag p-g">${esc(x.expediente)} ya estaba</span> <span class="mini">se conserva la de ${esc(x.queda)}</span>`);
-    if(!a.resoluciones) partes.push(`<span class="tag p-r">no se encontró ninguna resolución adentro</span> <span class="mini">${a.paginas} página(s): puede ser solo el cuerpo del expediente</span>`);
-    for(const e of a.errores) partes.push(`<span class="tag p-r">error</span> <span class="mini">${esc(e)}</span>`);
+    if(!a.resoluciones) partes.push(`<span class="tag p-r">no se encontró ninguna resolución adentro</span> <span class="mini">${a.paginas == null ? '' : plural(a.paginas, 'página', 'páginas') + ': '}puede ser solo el cuerpo del expediente</span>`);
+    for(const e of a.errores) partes.push(`<span class="tag p-r">error</span> <span class="mini">${esc(errorPDF(e))}</span>`);
     if(a.tipos.includes('CEDULA_NOTIFICACION')) partes.push('<span class="mini">es una cédula de notificación</span>');
     return `<tr><td class="mini" style="word-break:break-all">${esc(a.nombre)}</td><td>${partes.join(' ') || '—'}</td></tr>`;
   }).join('') || '<tr><td colspan="2" class="vacio">Ningún archivo en esta categoría.</td></tr>';
@@ -1649,7 +1660,7 @@ async function subirPDFsAhora(lista){
   let cortada = null, sinPermiso = null;
   $('progreso').classList.remove('oculto');
   const cuerpo = $('progresoCuerpo');
-  $('progresoSub').textContent = `procesando ${lista.length} archivo(s)…`;
+  $('progresoSub').textContent = `procesando ${plural(lista.length, 'archivo', 'archivos')}…`;
   let n = 0;
   const B = { yaEstaban: 0, nuevos: 0, sinResolucion: 0, errores: 0, resoluciones: 0 };
   const leidasAhora = () => registros.filter(r => !deLaPlanilla(r)).length;   // la planilla se achica cuando llega la lectura
@@ -1662,20 +1673,20 @@ async function subirPDFsAhora(lista){
       if(r.estado === 'ya_cargado') B.yaEstaban++;
       else if(r.estado === 'error') B.errores++;
       else { B.nuevos++; B.resoluciones += r.unidades || 0; if(!r.unidades) B.sinResolucion++; }
-      if(r.estado === 'ya_cargado') fila.lastElementChild.innerHTML = `<span class="tag p-g">ya estaba</span> <span class="mini">${esc(r.nombre_previo)}${r.pdf_guardado ? ' · leído en el kit: se guarda el PDF para verlo' : ''}</span>`;
-      else if(r.estado === 'error') fila.lastElementChild.innerHTML = `<span class="tag p-r">error</span> <span class="mini">${esc(r.error)}</span>`;
+      if(r.estado === 'ya_cargado') fila.lastElementChild.innerHTML = `<span class="tag p-g">ya estaba</span> <span class="mini">${esc(r.nombre_previo)}${r.pdf_guardado ? ' · leído en la versión instalada: se guarda el PDF para verlo' : ''}</span>`;
+      else if(r.estado === 'error') fila.lastElementChild.innerHTML = `<span class="tag p-r">error</span> <span class="mini">${esc(errorPDF(r.error))}</span>`;
       else fila.lastElementChild.innerHTML = (r.tipo === 'tomo' ? `<span class="tag p-m">${r.unidades > 1 ? 'tomo · ' + r.unidades + ' resoluciones' : 'expediente · 1 resolución'}</span> ` : '') +
-        r.expedientes.map(e => `<span class="tag ${e.clasificacion.startsWith('ELEGIBLE') ? 'p-v' : e.clasificacion.startsWith('NO_ELEGIBLE') ? 'p-g' : 'p-r'}">${esc(e.expediente || '?')} · ${esc(nombreClase(e.clasificacion))}</span>`).join(' ') +
-        (r.incompletas ? ` <span class="tag p-a">${r.incompletas} sin leer del todo</span>` : '') +
+        r.expedientes.map(e => `<span class="tag ${e.clasificacion.startsWith('ELEGIBLE') ? 'p-v' : e.clasificacion.startsWith('NO_ELEGIBLE') ? 'p-g' : 'p-r'}">${esc(e.expediente || 'sin número legible')} · ${esc(nombreClase(e.clasificacion))}</span>`).join(' ') +
+        (r.incompletas ? ` <span class="tag p-a">${miles(r.incompletas)} sin leer</span>` : '') +
         (r.falla_modelo ? ` <span class="tag p-r">la IA no se usó: ${esc(r.falla_modelo)}</span>` : '') +
-        (r.errores ? ` <span class="tag p-r">${r.errores} con error</span> <span class="mini">${esc((r.errores_detalle || []).join(' · '))}</span>` : '') +
+        (r.errores ? ` <span class="tag p-r">${miles(r.errores)} con error</span> <span class="mini">${esc((r.errores_detalle || []).map(errorPDF).join(' · '))}</span>` : '') +
         (!r.unidades ? ` <span class="tag p-r">no se encontró ninguna resolución</span>` : '') +
-        (r.paginas_cuerpo ? ` <span class="mini">${r.paginas_cuerpo} fojas de cuerpo${r.resoluciones_tramite ? ' y ' + r.resoluciones_tramite + ' resolución(es) de trámite' : ''} descartadas</span>` : '') +
-        (r.sueltas && r.sueltas.length ? ` <span class="mini">${r.sueltas.length} página(s) sin asignar</span>` : '');
+        (r.paginas_cuerpo || (r.sueltas && r.sueltas.length) ? ` <span class="mini">${[r.paginas_cuerpo ? `${plural(r.paginas_cuerpo, 'foja', 'fojas')} de cuerpo${r.resoluciones_tramite ? ' y ' + plural(r.resoluciones_tramite, 'resolución', 'resoluciones') + ' de trámite' : ''} ${r.paginas_cuerpo + (r.resoluciones_tramite || 0) === 1 ? 'descartada' : 'descartadas'}` : '',
+          r.sueltas && r.sueltas.length ? plural(r.sueltas.length, 'página', 'páginas') + ' sin asignar' : ''].filter(Boolean).join(' · ')}</span>` : '');
       if(r.falla_modelo) avisoModelo = r.falla_modelo;
       if(r.sin_guardar){ fila.lastElementChild.insertAdjacentHTML('beforeend', ' <span class="tag p-a">leído, sin guardar todavía</span>'); cortada = r.sin_guardar; }
     }catch(err){
-      fila.lastElementChild.innerHTML = `<span class="tag p-r">error</span> <span class="mini">${esc(err.message)}</span>`; B.errores++;
+      fila.lastElementChild.innerHTML = `<span class="tag p-r">error</span> <span class="mini">${esc(errorPDF(err.message))}</span>`; B.errores++;
       // Un error de permiso es el mismo para todos los archivos: se corta y se avisa una sola vez.
       if(/Tu perfil .* no puede|Tenés que ingresar|Falta el permiso de GitHub|no acepta el token|token no tiene permiso/i.test(err.message)){ n++; sinPermiso = err.message; break; }
     }
@@ -1683,7 +1694,7 @@ async function subirPDFsAhora(lista){
     if(cortada) break;   // si GitHub no guarda, no se sigue leyendo: lo leído espera en la pestaña
   }
   if(sinPermiso){ $('progresoSub').textContent = `se detuvo en ${n} de ${lista.length}`; avisar('No se pudo cargar: ' + sinPermiso, true); return; }
-  $('progresoSub').textContent = B.errores ? `${n} archivo(s) procesados, ${B.errores} con error` : `${n} archivo(s) cargados`;
+  $('progresoSub').textContent = B.errores ? `${plural(n, 'archivo procesado', 'archivos procesados')}, ${miles(B.errores)} con error` : plural(n, 'archivo cargado', 'archivos cargados');
   if(cortada){
     $('progresoSub').textContent = `se detuvo en ${n} de ${lista.length}: sin guardar`;
     $('pendienteWeb').classList.remove('oculto');
@@ -1693,18 +1704,18 @@ async function subirPDFsAhora(lista){
   if(WEB) await guardarPendienteWeb();
   await cargarDesdeServidor();
   const sumadas = leidasAhora() - visiblesAntes, mismoExp = Math.max(0, ((resumenSrv && resumenSrv.repetidas) || 0) - repetidasAntes);
-  const partes = [`<b>${lista.length}</b> archivo(s)`];
-  if(B.nuevos) partes.push(`${B.nuevos} leídos`);
-  if(B.yaEstaban) partes.push(`${B.yaEstaban} ya estaban cargados (mismo archivo)`);
-  if(B.sinResolucion) partes.push(`${B.sinResolucion} sin resolución adentro`);
-  if(B.errores) partes.push(`${B.errores} con error`);
-  const res = [`<b>${sumadas}</b> resolución(es) nuevas en el relevamiento`];
-  if(mismoExp) res.push(`${mismoExp} eran de un expediente que ya estaba (se conserva la más nueva)`);
+  const partes = [`<b>${miles(lista.length)}</b> ${lista.length === 1 ? 'archivo' : 'archivos'}`];
+  if(B.nuevos) partes.push(plural(B.nuevos, 'leído', 'leídos'));
+  if(B.yaEstaban) partes.push(plural(B.yaEstaban, 'ya estaba cargado (mismo archivo)', 'ya estaban cargados (mismo archivo)'));
+  if(B.sinResolucion) partes.push(`${miles(B.sinResolucion)} sin resolución adentro`);
+  if(B.errores) partes.push(`${miles(B.errores)} con error`);
+  const res = [`<b>${miles(sumadas)}</b> ${sumadas === 1 ? 'resolución nueva' : 'resoluciones nuevas'} en el relevamiento`];
+  if(mismoExp) res.push(plural(mismoExp, 'era de un expediente que ya estaba', 'eran de un expediente que ya estaba') + ' (se conserva la más nueva)');
   $('balanceCarga').innerHTML = partes.join(' · ') + '<br>' + res.join(' · ');
   $('balanceCarga').classList.remove('oculto');
   if(!$('panelArchivos').classList.contains('oculto')) verArchivos();
   const atencion = [];
-  if(avisoModelo) atencion.push(`${avisoModelo}. Las resoluciones que no se pudieron leer por texto quedaron guardadas como "no se pudieron leer". Corregí la clave en Configuración y después tocá "Leer con IA las que quedaron sin leer".`);
+  if(avisoModelo) atencion.push(`${avisoModelo}. Las resoluciones que el texto no resolvió quedaron guardadas como "sin leer". Corregí la clave en Configuración y después tocá "Leer con IA las que quedaron sin leer".`);
   if(WEB && window.PIERRI_WEB.catastroCaido && window.PIERRI_WEB.catastroCaido()) atencion.push('Catastro no respondió: las resoluciones de esta carga quedan sin ubicar en su parcela (se ubican por la localidad). Más tarde tocá "Ubicar en Catastro" en Localidades y mapa.');
   if(atencion.length) avisar('Atención: ' + atencion.join(' '), true);
 }
@@ -1736,7 +1747,7 @@ if(WEB){
 function cargarWeb(archivos){
   const l = Array.from(archivos || []);
   const json = l.filter(f => /\.json$/i.test(f.name));
-  if(json.length && (json.length > 1 || l.length > 1)){ avisar('El JSON del kit se sube solo, sin otros archivos al lado.', true); return; }
+  if(json.length && (json.length > 1 || l.length > 1)){ avisar('La copia de respaldo (.json) se carga sola, sin otros archivos al lado.', true); return; }
   if(json.length) return importarWeb(json[0]);
   subirPDFs(l);
 }
@@ -1745,12 +1756,18 @@ async function guardarPendienteWeb(){
   if(!window.PIERRI_WEB.pendientes()){ $('pendienteWeb').classList.add('oculto'); return true; }
   $('progresoSub').textContent = 'guardando en GitHub…';
   try{ await api('/api/web/guardar', { method: 'POST' }); $('pendienteWeb').classList.add('oculto'); $('progresoSub').textContent = 'guardado en GitHub'; return true; }
-  catch(err){ avisar('Lo leído todavía no se guardó: ' + err.message + ' Tocá "Guardar lo pendiente" para reintentar (no hace falta volver a leer).', true); $('progreso').classList.remove('oculto'); $('pendienteWeb').classList.remove('oculto'); $('progresoSub').textContent = 'sin guardar'; return false; }
+  catch(err){
+    // Si la conexión se cortó justo al guardar no se sabe si quedó: el mensaje ya lo dice, y repetirlo no duplica nada.
+    avisar((/no se sabe si quedó/.test(err.message) ? '' : 'Lo leído todavía no se guardó: ') + err.message + ' Tocá "Guardar lo pendiente" para reintentar (no hace falta volver a leer).', true);
+    $('progreso').classList.remove('oculto'); $('pendienteWeb').classList.remove('oculto'); $('progresoSub').textContent = 'sin guardar'; return false; }
 }
 async function importarWeb(f){
   if(!f) return;
+  // La copia de respaldo de la versión instalada reemplaza entera a la que se había cargado: una más vieja la pisaría sin aviso.
+  const delKit = registros.filter(r => !deLaPlanilla(r) && r.origen !== 'web').length, cuando = resumenSrv.cargado_web, cual = resumenSrv.cargado_web_archivo;
+  if(delKit && !confirm(`Ya hay una copia de respaldo de la versión instalada cargada${cuando ? ' el ' + fechaHora(cuando) : ''} con ${plural(delKit, 'resolución', 'resoluciones')}${cual ? ` (${cual})` : ''}. La nueva (${f.name}) la reemplaza entera; lo leído en la web no se toca. ¿Seguir?`)) return;
   avisar('Cifrando y guardando en el repositorio…');
-  try{ const r = await api('/api/web/importar?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Listo: ${r.resoluciones} resoluciones guardadas. Los demás lo ven al tocar "Volver a traer los datos" (abajo en el menú) o al volver a ingresar; GitHub puede tardar unos minutos en publicarlo.`); await cargarDesdeServidor(); ir('resumen'); }
+  try{ const r = await api('/api/web/importar?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Listo: ${plural(r.resoluciones, 'resolución guardada', 'resoluciones guardadas')}. Los demás lo ven al tocar "Volver a traer los datos" (abajo en el menú) o al volver a ingresar; GitHub puede tardar unos minutos en publicarlo.`); await cargarDesdeServidor(); ir('resumen'); }
   catch(err){ avisar('No se pudo guardar: ' + err.message, true); }
 }
 $('file').addEventListener('change', e => { if(e.target.files[0]) cargarArchivo(e.target.files[0]); e.target.value=''; });
@@ -1758,7 +1775,7 @@ async function cargarArchivo(f){
   // Si alguien tira un PDF con el Tablero abierto en modo archivo (sin pierri.js detrás),
   // el error tiene que explicar exactamente qué falta, no hablar de JSON.
   if(/\.pdf$/i.test(f.name)){
-    avisar('Para leer PDF hace falta la aplicación andando: abrí 2_abrir.bat (o escribí "node pierri.js" en la carpeta del kit) y entrá a http://localhost:3777. Esta pantalla sola no puede leer PDF.', true);
+    avisar('Para leer PDF hace falta el programa andando: abrí 2_abrir.bat (o escribí "node pierri.js" en la carpeta del programa) y entrá a http://localhost:3777. Esta pantalla sola no puede leer PDF.', true);
     return;
   }
   try{
@@ -1769,7 +1786,7 @@ async function cargarArchivo(f){
     catch(e){ lista = txt.split('\n').filter(l => l.trim()).map(l => { try{ return JSON.parse(l); }catch(e2){ return null; } }).filter(Boolean); }
     if(lista.length && lista[0] && lista[0].resultados) lista = lista[0].resultados;
     registros = lista.filter(r => r && r.derivado && !r.repetido_de);
-    if(!registros.length){ avisar('Ese archivo no tiene resoluciones adentro. Acá solo entra el resultados.jsonl o el JSON exportado por el Tablero. Para cargar PDF hay que abrir la aplicación con 2_abrir.bat y entrar a http://localhost:3777.', true); return; }
+    if(!registros.length){ avisar('Ese archivo no tiene resoluciones adentro. Acá solo entra el resultados.jsonl o la copia de respaldo (.json). Para cargar PDF hay que abrir el programa con 2_abrir.bat y entrar a http://localhost:3777.', true); return; }
     origenNombre = f.name;
     $('origen').innerHTML = `<span>Archivo <b>${esc(f.name)}</b></span><span><b>${registros.length}</b> resoluciones</span>`;
     recalcularLocal(); ir('resumen');
@@ -1802,12 +1819,16 @@ if(WEB){
     location.reload();
   }, 20000);
   try{
-    const inact = sessionStorage.getItem('pierri_inactividad'), perdidos = Number(sessionStorage.getItem('pierri_pendientes')) || 0;
-    sessionStorage.removeItem('pierri_inactividad'); sessionStorage.removeItem('pierri_pendientes');
+    // Por qué se volvió a la pantalla de ingreso: la sesión vencida, o la página que se recargó sola (la contraseña cambió
+    // en otra sesión, los datos se volvieron a cifrar). Sin esto, la persona ve el ingreso sin saber qué pasó.
+    const inact = sessionStorage.getItem('pierri_inactividad'), perdidos = Number(sessionStorage.getItem('pierri_pendientes')) || 0, motivo = sessionStorage.getItem('pierri_motivo');
+    ['pierri_inactividad', 'pierri_pendientes', 'pierri_motivo'].forEach(k => sessionStorage.removeItem(k));
     const textos = [];
     if(inact) textos.push('La sesión se cerró después de 30 minutos sin uso.');
-    if(perdidos) textos.push(`Quedaron ${perdidos} PDF leídos sin guardar en GitHub: volvé a cargarlos (lo que ya estaba guardado se saltea).`);
-    if(textos.length) setTimeout(() => errorIngreso(textos.join(' ') + ' Volvé a ingresar.'), 300);
+    if(perdidos) textos.push(perdidos === 1 ? 'Quedó 1 PDF leído sin guardar en GitHub: volvé a cargarlo (lo que ya estaba guardado se saltea).' : `Quedaron ${perdidos} PDF leídos sin guardar en GitHub: volvé a cargarlos (lo que ya estaba guardado se saltea).`);
+    if(motivo) textos.unshift(motivo);
+    const t = textos.join(' ');
+    if(t) setTimeout(() => errorIngreso(/Volvé a ingresar/.test(t) ? t : t + ' Volvé a ingresar.'), 300);
   }catch(e){}
   $('btnToken').addEventListener('click', async () => {
     try{ await api('/api/web/token', { method: 'POST', body: JSON.stringify({ token: $('tokenWeb').value }) }); $('tokenWeb').value = ''; $('subToken').textContent = 'cargado en esta computadora'; if(YO) YO.web_token = true;
@@ -1827,9 +1848,9 @@ if(WEB) $('btnInicial').addEventListener('click', async () => {
 function errorIngreso(t){ const e = $('ingError'); e.textContent = t; e.classList.toggle('oculto', !t); }
 function aplicarPerfil(){
   $('pieUsuario').classList.remove('oculto');
-  $('pieUsuario').innerHTML = `<b>${esc(YO.nombre || YO.usuario)}</b>${esc(YO.rol_nombre)}<br><button id="btnSalir">Cerrar sesión</button>${WEB ? ' <button id="btnTraer" title="Trae lo que guardaron los demás desde que entraste">Volver a traer los datos</button>' : ''}`;
-  if(WEB) $('btnTraer').addEventListener('click', async () => {
-    if(cargando || window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine lo que está en curso.', true); return; }
+  $('pieUsuario').innerHTML = `<b>${esc(YO.nombre || YO.usuario)}</b>${esc(YO.rol_nombre)}<br><button id="btnSalir">Cerrar sesión</button><button id="btnTraer" title="Trae lo que guardaron los demás desde que entraste">Volver a traer los datos</button>`;
+  $('btnTraer').addEventListener('click', async () => {
+    if(cargando || (WEB && window.PIERRI_WEB.ocupado())){ avisar('Esperá a que termine lo que está en curso.', true); return; }
     const b = $('btnTraer'); b.disabled = true;
     try{ await cargarDesdeServidor(true); if(!resumenSrv.aviso_datos) avisar('Datos actualizados.'); }catch(err){ avisar('No se pudieron traer los datos: ' + err.message, true); } b.disabled = false; });
   $('btnSalir').addEventListener('click', async () => {
@@ -1852,12 +1873,17 @@ function aplicarPerfil(){
     $('panelApp').classList.toggle('sin-permiso', !puede.administrar);
     $('filaInstr').classList.remove('oculto');
     $('textoApp').innerHTML = 'Sin clave se lee solo por texto, gratis. La IA se usa <b>solo cuando tocás "Leer con IA las que quedaron sin leer"</b>, y solo para las que el texto no resolvió y tienen su PDF guardado: antes de empezar te dice cuántas son. La clave queda guardada solo en esta computadora, cifrada con tu contraseña; no va al repositorio.';
-    $('cargarSub').textContent = 'Se leen en esta computadora y se guardan cifrados en el repositorio, junto con el PDF original para poder verlo. Los ven todos los usuarios. Un archivo cargado dos veces se ignora. También entra acá el JSON que baja "Guardar JSON" en el kit.';
+    $('cargarSub').textContent = 'Se leen en esta computadora y se guardan cifrados en el repositorio, junto con el PDF original para poder verlo. Los ven todos los usuarios. Un archivo cargado dos veces se ignora. También entra acá la copia de respaldo (.json) de la versión instalada en una computadora.';
     $('panelToken').classList.toggle('oculto', !puede.administrar);
     $('subToken').textContent = YO.web_token ? 'cargado en esta computadora' : 'falta: sin él no se pueden guardar cambios';
     const optAdmin = document.querySelector('#nuRol option[value="admin"]'); if(optAdmin) optAdmin.remove();
+    // Revisión todavía no corrige en la web: el permiso de GitHub queda solo en la computadora del administrador.
+    const optRev = document.querySelector('#nuRol option[value="editor"]'); if(optRev) optRev.textContent = 'Revisión (en la web, por ahora, solo mira)';
+    $('subUsuarios').textContent = 'en la web solo el administrador corrige; Consulta y Revisión miran y bajan la lista';
+    document.querySelectorAll('#panelUsuarios th.col-acceso').forEach(e => e.remove());   // la web no registra el último acceso
     const aviso = document.querySelector('#panelUsuarios p.mini'); if(aviso) aviso.textContent = 'En la versión web la contraseña la definís vos: pasásela a la persona por un medio seguro. Para cambiarla, "nueva contraseña". Desactivar a alguien cambia la llave de los datos: su contraseña deja de servir.';
   }
+  pintarCriterio();   // quien no administra ve el criterio, sin poder cambiarlo
 }
 async function arrancarConSesion(){
   let yo;
@@ -1886,22 +1912,50 @@ $('btnCambiarClave').addEventListener('click', async () => {
   catch(err){ errorIngreso(err.message); }
 });
 async function pintarUsuarios(lista){
-  const rolesNom = { veedor: 'Consulta', editor: 'Revisión', admin: 'Administración' };
-  $('tablaUsuarios').innerHTML = lista.map(u => `<tr><td class="exp">${esc(u.usuario)}</td><td>${esc(u.nombre || '')}</td>
-    <td><select data-rol="${esc(u.usuario)}" style="font-size:12.5px">${Object.entries(rolesNom).map(([k, v]) => `<option value="${k}" ${u.rol === k ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
-    <td class="mini">${u.ultimo_acceso ? fechaCarga(u.ultimo_acceso) : '—'}</td>
+  // Solo lo que se puede hacer: la fila propia no cambia de perfil ni se desactiva (el sistema lo rechazaría), y en la
+  // web hay un solo administrador, así que ese perfil no se da ni se saca desde la tabla. La web no registra el último acceso.
+  const rolesNom = { veedor: 'Consulta', editor: WEB ? 'Revisión (en la web, por ahora, solo mira)' : 'Revisión', admin: 'Administración' };
+  const opciones = Object.entries(rolesNom).filter(([k]) => !WEB || k !== 'admin');
+  $('tablaUsuarios').innerHTML = lista.map(u => { const propia = !!YO && u.usuario === YO.usuario, fija = propia || (WEB && u.rol === 'admin');
+    return `<tr><td class="exp">${esc(u.usuario)}</td><td>${esc(u.nombre || '')}</td>
+    <td>${fija ? esc(rolesNom[u.rol] || u.rol) + (propia ? ' <span class="mini">(vos)</span>' : '') : `<select data-rol="${esc(u.usuario)}" style="font-size:12.5px">${opciones.map(([k, v]) => `<option value="${k}" ${u.rol === k ? 'selected' : ''}>${v}</option>`).join('')}</select>`}</td>
+    ${WEB ? '' : `<td class="mini">${u.ultimo_acceso ? fechaCarga(u.ultimo_acceso) : '—'}</td>`}
     <td>${u.activo ? '<span class="tag p-v">activo</span>' : '<span class="tag p-g">inactivo</span>'}${u.debe_cambiar ? ' <span class="tag p-a">debe cambiar clave</span>' : ''}${u.bloqueado_hasta && new Date(u.bloqueado_hasta) > new Date() ? ' <span class="tag p-r">bloqueado</span>' : ''}</td>
-    <td class="mini"><a href="#" data-activo="${esc(u.usuario)}" data-valor="${u.activo ? 0 : 1}">${u.activo ? 'desactivar' : 'activar'}</a> · <a href="#" data-clave="${esc(u.usuario)}">nueva contraseña</a></td></tr>`).join('');
+    <td class="mini">${propia ? '' : `<a href="#" data-activo="${esc(u.usuario)}" data-valor="${u.activo ? 0 : 1}">${u.activo ? 'desactivar' : 'activar'}</a> · `}<a href="#" data-clave="${esc(u.usuario)}">nueva contraseña</a></td></tr>`; }).join('');
 }
+/**
+ * Un cambio de usuarios por vez, y se ve que está trabajando: en la web, desactivar a alguien o darle una contraseña
+ * nueva vuelve a cifrar todos los datos y tarda unos segundos. Mientras tanto la tabla y "Crear usuario" no responden.
+ */
+let usuariosOcupado = false;
 async function usuariosAccion(cuerpo){
+  if(usuariosOcupado){ avisar('Esperá a que termine el cambio anterior.', true); return false; }
+  usuariosOcupado = true;
+  const recifra = WEB && ((cuerpo.accion === 'activo' && !cuerpo.activo) || cuerpo.accion === 'reiniciar_clave');
+  $('usuariosProgreso').textContent = recifra ? 'Guardando el cambio y volviendo a cifrar los datos…' : 'Guardando el cambio…';
+  $('tablaUsuarios').classList.add('ocupado'); $('btnCrearUsuario').disabled = true;
+  $('tablaUsuarios').querySelectorAll('select').forEach(x => x.disabled = true);
   try{ const r = await api('/api/usuarios', { method: 'POST', body: JSON.stringify(cuerpo) }); pintarUsuarios(r.usuarios); avisar(WEB ? 'Listo. GitHub tarda unos minutos en publicarlo: recién ahí vale para la persona.' : 'Listo.'); return true; }
   catch(err){ avisar(err.message, true); if(WEB) api('/api/usuarios').then(r => pintarUsuarios(r.usuarios)).catch(() => {}); return false; }
+  finally{
+    usuariosOcupado = false; $('usuariosProgreso').textContent = ''; $('tablaUsuarios').classList.remove('ocupado'); $('btnCrearUsuario').disabled = false;
+    $('tablaUsuarios').querySelectorAll('select').forEach(x => x.disabled = false);
+  }
 }
 if(SERVIDOR){
   $('btnPadron').addEventListener('click', () => $('filePadron').click());
   $('filePadron').addEventListener('change', async e => { const f = e.target.files[0]; if(!f) return; e.target.value = '';
-    try{ const r = await api('/api/padron?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Padrón cargado: ${r.filas} filas. Cruce: ${r.cruce.cruzados} cruzadas, ${r.cruce.ambiguos} ambiguas, ${r.cruce.no_figuran} no figuran en el Padrón, ${r.cruce.sin_nombre} sin nombre.`); await cargarDesdeServidor(); }
-    catch(err){ avisar('No se pudo cargar el Padrón: ' + err.message, true); } });
+    if(cargando || (WEB && window.PIERRI_WEB.ocupado())){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
+    // El Padrón nuevo reemplaza entero al anterior: uno más chico o más viejo lo pisaría sin aviso.
+    const p = resumenSrv.padron || {};
+    if(p.filas && !confirm(`Ya hay un Padrón cargado${p.cargado_en ? ' el ' + fechaHora(p.cargado_en) : ''} con ${plural(p.filas, 'fila', 'filas')}${p.archivo ? ` (${p.archivo})` : ''}. El archivo nuevo (${f.name}) lo reemplaza entero. ¿Seguir?`)) return;
+    // Un Padrón grande tarda unos segundos en leerse y cruzarse: se ve que está trabajando y no se lo puede tocar dos veces.
+    $('btnPadron').disabled = true; $('padronProgreso').textContent = 'Leyendo el Padrón y cruzándolo con las resoluciones leídas…';
+    try{ const r = await api('/api/padron?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }), c = r.cruce || {};
+      avisar(`Padrón cargado: ${plural(r.filas, 'fila', 'filas')}. Cruce con las resoluciones leídas: ${plural(c.cruzados, 'cruzada', 'cruzadas')}, ${plural(c.ambiguos, 'ambigua', 'ambiguas')}, ${miles(c.no_figuran)} no ${Number(c.no_figuran) === 1 ? 'figura' : 'figuran'} en el Padrón, ${miles(c.sin_nombre)} sin nombre.`);
+      await cargarDesdeServidor(); }
+    catch(err){ avisar('No se pudo cargar el Padrón: ' + err.message, true); }
+    $('btnPadron').disabled = false; $('padronProgreso').textContent = ''; });
   $('btnCompletar').addEventListener('click', async () => {
     if(WEB){
       if(cargando || window.PIERRI_WEB.ocupado()){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
@@ -1910,8 +1964,9 @@ if(SERVIDOR){
       const salteadas = inc.filter(r => r.pdf_web && window.PIERRI_WEB.modeloSalteada(r.hash)).length, pend = window.PIERRI_WEB.modeloSinGuardar(), sinGuardar = pend.resoluciones;
       const conPdf = inc.filter(r => r.pdf_web).length - salteadas - sinGuardar;
       if((sinGuardar || pend.tokens) && conPdf <= 0){ /* solo falta guardar lo ya leído o cobrado: no se cobra nada */ }
-      else if(!conPdf){ avisar(salteadas ? `Las ${salteadas} que quedan sin leer ya se mandaron a la IA en esta sesión y no las pudo leer: se vuelven a intentar al volver a ingresar.` : inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en "Cargar resoluciones", en el menú.` : 'No hay resoluciones sin leer del todo.'); return; }
-      else if(!confirm(`Se van a leer con IA ${conPdf} resolución(es) que el texto no resolvió${sinGuardar ? ` (antes se ${sinGuardar === 1 ? 'guarda 1 ya leída, sin volver a cobrarla' : `guardan ${sinGuardar} ya leídas, sin volver a cobrarlas`})` : ''}${salteadas ? `; ${salteadas === 1 ? 'otra ya no se pudo leer en esta sesión y se saltea' : `otras ${salteadas} ya no se pudieron leer en esta sesión y se saltean`}` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
+      else if(!conPdf){ avisar(salteadas ? (salteadas === 1 ? 'La que queda sin leer ya se mandó a la IA en esta sesión y no la pudo leer: se vuelve a intentar al volver a ingresar.' : `Las ${miles(salteadas)} que quedan sin leer ya se mandaron a la IA en esta sesión y no las pudo leer: se vuelven a intentar al volver a ingresar.`)
+        : inc.length ? `Hay ${miles(inc.length)} sin leer, pero ${inc.length === 1 ? 'no tiene' : 'ninguna tiene'} su PDF guardado en la web: subí ${inc.length === 1 ? 'ese PDF' : 'esos PDF'} en "Cargar resoluciones", en el menú.` : 'No hay resoluciones sin leer.'); return; }
+      else if(!confirm(`Se van a leer con IA ${plural(conPdf, 'resolución', 'resoluciones')} que el texto no resolvió${sinGuardar ? ` (antes se ${sinGuardar === 1 ? 'guarda 1 ya leída, sin volver a cobrarla' : `guardan ${sinGuardar} ya leídas, sin volver a cobrarlas`})` : ''}${salteadas ? `; ${salteadas === 1 ? 'otra ya no se pudo leer en esta sesión y se saltea' : `otras ${salteadas} ya no se pudieron leer en esta sesión y se saltean`}` : ''}. Tiene costo: Anthropic lo cobra a tu clave, según los tokens que use. ¿Seguir?`)) return;
     }
     const b = $('btnCompletar'); b.disabled = true;
     let hechas = 0, tokens = 0, noLeidas = 0, vueltas = 0; const motivos = new Set();
@@ -1928,7 +1983,7 @@ if(SERVIDOR){
           avisar('La lectura con IA se cortó: ' + (r.corte || r.fallas[0]) + '.' + (hechas ? ` Antes se ${hechas === 1 ? 'completó 1' : 'completaron ' + hechas} (${gasto}).` : '')
             + (noLeidas ? ` ${noLeidas === 1 ? 'Una no se pudo leer' : noLeidas + ' no se pudieron leer'}: ${otros.join('; ')}.` : ''), true); break; }
         if(WEB ? !r.por_probar : !r.pendientes){
-          avisar(`Listo: ${hechas} resolución(es) completadas (${gasto}).` + (noLeidas ? ` ${noLeidas === 1 ? 'Una no se pudo leer' : noLeidas + ' no se pudieron leer'}: ${[...motivos].join('; ')}. Quedan sin leer por ahora: las que GitHub todavía no publicó se vuelven a probar solas en unos minutos; las demás, al volver a ingresar.` : '')
+          avisar(`Listo: ${plural(hechas, 'resolución leída', 'resoluciones leídas')} con IA (${gasto}).` + (noLeidas ? ` ${noLeidas === 1 ? 'Una no se pudo leer' : noLeidas + ' no se pudieron leer'}: ${[...motivos].join('; ')}. Quedan sin leer por ahora: las que GitHub todavía no publicó se vuelven a probar solas en unos minutos; las demás, al volver a ingresar.` : '')
             + (r.sin_pdf ? ` Otras ${r.sin_pdf} no tienen el PDF guardado en la web.` : ''), !!noLeidas);
           break;
         }
@@ -1979,7 +2034,6 @@ if(SERVIDOR){
       await cargarDesdeServidor(); }
     catch(err){ avisar('No se pudo cargar la planilla: ' + err.message, true); }
     bs.forEach(b => b.disabled = false); });
-  $('btnRecargar').addEventListener('click', () => cargarDesdeServidor(true).catch(err => avisar('No se pudieron traer los datos: ' + err.message, true)));
   $('btnArchivos').addEventListener('click', () => verArchivos().catch(err => avisar('Error: ' + err.message, true)));
   $('btnCrearUsuario').addEventListener('click', async () => {
     // Si hubo un error (contraseña corta, usuario repetido) los datos quedan para corregirlos, no se borran.
@@ -2003,7 +2057,7 @@ if(SERVIDOR){
   });
   $('btnAuditoria').addEventListener('click', async () => {
     try{ const r = await api('/api/auditoria?n=300');
-      $('tablaAuditoria').innerHTML = r.registros.map(x => `<tr><td class="mini" style="white-space:nowrap">${esc(fechaCarga(x.fecha))}</td><td>${esc(x.usuario)}</td><td>${esc(x.accion === 'completar_con_modelo' ? 'leer con IA' : String(x.accion).replace(/_/g, ' '))}</td><td class="mini">${esc(x.detalle || '')}</td><td class="col-sec mini">${esc(x.ip || '')}</td></tr>`).join('') || '<tr><td colspan="5" class="vacio">Sin movimientos.</td></tr>';
+      $('tablaAuditoria').innerHTML = r.registros.map(x => `<tr><td class="mini" style="white-space:nowrap">${esc(fechaHora(x.fecha))}</td><td>${esc(x.usuario)}${PERFIL[x.rol] ? ` <span class="mini">(${PERFIL[x.rol]})</span>` : ''}</td><td>${esc(ACCION_AUD[x.accion] || mayus1(String(x.accion || '').replace(/_/g, ' ')))}</td><td class="mini">${esc(detalleAud(x.detalle))}</td><td class="col-sec mini">${esc(x.ip || '')}</td></tr>`).join('') || '<tr><td colspan="5" class="vacio">Sin movimientos.</td></tr>';
     }catch(err){ avisar(err.message, true); }
   });
   document.querySelectorAll('#filtroArchivos .chip').forEach(b => b.addEventListener('click', () => {
@@ -2020,7 +2074,9 @@ if(SERVIDOR){
     try{ await api('/api/vaciar', { method: 'POST' }); limpiarFiltros(); $('progresoCuerpo').innerHTML = ''; $('progreso').classList.add('oculto'); avisar('Base vaciada. Podés cargar de nuevo.'); await cargarDesdeServidor(); ir('cargar'); }catch(err){ avisar('Error: ' + err.message, true); } });
   $('btnInventario').addEventListener('click', () => $('fileInventario').click());
   $('fileInventario').addEventListener('change', async e => { const f = e.target.files[0]; if(!f) return; e.target.value = '';
-    try{ const r = await api('/api/inventario?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }); avisar(`Cargado (formato ${r.formato}): ${r.filas} expedientes${r.descartadas ? ', ' + r.descartadas + ' filas sin número válido' : ''}. Inventario: ${r.inventario.total} expedientes, ${r.inventario.con_resolucion} con resolución, ${r.inventario.con_dni} con DNI.`); await cargarDesdeServidor(); await cargarInventarioVista(); }
+    try{ const r = await api('/api/inventario?nombre=' + encodeURIComponent(f.name), { method: 'POST', body: f }), i = r.inventario || {}, nd = Number(r.descartadas) || 0;
+      avisar(`Inventario cargado (${({ digitalizados: 'CSV de expedientes digitalizados', suac: 'CSV del SUAC' })[r.formato] || 'CSV'}): ${plural(r.filas, 'expediente', 'expedientes')}${nd ? `, ${nd === 1 ? '1 fila sin número válido quedó afuera' : miles(nd) + ' filas sin número válido quedaron afuera'}` : ''}. En total, el inventario tiene ${plural(i.total, 'expediente', 'expedientes')}: ${miles(i.con_resolucion)} con resolución y ${miles(i.con_dni)} con DNI.`);
+      await cargarDesdeServidor(); await cargarInventarioVista(); }
     catch(err){ avisar('No se pudo cargar el inventario: ' + err.message, true); } });
   $('btnUbicarInv').addEventListener('click', async () => {
     const b = $('btnUbicarInv'); b.disabled = true;
@@ -2041,26 +2097,79 @@ if(SERVIDOR){
     if(r.verificacion) avisar('Configuración guardada. ' + (r.verificacion.ok ? 'La clave es válida (si la cuenta no tuviera crédito, se avisa al cargar).' : 'Pero ojo: ' + r.verificacion.texto + '.'), !r.verificacion.ok);
     else avisar('Configuración guardada.');
     await cargarDesdeServidor(); }catch(err){ avisar('Error: ' + err.message, true); } });
-  ['regla','corte','margen'].forEach(id => $(id).addEventListener('change', async () => { try{ await api('/api/config', { method: 'POST', body: JSON.stringify({ regla: $('regla').value, fechaCorte: $('corte').value, margenBordeMeses: $('margen').value }) }); await cargarDesdeServidor(); }catch(err){ avisar('Error: ' + err.message, true); } }));
   window.__arrancar = () => arrancarConSesion().then(ok => {
     if(!ok) return;                                   // hay que ingresar primero
-    cargarDesdeServidor().then(() => ir(location.hash.slice(1) || vistaInicial())).catch(err => { avisar((WEB ? 'No se pudieron abrir los datos: ' : 'No se pudo conectar con pierri.js: ') + err.message, true); ir('cargar'); });
+    cargarDesdeServidor().then(() => ir(location.hash.slice(1) || vistaInicial())).catch(err => { avisar((WEB ? 'No se pudieron abrir los datos: ' : 'No se pudo conectar con el programa: ') + err.message, true); ir('cargar'); });
     if(YO && (YO.permisos || {}).administrar) api('/api/usuarios').then(r => pintarUsuarios(r.usuarios)).catch(() => {});
   });
   window.__arrancar();
 } else {
-  $('cargarTitulo').textContent = 'Arrastrá acá el archivo resultados.jsonl';
-  $('cargarSub').textContent = 'Modo archivo: abriste el Tablero sin pierri.js. Para cargar PDF y guardar en la base, corré node pierri.js.';
-  ['btnPadron','btnCompletar','btnRecargar','btnGuardarConfig','btnCatastro','btnInventario','btnUbicarInv','btnVaciar','btnReleer'].forEach(id => $(id).disabled = true);
+  $('cargarTitulo').textContent = 'Arrastrá acá el archivo de resultados (.jsonl) o la copia de respaldo (.json)';
+  $('cargarSub').textContent = 'Abriste esta página sola, sin el programa: acá solo se mira un archivo ya leído. Para cargar PDF y guardarlos, abrí el programa con 2_abrir.bat.';
+  ['btnPadron','btnCompletar','btnGuardarConfig','btnCatastro','btnInventario','btnUbicarInv','btnVaciar','btnReleer'].forEach(id => $(id).disabled = true);
   $('btnArchivos').parentElement.classList.add('oculto');   // el informe por archivo necesita el programa
   // En modo archivo el selector también deja elegir PDF: no para leerlos (no se puede sin pierri.js),
   // sino para poder explicar por qué no se puede, en vez de mostrarlos en gris sin motivo.
   $('file').accept = '.jsonl,.json,application/json,.pdf,application/pdf';
-  ['regla','corte','margen'].forEach(id => $(id).addEventListener('change', recalcularLocal));
   ir(location.hash.slice(1) || 'cargar');
 }
 
-function config(){ return { regla: $('regla').value, fechaCorte: $('corte').value || '2006-01-01', margenBordeMeses: Number($('margen').value) || 0 }; }
+/** El criterio en uso: el último confirmado (por el servidor, la web o, en el modo suelto, el que se eligió). */
+function config(){ return { regla: CRITERIO.regla, fechaCorte: CRITERIO.fechaCorte, margenBordeMeses: CRITERIO.margenBordeMeses }; }
+/**
+ * Pone el criterio en los campos y lo toma como el confirmado; si después no se puede guardar un cambio, se vuelve a
+ * este (volver = true). Al traer los datos no se pisa el campo en el que se está escribiendo.
+ */
+function ponerCriterio(c, volver){
+  CRITERIO = { regla: c.regla === 'PLAZO_MOVIL' ? 'PLAZO_MOVIL' : 'CORTE_FIJO', fechaCorte: textoAIso(isoATexto(c.fechaCorte)) || '2006-01-01',
+    margenBordeMeses: Math.max(0, Number(c.margenBordeMeses ?? 12) || 0), fijado: c.fijado || null };
+  const libre = id => volver || document.activeElement !== $(id);
+  if(libre('regla')) $('regla').value = CRITERIO.regla;
+  if(libre('corte')) ponerFecha($('corte'), CRITERIO.fechaCorte);
+  if(libre('margen')) $('margen').value = CRITERIO.margenBordeMeses;
+  pintarCriterio();
+}
+/** Quién puede cambiar el criterio: el administrador (en el kit sin usuarios, cualquiera; en el modo suelto, para su pestaña). */
+const puedeFijarCriterio = () => !SERVIDOR || !YO || !!(YO.permisos || {}).administrar;
+/** Los textos del panel del criterio y de la cabecera de Configuración: dicen qué pasa al cambiarlo y quién lo fija. */
+function pintarCriterio(){
+  const puede = puedeFijarCriterio(), f = CRITERIO.fijado;
+  ['regla','corte','margen'].forEach(id => $(id).disabled = !puede);
+  const ultimo = f && f.en ? ` Último cambio: ${fechaHora(f.en)}${f.por ? ' (' + f.por + ')' : ''}.` : '';
+  $('subCriterio').textContent = !SERVIDOR ? 'solo en esta pestaña' : puede ? 'vale para todos los usuarios' : 'lo fija el administrador para todos';
+  $('configSub').textContent = !SERVIDOR ? 'Abriste el Tablero sin el programa: el criterio que elijas cambia solo lo que ves en esta pestaña y se recalcula al instante, sin volver a leer los PDF.'
+    : puede ? 'El criterio de antigüedad vale para todos los usuarios: al cambiarlo se guarda y se recalcula todo al instante, sin volver a leer los PDF.'
+    : 'El criterio de antigüedad lo fija el administrador para todos: acá se ve cuál se usa.';
+  $('textoCriterio').textContent = !SERVIDOR ? 'Al cerrar la pestaña vuelve al corte del 01/01/2006 con ±12 meses de borde.'
+    : !puede ? 'Lo fija el administrador para todos.' + ultimo
+    : WEB ? 'Se guarda cifrado con los demás datos. Los demás lo ven al volver a entrar o con "Volver a traer los datos" (GitHub tarda unos minutos en publicarlo).' + ultimo
+    : 'Se guarda en el programa y vale para todos los usuarios: lo ven al volver a traer los datos o al recargar la página.';
+}
+/** Lo elegido en los campos, o null (con el aviso) si la fecha o el margen no sirven. */
+function criterioElegido(){
+  const iso = textoAIso($('corte').value), txt = $('margen').value.trim(), m = Number(txt);
+  if(!iso){ avisar('La fecha de corte va con día, mes y año: dd/mm/aaaa (por ejemplo, 01/01/2006).', true); return null; }
+  if(txt === '' || !Number.isInteger(m) || m < 0 || m > 36){ avisar('El margen de borde va en meses enteros, de 0 a 36.', true); return null; }
+  return { regla: $('regla').value === 'PLAZO_MOVIL' ? 'PLAZO_MOVIL' : 'CORTE_FIJO', fechaCorte: iso, margenBordeMeses: m };
+}
+/** Cambiar el criterio: en la web y en el kit se guarda para todos; si no se puede, los campos vuelven a su valor. */
+async function cambiarCriterio(){
+  const nuevo = criterioElegido(), c = CRITERIO;
+  if(!nuevo || (nuevo.regla === c.regla && nuevo.fechaCorte === c.fechaCorte && nuevo.margenBordeMeses === c.margenBordeMeses)){ ponerCriterio(c, true); return; }
+  if(!SERVIDOR){ ponerCriterio(nuevo, true); recalcularLocal(); return; }
+  if(cargando || (WEB && window.PIERRI_WEB.ocupado())){ ponerCriterio(c, true); avisar('Esperá a que termine lo que está en curso y volvé a cambiar el criterio.', true); return; }
+  const campos = ['regla','corte','margen'].map(id => $(id)), foco = document.activeElement;
+  campos.forEach(x => x.disabled = true); $('textoCriterio').textContent = 'Guardando el criterio…';
+  try{
+    await api('/api/config', { method: 'POST', body: JSON.stringify(nuevo) });
+    await cargarDesdeServidor();
+    avisar(`Criterio guardado: ${nuevo.regla === 'CORTE_FIJO' ? 'posesión anterior al ' + isoATexto(nuevo.fechaCorte) : 'diez años de posesión'}, con ±${nuevo.margenBordeMeses} ${nuevo.margenBordeMeses === 1 ? 'mes' : 'meses'} de borde. Vale para todos los usuarios.`);
+  }catch(err){ ponerCriterio(c, true); avisar('No se cambió el criterio: ' + err.message, true); }
+  pintarCriterio();
+  if(campos.includes(foco) && !foco.disabled) try{ foco.focus({ preventScroll: true }); }catch(e){}
+}
+['regla','corte','margen'].forEach(id => $(id).addEventListener('change', cambiarCriterio));
+pintarCriterio();
 function recalcularLocal(){
   const cfg = config();
   for(const r of registros){ const d = r.derivado, pd = d.posee_desde ? P.parseFecha(d.posee_desde) : null; d.elegibilidad = P.evaluarElegibilidad(pd, cfg);
@@ -2205,8 +2314,44 @@ function limpiarFiltros(){ guardados = null; vaciarFiltros(); pagina = 0; pintar
 function pintarTodo(){ poblarFiltros(); vista = registros.filter(r => pasa(r)); pintarMetricas(); pintarRecientes(); pintarTabla(); pintarRanking(); pintarPadron(); pintarPlanilla(); if(!$('v-mapa').classList.contains('oculto')) pintarMapa(); pintarPie(); }
 /** "21/09/2026 18:42", siempre con reloj de 24 horas (sin él, Chrome pone la tarde como "02:17" sin a. m. ni p. m.). */
 function fechaHora(iso){ const f = new Date(iso); return isNaN(f) ? '—' : f.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''); }
+/**
+ * Fechas que se escriben: texto con máscara dd/mm/aaaa, no el selector del navegador (según la máquina muestra el mes
+ * primero y el 3 de abril se carga como 4 de marzo). Por dentro se guarda aaaa-mm-dd.
+ */
+function isoATexto(iso){ return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || '')) ? String(iso).split('-').reverse().join('/') : ''; }
+/** "03/04/1995" → "1995-04-03"; null si no es una fecha que exista. */
+function textoAIso(t){
+  const m = String(t || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if(!m) return null;
+  const f = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1]));
+  return f.getUTCFullYear() === +m[3] && f.getUTCMonth() === +m[2] - 1 && f.getUTCDate() === +m[1] ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+function ponerFecha(el, iso){ el.value = isoATexto(iso); }
+/** La máscara: deja solo los dígitos y pone las barras. Reescribe solo si cambió, y deja el cursor donde estaba. */
+function mascaraFecha(e){
+  const el = e.target; if(!el.classList || !el.classList.contains('fecha')) return;
+  const v = el.value, pos = el.selectionStart == null ? v.length : el.selectionStart;
+  // Pegado entero, como 3/4/1995 o 1995-04-03: se completa con ceros. Al escribir de a una tecla, no (borrar un dígito del
+  // mes dejaría "15/0/1998", que se leería como pegado).
+  const pegado = !e.inputType || /^insertFrom/.test(e.inputType) || (e.data || '').length > 1;
+  const suelta = pegado && v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/), iso = pegado && v.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const d = suelta ? suelta[1].padStart(2, '0') + suelta[2].padStart(2, '0') + suelta[3] : iso ? iso[3] + iso[2] + iso[1] : v.replace(/\D/g, '').slice(0, 8);
+  const nuevo = d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+  if(nuevo === v) return;
+  const antes = (suelta || iso) ? d.length : v.slice(0, pos).replace(/\D/g, '').length;   // dígitos antes del cursor
+  el.value = nuevo;
+  let p = 0; for(let n = 0; p < nuevo.length && n < antes; p++) if(/\d/.test(nuevo[p])) n++;
+  try{ el.setSelectionRange(p, p); }catch(err){}
+}
+document.addEventListener('input', mascaraFecha);
 /** 12345 → "12.345". */
 function miles(x){ return (Number(x) || 0).toLocaleString('es-AR'); }
+/** Lo que contesta el lector de PDF cuando no puede abrir uno viene en inglés ("No password given"): en castellano. */
+function errorPDF(t){
+  const m = String(t == null ? '' : t);
+  if(/password/i.test(m)) return 'El PDF tiene contraseña: pedí una copia sin clave.';
+  if(/Invalid PDF|PDF structure|Missing PDF|bad XRef|Unexpected end|corrupt/i.test(m)) return 'El PDF está dañado o incompleto (¿se cortó la descarga?): volvé a bajarlo.';
+  return m;
+}
 /** "21/09 18:42", o "hoy 18:42" si es de hoy. */
 function fechaCarga(iso){
   if(!iso) return '—'; const f = new Date(iso); if(isNaN(f)) return '—';
@@ -2225,7 +2370,7 @@ function pintarRecientes(){
 }
 // Las últimas cargadas son resoluciones leídas: la lista que abre deja afuera lo estimado con la planilla.
 $('verRecientes').addEventListener('click', () => { orden = { k: 'cargado', asc: false }; abrirLista(registros.some(deLaPlanilla) ? 'LEIDA' : ''); });
-function pintarPie(){ const np = registros.filter(deLaPlanilla).length; $('pie').innerHTML = registros.length ? `${WEB ? 'versión web' : SERVIDOR ? 'pierri.db' : esc(origenNombre || 'archivo')} · ${registros.length - np} resoluciones` + (np ? ` · ${np} de la planilla` : '') + (resumenSrv.padron && resumenSrv.padron.filas ? `<br>Padrón: ${Number(resumenSrv.padron.filas) || 0} filas` : '') : 'sin datos cargados'; }
+function pintarPie(){ const np = registros.filter(deLaPlanilla).length; $('pie').innerHTML = registros.length ? `${WEB ? 'versión web' : SERVIDOR ? 'versión instalada' : esc(origenNombre || 'archivo')} · ${plural(registros.length - np, 'resolución', 'resoluciones')}` + (np ? ` · ${miles(np)} de la planilla` : '') + (resumenSrv.padron && resumenSrv.padron.filas ? `<br>Padrón: ${plural(resumenSrv.padron.filas, 'fila', 'filas')}` : '') : 'sin datos cargados'; }
 /**
  * "Ver más cifras" del Resumen: la cadena de lo leído y los paneles Avance, Calidad y Resultado (solo las resoluciones
  * leídas) y el de la planilla (solo lo estimado). Siempre sobre todo lo cargado, sin los filtros de Expedientes.
@@ -2299,13 +2444,89 @@ function pintarCumple(){
 function fechaPosesion(d){
   if(!d.posee_desde) return '—';
   const [a, m, di] = String(d.posee_desde).split('-'), p = d.posee_desde_precision;
-  return p === 'anio' ? `${a} (año aprox.)` : p === 'mes' ? `${m}/${a}` : `${di}/${m}/${a}`;
+  return p === 'anio' ? `${a}, año aproximado` : p === 'mes' ? `${m}/${a}` : `${di}/${m}/${a}`;
+}
+/** El tipo de documento en palabras (por dentro el sistema guarda códigos como RESOLUCION_INSCRIPCION). */
+const TIPO_NOMBRE = { RESOLUCION_INSCRIPCION: 'ordena la inscripción', RESOLUCION_RECTIFICA: 'rectifica o amplía', RESOLUCION_DESESTIMA: 'desestima', RESOLUCION_CANCELA: 'cancela',
+  RESOLUCION_TRAMITE: 'de trámite', CEDULA_NOTIFICACION: 'cédula de notificación', NO_ES_RESOLUCION: 'no es una resolución', PLANILLA_UEST: 'estimada con la planilla de la UEST' };
+/** Los perfiles como se llaman en pantalla (por dentro: veedor, editor, admin). */
+const PERFIL = { veedor: 'Consulta', editor: 'Revisión', admin: 'Administración' };
+/** La auditoría en castellano: cada acción con su nombre, los perfiles como en pantalla y las fechas dd/mm/aaaa. */
+const ACCION_AUD = { inicio: 'Puesta en marcha', ingreso: 'Ingreso', ingreso_fallido: 'Ingreso fallido', ingreso_bloqueado: 'Ingreso bloqueado', salida: 'Salida',
+  cambio_clave: 'Cambio de contraseña', cambio_clave_fallido: 'Cambio de contraseña fallido', usuario_alta: 'Alta de usuario', usuario_perfil: 'Cambio de perfil',
+  usuario_activado: 'Usuario activado', usuario_desactivado: 'Usuario desactivado', usuario_clave_reiniciada: 'Contraseña nueva para un usuario',
+  carga_relevamiento: 'Carga de la copia de respaldo (.json)', carga_pdf: 'Carga de resoluciones (PDF)', cargar_pdf: 'Carga de resoluciones (PDF)', carga_padron: 'Carga del Padrón',
+  carga_inventario: 'Carga del inventario', carga_planilla_sia: 'Carga de la planilla de trámites', carga_instrucciones: 'Carga de las instrucciones de la IA',
+  completar_con_modelo: 'Lectura con IA', revision: 'Control a mano de una resolución', revisar: 'Control a mano de una resolución', cambio_de_criterio: 'Cambio de criterio',
+  configurar: 'Cambio de configuración', releer: 'Volver a leer todo', borrar_todo: 'Empezar de cero (base vaciada)', ver_documento: 'Vio el PDF de una resolución' };
+/** El detalle de un movimiento, también los viejos: "amelia (veedor)" → "amelia (Consulta)", fechas dd/mm/aaaa, "2 archivo(s)" → "2 archivos". */
+function detalleAud(t){
+  return String(t || '')
+    .replace(/\((veedor|editor|admin)\)/g, (m, r) => `(${PERFIL[r]})`).replace(/→ (veedor|editor|admin)\b/g, (m, r) => '→ ' + PERFIL[r])
+    .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1').replace(/\b(RESOLUCION_[A-Z]+|CEDULA_NOTIFICACION|NO_ES_RESOLUCION)\b/g, c => TIPO_NOMBRE[c] || c)
+    .replace(/· revisada\b/, '· controlada a mano').replace(/· sin tilde\b/, '· sin controlar').replace(/· fecha (\d)/, '· posesión desde $1')
+    .replace(/(\d+) ([a-záéíóúñ]+)\((e?s)\)/gi, (m, n, p, x) => `${n} ${n === '1' ? p : p.replace(/ón$/, 'on') + x}`);
 }
 const CRITERIOS = { PLANILLA_UEST: 'estimada con la planilla de la UEST: fecha de ingreso menos la antigüedad declarada al iniciar el trámite', DECLARADA_ROGANTE: 'declarada por el rogante', SURGE_DOCUMENTAL: 'surge de la documental', SURGE_EXPEDIENTE: 'surge del expediente', CORREGIDA_A_MANO: 'corregida a mano', OTRO: 'otro criterio' };
+/** Las señales del sistema en palabras, para la lista, la ficha y el Excel. */
+const SENALES = { NOMBRE_SEGUN_OCR: 'nombre tomado del texto del PDF: confirmarlo contra la resolución', SIN_PARCELA_CATASTRO: 'Catastro no encontró la parcela',
+  PARCELA_BALDIA: 'Catastro la da como baldía', RURAL: 'inmueble rural', MULTIPLES_MATRICULAS: 'afecta más de una matrícula',
+  CESION_RECIENTE: 'posesión por cesión de hace menos de diez años', ROGANTE_PERSONA_JURIDICA: 'el rogante es una persona jurídica',
+  OTRA_LOCALIDAD: 'el rogante tiene el domicilio en otra localidad que el inmueble', DOMICILIO_COMPARTIDO: 'domicilio compartido con otro expediente',
+  MATRICULA_COMPARTIDA: 'matrícula compartida con otro expediente', ANTIGUEDAD_SURGE_DOCUMENTAL: 'la antigüedad surge de la documental, no de lo declarado',
+  ANTIGUEDAD_SURGE_EXPEDIENTE: 'la antigüedad surge del expediente, no de lo declarado', ANTIGUEDAD_OTRO: 'la antigüedad se fijó con otro criterio' };
+const senal = x => SENALES[x] || String(x || '').replace(/_/g, ' ').toLowerCase();
+/** Lo que el sistema anota como dudoso ("matricula: vacía", "legibilidad mala"…), en palabras y sin repetir. */
+const CAMPO_FALTA = { expediente: 'número de expediente', antiguedad: 'antigüedad de la posesión', cuenta: 'cuenta', matricula: 'matrícula', tipo_documento: 'tipo de resolución',
+  rogante: 'rogante', nombre_rogante: 'nombre del rogante', rogantes_multiples: 'los demás rogantes (hay más de uno)', expediente_distinto_al_archivo: 'expediente distinto al del archivo',
+  antiguedad_inconsistente: 'antigüedad que no coincide entre páginas', fecha_referencia_fuera_de_rango: 'fecha de referencia fuera de rango', antiguedad_fuera_de_rango: 'antigüedad fuera de rango',
+  cuenta_con_departamento_invalido: 'cuenta con un departamento que no existe', dni: 'DNI', cuil: 'CUIL', apellido_nombre: 'nombre del rogante', superficie_m2: 'superficie',
+  fecha_referencia: 'fecha de referencia', antiguedad_anios: 'antigüedad de la posesión', fecha_inicio_declarada: 'fecha de inicio de la posesión', estado_civil: 'estado civil' };
+const fechasDMA = t => String(t == null ? '' : t).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1');
+const listaCampos = t => String(t).split(/,\s*/).filter(Boolean).map(x => { const k = x.replace(/^(rogantes?\[\d+\]|inmueble|dominio|posesion|resolucion)\./, ''); return CAMPO_FALTA[k] || k.replace(/[_.]/g, ' '); }).join(', ');
+function motivoEnPalabras(m, porTexto){
+  const t = String(m || ''), i = t.indexOf(': '), campo = i > 0 ? t.slice(0, i) : '', det = i > 0 ? t.slice(i + 2) : '';
+  const vacio = /^(vac[ií][oa]s?|ningun[oa]|sin dato|sin tipo|0 rogante)/.test(det);
+  let x;
+  if((x = t.match(/^caso borde \(posee desde (\S+), límite (\S+)\)$/))) return `cerca del corte: posee desde ${fechasDMA(x[1])} y el límite es el ${fechasDMA(x[2])}`;
+  // En lo leído por texto, la "legibilidad" solo dice que faltan datos (ya están en la lista): no es la letra del PDF.
+  if((x = t.match(/^legibilidad (.*)$/))) return porTexto || x[1] === 'sin dato' ? null : x[1] === 'mala' ? 'letra poco legible' : 'letra en partes poco legible';
+  if((x = t.match(/^campos dudosos: (.*)$/))) return (porTexto ? 'al texto del PDF le faltan: ' : 'la IA marcó como dudosos: ') + listaCampos(x[1]);
+  if((x = t.match(/^el texto del PDF no alcanzó: faltan (.*?)(\s*\(.*\))?$/))) return 'el texto del PDF no alcanzó: faltan ' + listaCampos(x[1]) + (x[2] || '').replace('(se completa con clave de API)', '(se lee con IA)');
+  switch(campo.replace(/^rogante\[\d+\]\./, '')){
+    case 'tipo_documento': return !det || det === 'sin tipo' ? 'no se pudo saber qué tipo de resolución es'
+      : det === 'RESOLUCION_TRAMITE' || det === 'CEDULA_NOTIFICACION' ? null   // ya lo explica otro motivo, en palabras
+      : `no es la que ordena la inscripción: ${TIPO_NOMBRE[det] || det.replace(/_/g, ' ').toLowerCase()}`;
+    case 'expediente': return vacio ? 'no tiene número de expediente legible' : `número de expediente dudoso (${det})`;
+    case 'expediente_vs_archivo': return null;   // lo explica otro motivo, en palabras
+    case 'duplicado': return 'el ' + det.replace(/ ya procesado$/, ' ya estaba en otra resolución de la misma carga');
+    case 'rogantes': return 'no se encontró ningún rogante';
+    case 'apellido_nombre': return 'falta el nombre del rogante';
+    case 'dni': return vacio ? 'falta el DNI del rogante' : `DNI del rogante dudoso (${det})`;
+    case 'matriculas_afectadas': case 'matricula': return 'no tiene matrícula';
+    case 'cuenta': return vacio ? 'no tiene cuenta' : `cuenta inválida (${det})`;
+    case 'fecha_inicio_declarada': return `la fecha de inicio de la posesión (${fechasDMA(det)}) es posterior a hoy`;
+    case 'fecha_referencia': return vacio ? 'falta la fecha desde la que se cuenta la antigüedad' : `fecha desde la que se cuenta la antigüedad dudosa (${fechasDMA(det)})`;
+    case 'antiguedad_anios': return vacio ? 'falta la antigüedad de la posesión' : `antigüedad dudosa (${det} años)`;
+    case 'posesion_cruce_texto': return `la fecha de posesión que leyó la IA no coincide con la del texto del PDF (${fechasDMA(det)})`;
+    case 'posesion_vs_resolucion': case 'posesion_vs_referencia': case 'expediente_vs_resolucion': return fechasDMA(det);
+  }
+  return fechasDMA(campo && !/\s/.test(campo) ? `${campo.replace(/_/g, ' ')}: ${det}` : t);
+}
+function motivosEnPalabras(r){
+  const porTexto = r.fuente === 'texto' || r.fuente === 'texto_incompleto', ms = (r.derivado && r.derivado.motivos_revision) || [];
+  const noAlcanzo = ms.some(m => /^el texto del PDF no alcanzó/.test(m)), out = [];
+  for(const m of ms){ if(noAlcanzo && /^campos dudosos:/.test(m)) continue; const t = motivoEnPalabras(m, porTexto); if(t && !out.includes(t)) out.push(t); }
+  return out;
+}
+/** La parcela según Catastro, sin separadores sueltos cuando falta un dato. */
+const catastroTexto = c => [c.localidad, c.nomenclatura_legible, c.estado, `${c.sup_tierra || '?'} m² tierra, ${c.sup_mejoras || 0} m² construidos`].filter(Boolean).join(' · ');
+/** "Datos completos" (lo que guardó el sistema, crudo) es para quien administra; sin usuarios, para quien tiene el archivo. */
+const veDatosCrudos = () => !YO || !!(YO.permisos || {}).administrar;
 /** La clasificación en palabras, para las filas de carga, los globos del mapa y el KML. */
-const NOMBRE_CLASE = { ELEGIBLE: 'anterior al corte', ELEGIBLE_BORDE: 'anterior al corte, en el borde', NO_ELEGIBLE: 'posterior al corte', NO_ELEGIBLE_BORDE: 'posterior al corte, en el borde', SIN_DATO: 'sin fecha', REVISAR: 'sin fecha: revisar', NO_APLICA: 'no aplica' };
+const NOMBRE_CLASE = { ELEGIBLE: 'anterior al corte', ELEGIBLE_BORDE: 'anterior al corte, en el borde', NO_ELEGIBLE: 'posterior al corte', NO_ELEGIBLE_BORDE: 'posterior al corte, en el borde', SIN_DATO: 'sin fecha', REVISAR: 'sin fecha, con dudas', NO_APLICA: 'no aplica' };
 const nombreClase = c => NOMBRE_CLASE[c] || String(c || '').replace(/_/g, ' ').toLowerCase();
-const VEREDICTOS = { ELEGIBLE: 'Posesión anterior al corte', ELEGIBLE_BORDE: 'Anterior al corte, en el borde', NO_ELEGIBLE: 'Posesión posterior al corte', NO_ELEGIBLE_BORDE: 'Posterior al corte, en el borde', SIN_DATO: 'Sin fecha de posesión', REVISAR: 'Sin fecha de posesión: revisar', NO_APLICA: 'No ordena la inscripción' };
+const VEREDICTOS = { ELEGIBLE: 'Posesión anterior al corte', ELEGIBLE_BORDE: 'Anterior al corte, en el borde', NO_ELEGIBLE: 'Posesión posterior al corte', NO_ELEGIBLE_BORDE: 'Posterior al corte, en el borde', SIN_DATO: 'Sin fecha de posesión', REVISAR: 'Sin fecha de posesión, con dudas', NO_APLICA: 'No ordena la inscripción' };
 /** "1 resolución leída" / "13 resoluciones leídas", con el número ya en castellano. */
 const plural = (n, uno, varios) => `${miles(n)} ${Number(n) === 1 ? uno : varios}`;
 /** Cuántos hay de cada resultado. El borde va dentro de anteriores y posteriores; evaluables = anteriores + posteriores + sin fecha. */
@@ -2465,7 +2686,7 @@ function pintarTabla(){
   pintarPaginacion(total);
   $('filas').innerHTML = pag.map(r => {
     const d = r.derivado, c = cl(d);
-    const marcas = (d.senales || []).filter(s => !/COMPARTID/.test(s)).map(s => s.toLowerCase().replace(/_/g, ' ')).concat(r.inventario && (r.inventario.cuenta_coincide === false || r.inventario.resolucion_coincide === false) ? ['difiere del inventario'] : []).join(' · ');
+    const marcas = (d.senales || []).filter(s => !/COMPARTID|NOMBRE_SEGUN_OCR/.test(s)).map(senal).concat(r.inventario && (r.inventario.cuenta_coincide === false || r.inventario.resolucion_coincide === false) ? ['difiere del inventario'] : []).join(' · ');
     return `<tr class="fila ${d.revision && d.revision.revisado ? 'rev' : ''}" data-i="${registros.indexOf(r)}">
       <td class="exp">${esc(d.expediente || '—')}<div class="mini">${esc(d.resolucion_numero ? d.resolucion_numero + '/' + (d.resolucion_anio || '') : '')}</div><div class="mini solo-movil">${esc(d.rogante_principal || '')}</div></td>
       <td class="col-rog">${esc(d.rogante_principal || '—')}${d.cantidad_rogantes > 1 ? ` <span class="mini">+${d.cantidad_rogantes - 1}</span>` : ''}${marcas ? `<div class="mini">${esc(marcas)}</div>` : ''}</td>
@@ -2507,47 +2728,48 @@ $('filas').addEventListener('click', e => {
   const sig = tr.nextElementSibling; if(sig && sig.classList.contains('det')){ sig.remove(); return; }
   document.querySelectorAll('tr.det').forEach(x => x.remove());
   const r = registros[Number(tr.dataset.i)], d = r.derivado, e2 = r.extraido || {}, g = d.geo || {}, c = g.catastro || {};
-  const rog = (e2.rogantes || []).map(x => `${esc(x.apellido_nombre || '?')} · DNI ${esc(x.dni || '?')} · ${esc(x.estado_civil || '')} · ${esc([x.domicilio && x.domicilio.calle, x.domicilio && x.domicilio.numero, x.domicilio && x.domicilio.localidad].filter(Boolean).join(' '))}`).join('<br>');
+  const rog = (e2.rogantes || []).map(x => { const dom = x.domicilio || {};
+    return [x.apellido_nombre || 'sin nombre legible', x.dni ? 'DNI ' + x.dni : 'sin DNI', x.estado_civil, [dom.calle, dom.numero, dom.localidad].filter(Boolean).join(' ')].filter(Boolean).map(esc).join(' · '); }).join('<br>');
   const rev = d.revision || {};
   const ESTADO_REG = { INSCRIPTA: 'Inscripta', PROVISORIA: 'Provisoria', OBSERVADA: 'Observada', NO_FIGURA_EN_PADRON: 'No figura en el Padrón cargado (el cruce es por nombre: confirmarlo a mano)',
     AMBIGUO: 'Ambigua (el nombre aparece más de una vez)', SIN_NOMBRE_PARA_CRUZAR: 'Sin nombre legible para cruzar con el Registro' };
-  const insc = d.inscripcion ? `${esc(ESTADO_REG[d.inscripcion.estado] || d.inscripcion.estado)}${d.inscripcion.diario ? ' · diario ' + esc(d.inscripcion.diario) : ''}${d.inscripcion.candidatas ? ' · candidatas: ' + esc(d.inscripcion.candidatas.map(x => x.diario + ' (' + x.estado + ')').join(', ')) : ''}` : 'sin cruzar con el Padrón';
+  const insc = d.inscripcion ? `${esc(ESTADO_REG[d.inscripcion.estado] || d.inscripcion.estado)}${d.inscripcion.diario ? ' · diario ' + esc(d.inscripcion.diario) : ''}${d.inscripcion.candidatas ? ' · candidatas: ' + esc(d.inscripcion.candidatas.map(x => x.diario + ' (' + (REGISTRO_EXCEL[x.estado] || String(x.estado || '').toLowerCase()) + ')').join(', ')) : ''}` : 'sin cruzar con el Padrón';
   if(deLaPlanilla(r)){ tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="8" class="detalle">${fichaPlanilla(r, insc)}</td></tr>`); return; }
   const pe = r.planilla_estimaba;
   tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="8" class="detalle"><p style="margin:0 0 10px;font-size:14px"><b class="${cl(d).startsWith('ELEGIBLE') ? 'c-v' : cl(d).startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(VEREDICTOS[cl(d)] || cl(d))}</b> · posee desde ${esc(fechaPosesion(d))} · ${config().regla === 'CORTE_FIJO' ? 'corte ' + esc((config().fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p><dl>
     <dt>Rogantes</dt><dd>${rog || '—'}</dd>
-    <dt>Posesión</dt><dd>${esc(fechaPosesion(d))} (${esc(CRITERIOS[d.posesion_criterio] || d.posesion_criterio || 'sin criterio')})<br><span class="mini">${esc(e2.posesion && e2.posesion.texto_original || '')}</span></dd>
+    <dt>Posesión</dt><dd>${esc(fechaPosesion(d))}${d.posee_desde ? ' — ' + esc(CRITERIOS[d.posesion_criterio] || (d.posesion_criterio ? String(d.posesion_criterio).replace(/_/g, ' ').toLowerCase() : 'sin decir cómo se fijó')) : ''}${e2.posesion && e2.posesion.texto_original ? `<br><span class="mini">dice: «${esc(e2.posesion.texto_original)}»</span>` : ''}</dd>
     <dt>Inmueble</dt><dd>${esc([e2.inmueble && e2.inmueble.calle, e2.inmueble && e2.inmueble.numero, e2.inmueble && e2.inmueble.manzana && 'mz ' + e2.inmueble.manzana, e2.inmueble && e2.inmueble.superficie_texto].filter(Boolean).join(' · ') || '—')}</dd>
-    <dt>Matrículas</dt><dd>${esc((d.matriculas || []).join(', ') || '—')} · titular ${esc(d.titulares_registrales || '—')} · cuenta ${esc(g.cuenta_normalizada || '—')}</dd>
-    <dt>Catastro</dt><dd>${c.encontrada ? esc(`${c.localidad} · ${c.nomenclatura_legible} · ${c.estado || ''} · ${c.sup_tierra || '?'} m² tierra, ${c.sup_mejoras || 0} m² construidos`) : 'sin parcela encontrada'}</dd>
+    <dt>Matrículas</dt><dd>${esc([(d.matriculas || []).join(', ') || 'sin matrícula', d.titulares_registrales && 'titular ' + d.titulares_registrales, g.cuenta_normalizada ? 'cuenta ' + g.cuenta_normalizada : 'sin cuenta'].filter(Boolean).join(' · '))}</dd>
+    <dt>Catastro</dt><dd>${c.encontrada ? esc(catastroTexto(c)) : c.encontrada === false ? 'Catastro no encontró la parcela' : 'sin consultar en Catastro'}</dd>
     <dt>Registro</dt><dd>${insc}</dd>
-    <dt>Inventario UEST</dt><dd>${r.inventario ? esc(`${r.inventario.estado_digitalizacion || ''} · cuenta ${r.inventario.cuenta || 'sin'}${r.inventario.cuenta_coincide === false ? ' (NO coincide con la leída)' : r.inventario.cuenta_coincide ? ' (coincide)' : ''} · resolución N° ${r.inventario.nro_resolucion || 'sin'}${r.inventario.resolucion_coincide === false ? ' (NO coincide)' : r.inventario.resolucion_coincide ? ' (coincide)' : ''}${r.inventario.iniciador ? ' · SUAC: ' + r.inventario.iniciador + (r.inventario.dni ? ' DNI ' + r.inventario.dni : '') + (r.inventario.dni_coincide === false ? ' (DNI NO coincide)' : r.inventario.dni_coincide ? ' (DNI coincide)' : '') : ''}`) : 'no está en el inventario cargado'}</dd>
+    <dt>Inventario UEST</dt><dd>${r.inventario ? esc(`${r.inventario.estado_digitalizacion ? r.inventario.estado_digitalizacion + ' · ' : ''}cuenta ${r.inventario.cuenta || 'sin'}${r.inventario.cuenta_coincide === false ? ' (NO coincide con la leída)' : r.inventario.cuenta_coincide ? ' (coincide)' : ''} · resolución N° ${r.inventario.nro_resolucion || 'sin'}${r.inventario.resolucion_coincide === false ? ' (NO coincide)' : r.inventario.resolucion_coincide ? ' (coincide)' : ''}${r.inventario.iniciador ? ' · SUAC: ' + r.inventario.iniciador + (r.inventario.dni ? ' DNI ' + r.inventario.dni : '') + (r.inventario.dni_coincide === false ? ' (DNI NO coincide)' : r.inventario.dni_coincide ? ' (DNI coincide)' : '') : ''}`) : 'no está en el inventario cargado'}</dd>
     ${pe ? `<dt>Planilla UEST</dt><dd>${esc(`estimaba posesión desde ${pe.posee_desde ? pe.posee_desde.slice(0, 4) : '—'}: ${String(VEREDICTOS[pe.clasificacion] || pe.clasificacion).toLowerCase()}`)}${pe.coincide === false ? ' · <b class="c-r">no coincide con la resolución</b>' : pe.coincide ? ' · coincide con la resolución' : ''}</dd>` : ''}
-    <dt>Señales</dt><dd>${esc((d.senales || []).join(', ') || '—')}</dd>
-    <dt>Con dudas</dt><dd>${esc((d.motivos_revision || []).join(' · ') || 'no')}</dd>
-    <dt>Archivo</dt><dd>${esc(r.archivo || '')}${r.tomo ? ` <span class="mini">(páginas ${(Number(r.tomo.desde) || 0) + 1}–${(Number(r.tomo.hasta) || 0) + 1} de ${esc(r.tomo.archivo)})</span>` : ''}</dd>
+    <dt>Señales</dt><dd>${esc((d.senales || []).map(senal).join(' · ') || '—')}</dd>
+    <dt>Con dudas</dt><dd>${esc(motivosEnPalabras(r).join(' · ') || (d.revisar ? 'sí' : 'no'))}</dd>
+    <dt>Archivo</dt><dd>${r.tomo ? `${esc(r.tomo.archivo)} <span class="mini">(páginas ${(Number(r.tomo.desde) || 0) + 1} a ${(Number(r.tomo.hasta) || 0) + 1})</span>` : esc(r.archivo || '—')}</dd>
   </dl>
   ${SERVIDOR && !WEB ? `<div class="acciones" style="margin-top:12px"><a class="boton-ver" href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">Ver la resolución original</a><span class="mini">se abre el PDF tal como lo leyó el sistema, para controlarlo</span></div>` : ''}
   ${WEB ? (r.pdf_web ? `<div class="acciones" style="margin-top:12px"><button class="boton-ver" data-verpdf="${esc(r.pdf_web)}" data-desde="${r.tomo ? Number(r.tomo.desde) || 0 : ''}" data-hasta="${r.tomo ? Number(r.tomo.hasta) || 0 : ''}" data-nombre="${esc(r.archivo || '')}" data-exp="${esc(d.expediente || '')}" data-reg="${esc(r.hash)}">Ver la resolución original</button><span class="mini">se abre al costado el PDF tal como lo leyó el sistema, para controlarlo</span></div>`
     : `<p class="mini" style="margin:12px 0 0">El PDF de esta resolución todavía no está guardado en la web.${YO && YO.permisos && YO.permisos.cargar ? ' Subilo en "Cargar resoluciones", en el menú: si ya estaba leído, se guarda sin volver a leerlo y queda para verlo acá.' : ''}</p>`) : ''}
   ${SERVIDOR && (!WEB || (YO && YO.permisos && YO.permisos.revisar)) ? `<div class="revision" data-id="${encodeURIComponent(r.hash)}">
-    <label class="tilde"><input type="checkbox" class="rv-ok" ${rev.revisado ? 'checked' : ''}> <b>Revisada</b> contra el documento</label>
+    <label class="tilde"><input type="checkbox" class="rv-ok" ${rev.revisado ? 'checked' : ''}> <b>Controlada a mano</b> contra el documento</label>
     <div class="controles">
       <div class="grupo"><label>Corregir el tipo</label><select class="rv-tipo">
-        <option value="">como lo leyó el sistema (${esc((d.tipo_documento || '—').replace('RESOLUCION_', '').toLowerCase())})</option>
+        <option value="">como lo leyó el sistema (${esc(TIPO_NOMBRE[d.tipo_documento] || 'sin tipo')})</option>
         <option value="RESOLUCION_INSCRIPCION" ${rev.tipo_documento === 'RESOLUCION_INSCRIPCION' ? 'selected' : ''}>ordena la inscripción</option>
         <option value="RESOLUCION_RECTIFICA" ${rev.tipo_documento === 'RESOLUCION_RECTIFICA' ? 'selected' : ''}>rectifica o amplía</option>
         <option value="RESOLUCION_DESESTIMA" ${rev.tipo_documento === 'RESOLUCION_DESESTIMA' ? 'selected' : ''}>desestima</option>
         <option value="RESOLUCION_CANCELA" ${rev.tipo_documento === 'RESOLUCION_CANCELA' ? 'selected' : ''}>cancela</option>
         <option value="RESOLUCION_TRAMITE" ${rev.tipo_documento === 'RESOLUCION_TRAMITE' ? 'selected' : ''}>de trámite (aprueba, emplaza, suspende)</option>
       </select></div>
-      <div class="grupo"><label>Corregir la fecha de posesión</label><input type="date" class="rv-fecha" value="${esc(rev.posee_desde || '')}"></div>
-      <div class="grupo"><label>Quién revisó</label><input type="text" class="rv-quien" value="${esc(rev.revisor || (WEB && YO ? YO.nombre || YO.usuario : ''))}" placeholder="nombre o iniciales" style="width:150px"></div>
+      <div class="grupo"><label>Corregir la fecha de posesión</label><input type="text" class="rv-fecha fecha" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" value="${esc(isoATexto(rev.posee_desde))}" style="width:130px"></div>
+      <div class="grupo"><label>Quién la controló</label><input type="text" class="rv-quien" value="${esc(rev.revisor || (WEB && YO ? YO.nombre || YO.usuario : ''))}" placeholder="nombre o iniciales" style="width:150px"></div>
       <div class="grupo" style="flex:1;min-width:190px"><label>Observación</label><input type="text" class="rv-nota" value="${esc(rev.nota || '')}" placeholder="qué hubo que corregir"></div>
       <button class="rv-guardar">Guardar revisión</button>
     </div>
-    <span class="mini rv-estado">${rev.en ? 'Revisada el ' + fechaHora(rev.en) + (rev.revisor ? ' por ' + esc(rev.revisor) : '') : 'Sin revisar'}</span>
-  </div>` : ''}<details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ extraido: e2, derivado: d }, null, 1))}</pre></details></td></tr>`);
+    <span class="mini rv-estado">${rev.en ? (rev.revisado ? 'Controlada a mano el ' : 'Corrección guardada el ') + fechaHora(rev.en) + (rev.revisor ? ' por ' + esc(rev.revisor) : '') : 'Sin controlar'}</span>
+  </div>` : ''}${veDatosCrudos() ? `<details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ extraido: e2, derivado: d }, null, 1))}</pre></details>` : ''}</td></tr>`);
 });
 
 /** La ficha de un expediente estimado con la planilla de la UEST: qué se declaró al iniciar el trámite y qué falta para confirmarlo. */
@@ -2555,10 +2777,10 @@ function fichaPlanilla(r, insc){
   const d = r.derivado, p = r.planilla || {}, g = d.geo || {}, c = g.catastro || {}, cfg = config(), k = cl(d);
   const fecha = iso => iso ? String(iso).split('-').reverse().join('/') : '—';
   const estim = d.posee_desde ? `el trámite ingresó el ${fecha(p.fecha_ingreso)} declarando ${p.antiguedad} año${p.antiguedad === 1 ? '' : 's'} de posesión: posee desde ${fechaPosesion(d)}` : (d.sin_estimar || 'sin dato');
-  const catastro = c.encontrada ? `${c.localidad} · ${c.nomenclatura_legible} · ${c.estado || ''} · ${c.sup_tierra || '?'} m² tierra, ${c.sup_mejoras || 0} m² construidos`
+  const catastro = c.encontrada ? catastroTexto(c)
     : !g.cuenta_normalizada ? (g.ubicacion_aproximada ? 'sin cuenta: ubicada aproximadamente por la localidad' : 'sin cuenta ni localidad para ubicarla')
     : c.encontrada === false ? 'Catastro no tiene esa cuenta' : 'sin consultar todavía' + (puedeCargar() ? ': "Ubicar en Catastro", en Planilla de trámites' : '');
-  const inv = r.inventario ? `${r.inventario.estado_digitalizacion || ''} · cuenta ${r.inventario.cuenta || 'sin'} · resolución N° ${r.inventario.nro_resolucion || 'sin'}` : 'no está en el inventario cargado';
+  const inv = r.inventario ? [r.inventario.estado_digitalizacion, 'cuenta ' + (r.inventario.cuenta || 'sin'), 'resolución N° ' + (r.inventario.nro_resolucion || 'sin')].filter(Boolean).join(' · ') : 'no está en el inventario cargado';
   return `<p style="margin:0 0 10px;font-size:14px"><b class="${k.startsWith('ELEGIBLE') ? 'c-v' : k.startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(VEREDICTOS[k] || k)}</b> · estimada con la planilla de la UEST · ${cfg.regla === 'CORTE_FIJO' ? 'corte ' + esc((cfg.fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p><dl>
     <dt>Estimación</dt><dd>${esc(estim)}<br><span class="mini">No se leyó la resolución: es lo que se declaró al iniciar el trámite. La resolución puede fijar otra antigüedad.</span></dd>
     <dt>Iniciador</dt><dd>${esc(d.rogante_principal || '—')}${d.dni_principal ? ' · DNI ' + esc(d.dni_principal) : ''}</dd>
@@ -2571,7 +2793,7 @@ function fichaPlanilla(r, insc){
     <dt>Inventario UEST</dt><dd>${esc(inv)}</dd>
   </dl>
   <p class="mini" style="margin:12px 0 0">${puedeCargar() ? 'Para confirmarla, conseguí el PDF de la resolución y subilo en "Cargar resoluciones", en el menú: la lectura reemplaza a esta estimación.' : 'Se confirma cuando se lea la resolución.'}</p>
-  <details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ planilla: p, derivado: d }, null, 1))}</pre></details>`;
+  ${veDatosCrudos() ? `<details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ planilla: p, derivado: d }, null, 1))}</pre></details>` : ''}`;
 }
 /**
  * Abre Expedientes con exactamente estos filtros ("ELEGIBLE+ESTIMADA", "LEIDA+INSC:TRABADA", "SIN_UBICAR"…), sin
@@ -2666,8 +2888,8 @@ function planillaExcel(lista){
       lat: numExcel(f.lat), lon: numExcel(f.lon), superficie_poseida_m2: numExcel(f.superficie_poseida_m2), sup_mejoras_parcela: numExcel(f.sup_mejoras_parcela), valuacion_parcela: numExcel(f.valuacion_parcela),
       inscripcion: d.inscripcion ? REGISTRO_EXCEL[d.inscripcion.estado] || d.inscripcion.estado : est ? '' : 'Sin cruzar con el Padrón',
       fecha_resolucion: fechaExcel(d.resolucion_fecha),
-      controlada: est ? '' : rev.revisado ? 'sí' : 'no', dudas: est ? '' : d.revisar ? 'sí' : 'no', motivos: est ? '' : (d.motivos_revision || []).join(' · ').replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1'),
-      senales: (d.senales || []).map(x => String(x).replace(/_/g, ' ').toLowerCase()).join(' · '),
+      controlada: est ? '' : rev.revisado ? 'sí' : 'no', dudas: est ? '' : d.revisar ? 'sí' : 'no', motivos: est ? '' : motivosEnPalabras(r).join(' · '),
+      senales: (d.senales || []).map(senal).join(' · '),
       grupo_domicilio: f.cluster_domicilio, grupo_matricula: f.cluster_matricula });
     return COLUMNAS_EXCEL.map(([k]) => c(o[k])).join(';'); });
   return [COLUMNAS_EXCEL.map(([, t]) => t).join(';')].concat(filas).join('\r\n');
@@ -2722,12 +2944,15 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('visor')
 /** Guarda la revisión manual de una resolución: tilde, corrección de fecha, quién y observación. */
 async function guardarRevision(caja){
   const btn = caja.querySelector('.rv-guardar'), est = caja.querySelector('.rv-estado');
+  // La fecha se escribe dd/mm/aaaa y se guarda aaaa-mm-dd; vacía, queda la que leyó el sistema.
+  const txtFecha = caja.querySelector('.rv-fecha').value.trim(), fecha = txtFecha ? textoAIso(txtFecha) : '';
+  if(fecha === null){ est.textContent = 'No se pudo guardar: la fecha de posesión va con día, mes y año (dd/mm/aaaa), o vacía para dejar la que leyó el sistema.'; caja.querySelector('.rv-fecha').focus(); return; }
   btn.disabled = true; est.textContent = 'guardando…';
   try{
     const r = await api('/api/revision', { method: 'POST', body: JSON.stringify({
       id: decodeURIComponent(caja.dataset.id),
       revisado: caja.querySelector('.rv-ok').checked,
-      posee_desde: caja.querySelector('.rv-fecha').value,
+      posee_desde: fecha,
       tipo_documento: caja.querySelector('.rv-tipo').value,
       revisor: caja.querySelector('.rv-quien').value,
       nota: caja.querySelector('.rv-nota').value,
@@ -2780,9 +3005,9 @@ function pintarPadron(){
   const cuenta = e => porEstado[e] || 0;
   const p = resumenSrv.padron || {};
   const cruzados = cuenta('INSCRIPTA') + cuenta('PROVISORIA') + cuenta('OBSERVADA');
-  $('subRegistro').textContent = p.filas ? `Padrón ${p.archivo || ''} · ${p.filas} filas` : 'Padrón sin cargar';
+  $('subRegistro').textContent = p.filas ? `Padrón ${p.archivo || ''} · ${plural(p.filas, 'fila', 'filas')}` : 'Padrón sin cargar';
   const tarjetas = [['Inscriptas', cuenta('INSCRIPTA'), 'c-m', 'INSCRIPTA'], ['Provisorias u observadas', cuenta('PROVISORIA') + cuenta('OBSERVADA'), 'c-a', 'TRABADA'], ['No figuran en el Padrón', cuenta('NO_FIGURA_EN_PADRON'), 'c-r', 'NO_FIGURA_EN_PADRON'], ['Ambiguas', cuenta('AMBIGUO'), 'c-g', 'AMBIGUO'], ['Sin nombre para cruzar', cuenta('SIN_NOMBRE_PARA_CRUZAR'), 'c-g', 'SIN']];
-  $('padronTarjetas').innerHTML = (p.filas ? `<div class="tarjeta"><div class="t"><span>Padrón cargado</span></div><span class="n c-m" style="font-size:15px;overflow-wrap:anywhere">${esc(p.archivo || '')}</span><span class="mini">${Number(p.filas) || 0} filas · ${p.cargado_en ? fechaHora(p.cargado_en) : ''}</span></div>` : `<div class="tarjeta"><div class="t"><span>Padrón</span></div><span class="n c-g" style="font-size:20px">sin cargar</span><span class="mini">cargá el .xls del Registro para cruzar</span></div>`)
+  $('padronTarjetas').innerHTML = (p.filas ? `<div class="tarjeta"><div class="t"><span>Padrón cargado</span></div><span class="n c-m" style="font-size:15px;overflow-wrap:anywhere">${esc(p.archivo || '')}</span><span class="mini">${plural(p.filas, 'fila', 'filas')}${p.cargado_en ? ' · cargado el ' + fechaHora(p.cargado_en) : ''}</span></div>` : `<div class="tarjeta"><div class="t"><span>Padrón</span></div><span class="n c-g" style="font-size:20px">sin cargar</span><span class="mini">cargá el .xls del Registro para cruzar</span></div>`)
     + tarjetas.map(([t, n, c, f]) => `<div class="tarjeta ${n ? 'clicable' : ''}" ${n ? `data-verinsc="${f}" role="button" tabindex="0"` : ''}><div class="t"><span>${t}</span></div><span class="n ${c}">${n}</span>${n ? '<span class="mini">tocá para ver cuáles</span>' : ''}</div>`).join('');
   $('padronTarjetas').querySelectorAll('[data-verinsc]').forEach(el => el.addEventListener('click', () => verInscripcion(el.dataset.verinsc)));
   $('registroResumen').innerHTML = p.filas || cruzados ? `<div class="tarjetas" style="grid-template-columns:repeat(3,minmax(0,1fr))">
@@ -2801,7 +3026,7 @@ async function cargarInventarioVista(){
   const inv = d.inventario || {};
   // Sin CSV, un solo renglón: ni el mapa vacío ni la tabla vacía, ni el botón de Catastro (no tendría nada que ubicar).
   $('invVacio').classList.toggle('oculto', !!inv.cargado); $('invDetalle').classList.toggle('oculto', !inv.cargado); $('btnUbicarInv').classList.toggle('oculto', !inv.cargado);
-  if(!inv.cargado){ $('invVacio').textContent = puedeCargar() ? 'Todavía no se cargó el inventario. Cargá el CSV de expedientes digitalizados que manda la UEST con "Cargar inventario (.csv)": se suma al que ya estaba.' : 'Todavía no se cargó el inventario de expedientes digitalizados.';
+  if(!inv.cargado){ $('invVacio').textContent = puedeCargar() ? 'Todavía no se cargó el inventario. Cargá el CSV de expedientes digitalizados que manda la UEST con "Cargar inventario (.csv)".' : 'Todavía no se cargó el inventario de expedientes digitalizados.';
     $('invTarjetas').innerHTML = ''; $('invLocalidades').innerHTML = ''; $('invSubLoc').textContent = ''; return; }
   const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
   $('invTarjetas').innerHTML = `
@@ -2813,7 +3038,7 @@ async function cargarInventarioVista(){
     <div class="tarjeta"><div class="t"><span>Sin digitalizar (SUAC)</span></div><span class="n c-a">${(inv.sin_digitalizar || 0).toLocaleString('es-AR')}</span><span class="mini">de todos los expedientes de la UEST</span></div>
     <div class="tarjeta"><div class="t"><span>Con iniciador y DNI</span><span class="pill p-m">${pct(inv.con_dni, inv.total)} %</span></div><span class="n c-m">${(inv.con_dni || 0).toLocaleString('es-AR')}</span><span class="mini">vienen del SUAC; sirven para cruzar exacto</span></div>`;
   const locs = (d.localidades || []);
-  $('invSubLoc').textContent = `${locs.length} localidades`;
+  $('invSubLoc').textContent = plural(locs.length, 'localidad', 'localidades');
   $('invLocalidades').innerHTML = locs.slice(0, 300).map(l => `<tr><td>${esc(l.localidad)}<div class="mini">${esc(l.departamento || '')}${l.baldias ? ' · ' + l.baldias + ' baldías' : ''}</div></td><td style="text-align:right;font-weight:700">${l.con_resolucion || 0}</td><td style="text-align:right">${l.total}</td></tr>`).join('');
   if(!mapaInv){
     mapaInv = L.map('mapaInv', { scrollWheelZoom: true }).setView([-31.4, -64.2], 7);
