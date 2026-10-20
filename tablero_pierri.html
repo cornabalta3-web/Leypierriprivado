@@ -2627,7 +2627,7 @@ function loQueSeSabe(r){
   const catastro = c.encontrada ? fila('Catastro', esc(catastroTexto(c)))
     : c.encontrada === false ? fila('Catastro', 'no encontró la parcela de esa cuenta', true)
     : !g.cuenta_normalizada ? fila('Catastro', 'sin cuenta para consultar' + (g.ubicacion_aproximada ? ': ubicado aproximadamente por la localidad' : ''), true)
-    : fila('Catastro', 'sin consultar' + (puedeCargar() ? (WEB ? ': "Ubicar en Catastro", en Planilla de trámites' : ': "Ubicar en Catastro", en Localidades y mapa') : ''), true);
+    : fila('Catastro', 'sin consultar' + (SERVIDOR && puedeCargar() ? (WEB ? ': "Ubicar en Catastro", en Planilla de trámites' : ': "Ubicar en Catastro", en Localidades y mapa') : ''), true);
   // El Padrón del Registro (cruce por nombre) y el inventario de expedientes digitalizados de la UEST.
   const i = d.inscripcion, padron = fila('Padrón', esc(padronTexto(d)), !i || i.estado === 'NO_FIGURA_EN_PADRON' || i.estado === 'SIN_NOMBRE_PARA_CRUZAR');
   const v = r.inventario, contra = est ? 'la planilla' : 'la resolución', coincide = (x, que) => x === false ? ` (${que}NO coincide con ${contra})` : x ? ` (${que}coincide)` : '';
@@ -3331,9 +3331,9 @@ function pintarMapa(){
       '<div class="globo-lista" style="margin-top:4px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding-right:4px">' + rs.slice(0, 25).map(r => { const d = r.derivado, est = deLaPlanilla(r), ed = edificacion(d.geo && d.geo.catastro);
         return `<div class="globo-exp"><a href="#" data-abrir="${esc(r.hash)}" style="font-weight:700">${esc(d.expediente || 'sin número')}</a> — ${esc(d.rogante_principal || '')}<br><span class="mini">`
           + esc([mayus1(nombreClase(cl(d))) + (est ? ' (estimado)' : ' · resolución leída'), hayPadron() && 'Padrón: ' + padronTexto(d, true), ed && 'Catastro: ' + ed].filter(Boolean).join(' · '))
-          + (SERVIDOR && !WEB ? ` · <a href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">ver PDF</a>` : '') + '</span></div>'; }).join('') +
-      (rs.length > 25 ? `<div class="mini">y ${miles(rs.length - 25)} más: elegí la localidad en el panel de la derecha para verlos en Expedientes.</div>` : '') +
-      `<div class="mini" style="margin-top:2px">Tocá el número para abrir el expediente.</div></div></div>`; };
+          + (SERVIDOR && !WEB ? ` · <a href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">ver PDF</a>` : '') + '</span></div>'; }).join('') + '</div>' +
+      (rs.length > 25 ? `<div class="mini" style="margin-top:6px">y ${miles(rs.length - 25)} más: elegí la localidad en el panel de la derecha para verlos en Expedientes.</div>` : '') +
+      `<div class="mini" style="margin-top:4px">Tocá el número para abrir el expediente.</div></div>`; };
     // Lleno: resolución leída. Claro: estimado con la planilla. Borde punteado: ubicación aproximada, por la localidad.
     L.circleMarker([lat, lon], aprox
       ? { radius: 9 + Math.min(ds.length, 8), color: est ? '#fff' : col, weight: est ? 2 : 2.5, dashArray: '4 3', fillColor: col, fillOpacity: est ? .3 : .18 }
