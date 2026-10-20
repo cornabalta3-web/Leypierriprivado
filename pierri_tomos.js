@@ -237,16 +237,25 @@
   /** Convierte un error de la API en una frase que entienda cualquiera. `grave` = no tiene sentido seguir intentando. */
   function motivoModelo(err) {
     const m = String((err && err.message) || err || '');
-    // Lo que no es del modelo: el PDF guardado en GitHub y la conexión con GitHub.
-    if (/GitHub no devolvió el PDF/i.test(m)) return { texto: 'GitHub no devolvió el PDF de esa resolución (si recién se cargó, hay que esperar unos minutos)', grave: false, documento: true };
+    // Primero por el código de la respuesta: un número suelto en el texto (tokens, request_id) no tiene que confundir.
+    const api = (m.match(/la API respondió (\d{3})/) || [])[1], pdf = (m.match(/GitHub no devolvió el PDF \(respuesta (\d{3})\)/) || [])[1];
+    if (pdf) return Number(pdf) >= 500
+      ? { texto: 'GitHub no está entregando los PDF guardados (falla de su lado); probá en unos minutos', grave: false }
+      : { texto: 'GitHub no devolvió el PDF de esa resolución: si recién se cargó, hay que esperar unos minutos', grave: false, documento: true };
     if (/conexión con GitHub/i.test(m)) return { texto: 'no hay conexión con GitHub', grave: false };
-    if (/401|authentication|invalid x-api-key|API key is invalid/i.test(m)) return { texto: 'la clave de API no es válida', grave: true };
-    if (/credit balance|billing|402|insufficient/i.test(m)) return { texto: 'la cuenta de Anthropic no tiene crédito', grave: true };
-    if (/403|permission/i.test(m)) return { texto: 'la clave no tiene permiso para usar el modelo', grave: true };
-    if (/429|rate/i.test(m)) return { texto: 'demasiados pedidos seguidos; reintentar en unos minutos', grave: false };
-    if (/529|overloaded/i.test(m)) return { texto: 'Anthropic está sobrecargado; probá en unos minutos', grave: false };
-    if (/respondió 5\d\d/i.test(m)) return { texto: 'Anthropic tuvo una falla de su lado; probá en unos minutos', grave: false };
-    if (/respondió 400/i.test(m)) return { texto: 'la API rechazó el PDF de esa resolución (puede estar dañado o ser demasiado grande)', grave: false, documento: true };
+    if (api) {
+      const st = Number(api);
+      if (st === 401) return { texto: 'la clave de API no es válida', grave: true };
+      if (st === 402 || (st === 400 && /credit balance|billing/i.test(m))) return { texto: 'la cuenta de Anthropic no tiene crédito', grave: true };
+      if (st === 403) return { texto: 'la clave no tiene permiso para usar el modelo', grave: true };
+      if (st === 429) return { texto: 'demasiados pedidos seguidos; reintentar en unos minutos', grave: false };
+      if (st === 529) return { texto: 'Anthropic está sobrecargado; probá en unos minutos', grave: false };
+      if (st >= 500) return { texto: 'Anthropic tuvo una falla de su lado; probá en unos minutos', grave: false };
+      if (st === 413) return { texto: 'el PDF de esa resolución es demasiado grande para mandarlo al modelo', grave: false, documento: true };
+      if (st === 400) return { texto: 'la API rechazó el PDF de esa resolución: puede estar dañado o ser demasiado grande', grave: false, documento: true };
+    }
+    if (/invalid x-api-key|API key is invalid|authentication_error/i.test(m)) return { texto: 'la clave de API no es válida', grave: true };
+    if (/credit balance|billing/i.test(m)) return { texto: 'la cuenta de Anthropic no tiene crédito', grave: true };
     if (/no devolvió JSON/i.test(m)) return { texto: 'el modelo contestó pero no pudo leerla', grave: false, documento: true };
     if (/fetch failed|ENOTFOUND|ECONN|network|No hay conexión|error de red/i.test(m)) return { texto: 'no hay conexión a internet', grave: false };
     return { texto: 'el modelo no respondió (' + m.slice(0, 120) + ')', grave: false };

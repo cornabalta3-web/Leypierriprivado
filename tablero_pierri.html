@@ -146,7 +146,7 @@ td.exp{white-space:nowrap;font-weight:600}
 .pag{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 18px;font-size:12px;color:var(--texto2);border-top:1px solid var(--fondo)}
 .detalle{background:var(--suave)}
 .detalle dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;margin:0;font-size:13px}
-.detalle dt{color:var(--texto2)} .detalle dd{margin:0}
+.detalle dt{color:var(--texto2)} .detalle dd{margin:0;overflow-wrap:anywhere;min-width:0}
 .detalle details{margin-top:10px;font-size:12.5px} .detalle pre{font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:300px;overflow:auto;background:var(--blanco);padding:10px;border:1px solid var(--linea);border-radius:var(--r2)}
 .vacio{color:var(--texto2);font-size:13.5px;padding:18px;text-align:center}
 .revision{margin-top:12px;padding:12px;border:1px solid var(--linea);border-radius:var(--r2);background:var(--blanco);display:flex;flex-direction:column;gap:8px}
@@ -1823,7 +1823,7 @@ if(SERVIDOR){
       const conPdf = inc.filter(r => r.pdf_web).length - salteadas - sinGuardar;
       if((sinGuardar || pend.tokens) && conPdf <= 0){ /* solo falta guardar lo ya leído o cobrado: no se cobra nada */ }
       else if(!conPdf){ avisar(salteadas ? `Las ${salteadas} que quedan sin leer ya se probaron con el modelo en esta sesión y no las pudo leer: se vuelven a intentar al volver a ingresar.` : inc.length ? `Hay ${inc.length} sin leer del todo, pero ninguna tiene su PDF guardado en la web: subí esos PDF en "Filtro Ley Pierri" (la carga de PDF, en el menú).` : 'No hay resoluciones sin leer del todo.'); return; }
-      else if(!confirm(`Se van a leer con el modelo ${conPdf} resolución(es) que el texto no resolvió${sinGuardar ? ` (antes se guardan ${sinGuardar} ya leídas, sin volver a cobrarlas)` : ''}${salteadas ? `; otras ${salteadas} ya no se pudieron leer en esta sesión y se saltean` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
+      else if(!confirm(`Se van a leer con el modelo ${conPdf} resolución(es) que el texto no resolvió${sinGuardar ? ` (antes se ${sinGuardar === 1 ? 'guarda 1 ya leída, sin volver a cobrarla' : `guardan ${sinGuardar} ya leídas, sin volver a cobrarlas`})` : ''}${salteadas ? `; ${salteadas === 1 ? 'otra ya no se pudo leer en esta sesión y se saltea' : `otras ${salteadas} ya no se pudieron leer en esta sesión y se saltean`}` : ''}. Esto gasta tokens de tu clave de Anthropic. ¿Seguir?`)) return;
     }
     const b = $('btnCompletar'); b.disabled = true;
     let hechas = 0, tokens = 0, noLeidas = 0, vueltas = 0; const motivos = new Set();
@@ -1835,9 +1835,12 @@ if(SERVIDOR){
         hechas += r.completadas || 0; tokens += r.tokens || 0; noLeidas += r.no_leidas || 0; (r.fallas || []).forEach(m => motivos.add(m));
         const gasto = `${tokens.toLocaleString('es-AR')} tokens`;
         // El kit no saltea las que no puede leer: si no completó ninguna, se corta para no pagar lo mismo otra vez.
-        if(r.corte || (!WEB && r.fallas && r.fallas.length && !r.completadas)){ avisar('La lectura con el modelo se cortó: ' + (r.corte || r.fallas[0]) + (hechas ? `. Antes se completaron ${hechas} (${gasto}).` : '.'), true); break; }
+        if(r.corte || (!WEB && r.fallas && r.fallas.length && !r.completadas)){
+          const otros = [...motivos].filter(m => m !== r.corte);
+          avisar('La lectura con el modelo se cortó: ' + (r.corte || r.fallas[0]) + '.' + (hechas ? ` Antes se ${hechas === 1 ? 'completó 1' : 'completaron ' + hechas} (${gasto}).` : '')
+            + (noLeidas ? ` ${noLeidas === 1 ? 'Una no se pudo leer' : noLeidas + ' no se pudieron leer'}: ${otros.join('; ')}.` : ''), true); break; }
         if(WEB ? !r.por_probar : !r.pendientes){
-          avisar(`Listo: ${hechas} resolución(es) completadas (${gasto}).` + (noLeidas ? ` No se pudieron leer ${noLeidas} (${[...motivos].join('; ')}): quedan sin leer por ahora y se vuelven a intentar al volver a ingresar.` : '')
+          avisar(`Listo: ${hechas} resolución(es) completadas (${gasto}).` + (noLeidas ? ` ${noLeidas === 1 ? 'Una no se pudo leer' : noLeidas + ' no se pudieron leer'}: ${[...motivos].join('; ')}. Quedan sin leer por ahora: las que GitHub todavía no publicó se vuelven a probar solas en unos minutos; las demás, al volver a ingresar.` : '')
             + (r.sin_pdf ? ` Otras ${r.sin_pdf} no tienen el PDF guardado en la web.` : ''), !!noLeidas);
           break;
         }
@@ -2698,11 +2701,11 @@ function pintarMapa(){
       `<div class="mini" style="margin-top:2px">Tocá el número para abrir el expediente.</div></div></div>`;
     // Lleno: resolución leída. Claro: estimado con la planilla. Borde punteado: ubicación aproximada, por la localidad.
     L.circleMarker([lat, lon], aprox
-      ? { radius: 9 + Math.min(ds.length, 8), color: col, weight: 2.5, dashArray: '4 3', fillColor: col, fillOpacity: est ? .08 : .18 }
+      ? { radius: 9 + Math.min(ds.length, 8), color: est ? '#fff' : col, weight: est ? 2 : 2.5, dashArray: '4 3', fillColor: col, fillOpacity: est ? .3 : .18 }
       : est ? { radius: 7 + Math.min(ds.length, 8), color: '#fff', weight: 1.5, fillColor: col, fillOpacity: .35 }
       : { radius: 7 + Math.min(ds.length, 8), color: '#fff', fillColor: col, fillOpacity: .9, weight: 1.5 }).bindPopup(html).addTo(capa);
   }
-  $('leyendaEst').classList.toggle('oculto', !registros.some(deLaPlanilla));
+  $('leyendaEst').classList.toggle('oculto', !vista.some(deLaPlanilla));
   const ubic = vista.filter(r => r.derivado.geo && r.derivado.geo.lat != null), nAprox = ubic.filter(r => r.derivado.geo.ubicacion_aproximada).length;
   $('subMapa').textContent = `${ubic.length} de ${vista.length} expedientes en el mapa` + (nAprox ? ` · ${nAprox} con ubicación aproximada (por localidad)` : '') +
     (vista.length - ubic.length ? ` · ${vista.length - ubic.length} sin ubicar (sin cuenta ni localidad legible)` : '') + (localidadSel ? ' · ' + localidadSel : '');

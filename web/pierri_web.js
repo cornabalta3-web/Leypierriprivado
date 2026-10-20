@@ -997,7 +997,7 @@
       const r = await guardarAhora();
       if (Object.keys(PEND_MODELO.registros).length || PEND_MODELO.tokens) {
         const p = PEND_MODELO;
-        await ocupado(() => guardarModelo(s, p.registros, p.tokens, modeloElegido(), p.noLeidas || 0));
+        await ocupado(() => guardarModelo(s, p.registros, p.tokens, modeloElegido(), p.noLeidas || 0, p.id));
       }
       return r;
     });
@@ -1168,18 +1168,19 @@
     await datos();
     const c = CACHE, T = window.PierriTomos, P = window.PierriCore;
     if (!c.instrucciones || !c.instrucciones.prompt_sistema) throw new Error('Faltan las instrucciones del modelo: cargalas una vez en Configuración.');
+    // Primero se guarda lo que ya se pagó y GitHub no guardó; si GitHub sigue fallando, no se lee (ni se cobra) nada nuevo.
+    const antes = PEND_MODELO, guardadasAntes = Object.keys(antes.registros).length;
+    if (guardadasAntes || antes.tokens) { await guardarModelo(s, antes.registros, antes.tokens, modeloElegido(), antes.noLeidas || 0, antes.id); await datos(); }
     const incompletas = VISTA.todos.filter(r => r.derivado && r.fuente === 'texto_incompleto' && !r.error);
     const conPdf = incompletas.filter(r => r.pdf_web);
-    // Primero lo que ya se pagó y no se pudo guardar; después las que no se probaron en esta sesión.
-    const nuevas = Object.assign({}, PEND_MODELO.registros);
+    const nuevas = {};
     const porProbar = conPdf.filter(r => !salteada(r.hash) && !nuevas[r.hash]);
     const lote = porProbar.slice(0, LOTE_MODELO), ix = indices(c), modelo = modeloElegido(), cfg = cfgDe(c, s);
     // El registro tal como se guardó (sin lo que se calcula al mirar), del kit o de lo leído en la web.
     const original = new Map();
     for (const r of (c.kit.resultados || []).concat(lecturasWeb(c).registros)) if (r && !original.has(r.hash)) original.set(r.hash, r);
     const fallas = [];
-    let n = Object.keys(nuevas).length, tokens = PEND_MODELO.tokens, noLeidas = 0, corte = null;
-    const noLeidasAntes = PEND_MODELO.noLeidas || 0;
+    let n = 0, tokens = 0, noLeidas = 0, corte = null;
     for (let i = 0; i < lote.length; i++) {
       const r = lote[i];
       progreso(`Leyendo con el modelo ${i + 1} de ${lote.length}: ${(r.derivado && r.derivado.expediente) || r.archivo}…`);
@@ -1187,7 +1188,7 @@
         let bytes;
         // Si el PDF guardado no se puede traer o abrir, es un problema de ese documento (salvo que falte la conexión).
         try { bytes = await traerPDF(ix.archivos[r.pdf_web]); if (r.tomo) bytes = await recortarPaginas(bytes, r.tomo.desde, r.tomo.hasta); }
-        catch (e) { if (!e.red) e.documento = true; throw e; }
+        catch (e) { if (!e.red && !/GitHub no devolvió el PDF \(respuesta 5/.test(String(e.message))) e.documento = true; throw e; }
         const leido = await leerConModelo(bytes, s.claveApi, modelo, c.instrucciones);
         const reg = structuredClone(original.get(r.hash) || r);
         const fusion = T.fusionar(reg.extraido, leido.extraido);
@@ -1197,7 +1198,7 @@
         nuevas[r.hash] = limpiar(reg); n++; tokens += leido.tokens;
       } catch (err) {
         const m = T.motivoModelo(err), deDocumento = m.documento || (err && err.documento);
-        fallas.push(deDocumento && !m.documento ? `no se pudo abrir el PDF guardado de esa resolución (${String(err.message || err).slice(0, 80)})` : m.texto);
+        fallas.push(deDocumento && !m.documento ? 'no se pudo abrir el PDF guardado de esa resolución' : m.texto);
         tokens += Number(err && err.tokens) || 0;
         // Un problema de la cuenta o de la conexión (clave, crédito, demasiados pedidos, Anthropic caído, sin internet)
         // corta, dice por qué, y la próxima vez se vuelve a intentar. Un problema de este documento lo saltea y sigue.
@@ -1206,16 +1207,23 @@
       }
     }
     // Se guarda también si no salió ninguna: lo cobrado queda en la cuenta de tokens y en la auditoría.
-    if (n || tokens) await guardarModelo(s, nuevas, tokens, modelo, noLeidasAntes + noLeidas);
+    const motivos = [...new Set(fallas)];
+    if (n || tokens) {
+      try { await guardarModelo(s, nuevas, tokens, modelo, noLeidas); }
+      catch (e) { if (noLeidas) e.message += ` Además, ${noLeidas === 1 ? 'una no se pudo leer' : noLeidas + ' no se pudieron leer'}: ${motivos.join('; ')}.`; throw e; }
+    }
     progreso('');
-    return { completadas: n, no_leidas: noLeidas, pendientes: conPdf.length - n, por_probar: corte ? 0 : porProbar.length - lote.length,
-      sin_pdf: incompletas.length - conPdf.length, tokens, corte, fallas: [...new Set(fallas)].slice(0, 3) };
+    return { completadas: guardadasAntes + n, no_leidas: noLeidas, pendientes: conPdf.length - n, por_probar: corte ? 0 : porProbar.length - lote.length,
+      sin_pdf: incompletas.length - conPdf.length, tokens: (antes.tokens || 0) + tokens, corte, fallas: motivos.slice(0, 4) };
   }
   /**
    * Guarda lo leído con el modelo (y lo cobrado sin datos). Si GitHub no lo guarda, queda en PEND_MODELO: lo guarda la
    * vuelta siguiente, "Guardar lo pendiente" o el cierre de sesión, sin volver a pagarlo.
    */
-  async function guardarModelo(s, nuevas, tokens, modelo, noLeidas) {
+  async function guardarModelo(s, nuevas, tokens, modelo, noLeidas, idPrevio) {
+      // Cada guardado lleva una marca: si GitHub lo aplicó pero contestó con error, el reintento lo reconoce y no vuelve
+      // a sumar los tokens ni a anotarlo en la auditoría.
+      const id = idPrevio || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
       const c = CACHE || {}, n = Object.keys(nuevas).length;
       let parcelas = null;
       const cuentas = [...new Set(Object.values(nuevas).map(r => r.derivado.geo && r.derivado.geo.cuenta_normalizada).filter(Boolean).map(x => x.replace(/\D/g, '')))]
@@ -1225,7 +1233,10 @@
       let escrito = null;
       await transaccion(async estado => {
         const ab = await abrirEstado(estado, s);
-        const comp = Object.assign((await abrirJSON(ab.dek, await estado.leer(RUTAS.completadas))) || {}, nuevas);
+        const previo = (await abrirJSON(ab.dek, await estado.leer(RUTAS.completadas))) || {};
+        if ((previo._guardados || []).includes(id)) { escrito = { dek: ab.dek, completadas: previo }; throw Object.assign(new Error('ya guardado'), { yaGuardado: true }); }
+        const comp = Object.assign(previo, nuevas);
+        comp._guardados = (previo._guardados || []).concat(id).slice(-50);
         // Lo cobrado por respuestas que no trajeron los datos: no es de ninguna resolución, pero se suma a los tokens.
         const sinDatos = tokens - Object.values(nuevas).reduce((a, r) => a + (Number(r.tokens) || 0), 0);
         if (sinDatos > 0) comp._sin_lectura = { tokens: ((comp._sin_lectura && comp._sin_lectura.tokens) || 0) + sinDatos };
@@ -1239,7 +1250,8 @@
         archivos[RUTAS.admin] = await sellarBovedaDe(ab, s);
         return archivos;
       }, 'Actualización del relevamiento').catch(e => {
-        PEND_MODELO = { registros: nuevas, tokens, noLeidas };
+        if (e && e.yaGuardado) return;
+        PEND_MODELO = { registros: nuevas, tokens, noLeidas, id };
         progreso('');
         throw new Error(`GitHub no guardó lo leído con el modelo (${e.message}). Quedó en esta pestaña: tocá de nuevo "Completar incompletas con el modelo" y se guarda sin volver a cobrarlo.`);
       });
