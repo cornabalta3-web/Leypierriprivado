@@ -1437,7 +1437,14 @@
     const todas = [...new Set(d.registros.map(r => r.derivado.geo).filter(g => g && g.cuenta_normalizada && !(g.catastro && g.catastro.encontrada))
       .map(g => g.cuenta_normalizada.replace(/\D/g, '')).filter(x => x.length === 12 && !yaConsultada(x)))];
     const previas = Object.keys(PEND_CATASTRO).length;
-    if (!todas.length && !previas) return { ubicadas: 0, consultadas: 0, pendientes: 0 };
+    if (!todas.length && !previas) {
+      // Nada para consultar: se dice cuántas no encontró Catastro y desde cuándo se vuelve a probar la primera.
+      const sin = [...new Set(d.registros.map(r => r.derivado.geo).filter(g => g && g.cuenta_normalizada && !(g.catastro && g.catastro.encontrada))
+        .map(g => g.cuenta_normalizada.replace(/\D/g, '')).filter(x => consultadas[x] && !consultadas[x].p))];
+      const primera = sin.map(x => String(consultadas[x].en || '')).filter(Boolean).sort()[0];
+      return { ubicadas: 0, consultadas: 0, pendientes: 0, no_encontradas: sin.length,
+        reintento: primera && !isNaN(Date.parse(primera)) ? new Date(Date.parse(primera) + 30 * 86400000).toISOString() : null };
+    }
     // Cada tanda guarda una sola vez: hasta un minuto de consultas o las cuentas pedidas. Guardar muy seguido hace que
     // GitHub pida ir más despacio.
     const cuentas = todas.slice(0, Math.min(Number(maximo) || 20000, 20000)), hasta = Date.now() + 60000;
