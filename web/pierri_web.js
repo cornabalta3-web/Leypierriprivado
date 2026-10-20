@@ -798,9 +798,12 @@
     const porExp = new Map(filas.map(f => [f.expediente, f]));
     const leidas = new Set();
     for (const r of todos) {
+      if (!r.derivado || r.repetido_de || r.error) continue;
+      const e = SIA.canonExpediente(r.derivado.expediente), f = e && porExp.get(e); if (!f) continue;
+      // Lo que dice la planilla del trámite de una resolución leída, para su ficha ("Lo que se sabe de este expediente").
+      r.en_planilla = { fecha_ingreso: f.fecha_ingreso || null, antiguedad: f.antiguedad == null ? null : f.antiguedad, estado: f.estado || null, etapa: f.etapa || null };
       // Un documento que no se pudo leer (sin tipo) no reemplaza a la estimación: no se sabe qué dice.
-      if (!r.derivado || r.repetido_de || r.error || !r.derivado.tipo_documento || P.clasificar(r.derivado) === 'NO_APLICA') continue;
-      const e = SIA.canonExpediente(r.derivado.expediente); if (e && porExp.has(e)) leidas.add(e);
+      if (r.derivado.tipo_documento && P.clasificar(r.derivado) !== 'NO_APLICA') leidas.add(e);
     }
     const validacion = SIA.compararConLeidas(todos, porExp, cfg, T);
     const registros = [];
