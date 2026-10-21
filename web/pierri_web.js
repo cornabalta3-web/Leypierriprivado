@@ -860,6 +860,10 @@
       const rw = revs[r.hash];
       if (rw && (!r.revision || String(rw.en || '') >= String(r.revision.en || ''))) r.revision = rw;
       B.aplicarRevision(r, cfg);
+      // Controlada con IA y coincide: el borde ya se miró contra el documento, salvo que una persona la marque con dudas.
+      if (r.control_ia && r.control_ia.coincide && !(d.revision && (d.revision.revisado || d.revision.dudas))) {
+        d.motivos_revision = d.motivos_revision.filter(m => !m.startsWith('caso borde')); d.revisar = d.motivos_revision.length > 0;
+      }
       const g = d.geo, cta = g && g.cuenta_normalizada ? g.cuenta_normalizada.replace(/\D/g, '') : '';
       // Ubicada por la parcela: deja de ser la ubicación aproximada por localidad que pudo traer del kit.
       if (cta && !(g.catastro && g.catastro.encontrada) && cat[cta] && P.enriquecerConCatastro(d, cat[cta].p || null, T)) delete g.ubicacion_aproximada;
@@ -921,7 +925,9 @@
     resumen.planilla = sia ? sia.resumen : { cargada: false };
     const hechos = todos.filter(r => r.control_ia && !r.repetido_de);
     resumen.control_ia = { controladas: hechos.length, coinciden: hechos.filter(r => r.control_ia.coincide).length,
-      con_diferencias: hechos.filter(r => !r.control_ia.coincide).length };
+      con_diferencias: hechos.filter(r => !r.control_ia.coincide).length,
+      // De las que difieren, las que todavía nadie eligió en su ficha cuál lectura vale.
+      falta_elegir: hechos.filter(r => !r.control_ia.coincide && !(r.derivado && r.derivado.revision && r.derivado.revision.revisado)).length };
     resumen.aviso_datos = c.aviso || null;
     VISTA = { todos, archivos: web.archivos, cruce, planilla: sia, controles: ctrls };
     const clave = s.claveApi || '';
