@@ -915,7 +915,7 @@
     resumen.control_ia = { controladas: hechos.length, coinciden: hechos.filter(r => r.control_ia.coincide).length,
       con_diferencias: hechos.filter(r => !r.control_ia.coincide).length };
     resumen.aviso_datos = c.aviso || null;
-    VISTA = { todos, archivos: web.archivos, cruce, planilla: sia };
+    VISTA = { todos, archivos: web.archivos, cruce, planilla: sia, controles: ctrls };
     const clave = s.claveApi || '';
     const fijado = c.criterio && c.criterio.en ? { en: c.criterio.en, por: c.criterio.por || null } : null;
     return { config: Object.assign({}, cfg, { key: clave ? '••••' + clave.slice(-4) : '', modelo: modeloElegido(), fijado }), resumen, registros: conPlanilla.filter(r => r.derivado) };
@@ -1390,9 +1390,11 @@
    * Las que se pueden controlar con IA: leídas por texto, válidas, que ordenan algo y tienen fecha, sin un control a mano
    * (ni "con dudas" de una persona) y sin un control con IA guardado. Para no pagar dos veces lo mismo.
    */
-  function controlables(c) {
-    if (!VISTA || !c) return [];
-    const P = window.PierriCore, hechos = c.controles || {};
+  function controlables() {
+    // Sobre lo último que se calculó (VISTA), que guarda también los controles con que se calculó: la memoria (CACHE) se
+    // vacía, por ejemplo, al crear un usuario, y el Tablero pregunta cuántas hay sin volver a traer todo.
+    if (!VISTA) return [];
+    const P = window.PierriCore, hechos = VISTA.controles || {};
     // Un control guardado vale mientras la lectura por texto siga siendo la misma (si cambió, se puede volver a controlar).
     return VISTA.todos.filter(r => r.derivado && !r.error && !r.repetido_de && r.fuente === 'texto' && !r.control_ia && !r.derivado.revision
       && !(hechos[r.hash] && hechos[r.hash].ia && !controlViejo(hechos[r.hash], r.derivado))
@@ -1405,7 +1407,7 @@
   let PEND_CONTROL = { registros: {}, tokens: 0, noLeidas: 0 };
   /** Para el Tablero, antes de preguntar: cuántas hay para controlar y cuántas ya se pagaron y esperan guardarse. */
   function paraControlar() {
-    const lista = controlables(CACHE), conPdf = lista.filter(r => r.pdf_web), sinGuardar = Object.keys(PEND_CONTROL.registros).length;
+    const lista = controlables(), conPdf = lista.filter(r => r.pdf_web), sinGuardar = Object.keys(PEND_CONTROL.registros).length;
     const salteadas = conPdf.filter(r => controlSalteada(r.hash)).length;
     return { con_pdf: conPdf.length - salteadas - conPdf.filter(r => PEND_CONTROL.registros[r.hash]).length, sin_pdf: lista.length - conPdf.length,
       salteadas, sin_guardar: sinGuardar, tokens_sin_guardar: PEND_CONTROL.tokens };
@@ -1423,7 +1425,7 @@
     // Primero lo que ya se pagó y GitHub no guardó; si GitHub sigue fallando, no se lee (ni se cobra) nada nuevo.
     const antes = PEND_CONTROL, previas = Object.values(antes.registros);
     if (previas.length || antes.tokens) { await guardarControles(s, antes.registros, antes.tokens, antes.modelo || modeloElegido(), antes.noLeidas || 0, antes.id); await datos(); }
-    const c = CACHE, lista = controlables(c), conPdf = lista.filter(r => r.pdf_web);
+    const c = CACHE, lista = controlables(), conPdf = lista.filter(r => r.pdf_web);
     const porProbar = conPdf.filter(r => !controlSalteada(r.hash));
     const lote = porProbar.slice(0, LOTE_MODELO), ix = indices(c), modelo = modeloElegido(), cfg = cfgDe(c);
     const nuevas = {}, fallas = [];
