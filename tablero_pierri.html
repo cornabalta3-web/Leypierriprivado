@@ -467,7 +467,7 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
           <div class="grupo"><label for="fLoc">Localidad</label><select id="fLoc"><option value="">Todas</option></select></div>
           <div class="grupo"><label for="fSec">Sección / barrio</label><select id="fSec"><option value="">Todas</option></select></div>
           <label class="casilla" for="fSinUbicar"><input type="checkbox" id="fSinUbicar"> Sin ubicar en el mapa</label>
-          <div class="grupo"><label for="fInsc">Registro</label><select id="fInsc"><option value="">Cualquiera</option><option value="INSCRIPTA">Inscripta</option><option value="TRABADA">Provisoria u observada</option><option value="NO_FIGURA_EN_PADRON">No figura en el Padrón</option><option value="AMBIGUO">Ambigua</option><option value="SIN">Sin cruzar</option></select></div>
+          <div class="grupo"><label for="fInsc">Registro</label><select id="fInsc"><option value="">Cualquiera</option><option value="INSCRIPTA">Inscripta</option><option value="TRABADA">Provisoria u observada</option><option value="NO_FIGURA_EN_PADRON">No figura en el Padrón</option><option value="AMBIGUO">Ambigua</option><option value="SIN_RESOLUCION">Sin resolución según la planilla</option><option value="SIN">Sin cruzar</option></select></div>
           <div class="grupo"><label for="fAnioD">Año de la resolución: desde</label><select id="fAnioD"><option value="">—</option></select></div>
           <div class="grupo"><label for="fAnioH">hasta</label><select id="fAnioH"><option value="">—</option></select></div>
           <button id="fLimpiar" class="sec">Limpiar filtros</button>
@@ -522,7 +522,7 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
     <div id="padronProgreso" class="mini"></div>
     <div class="tarjetas" id="padronTarjetas"></div>
     <div class="panel"><div class="cabp"><h2>Qué significa cada estado</h2></div><div class="cuerpo mini" style="gap:6px">
-      <div><b>Inscripta</b>: la anotación existe y es definitiva. <b>Provisoria / Observada</b>: la anotación quedó trabada; hay que destrabarla antes de escriturar.</div>
+      <div><b>Inscripta</b>: la anotación existe y es definitiva. <b>Provisoria / Observada</b>: la anotación no es definitiva.</div>
       <div><b>No figura en el Padrón</b>: el nombre no aparece en el Padrón cargado. Puede ser una resolución que no se inscribió o el mismo nombre escrito de otra forma: el cruce es por nombre, así que se confirma a mano.</div>
       <div><b>Ambiguo</b>: el nombre aparece más de una vez, o el año del diario no cierra con el de la resolución. Se resuelve a mano.</div>
       <div id="padronLeyendaEst" class="oculto"><b>Estimados con la planilla</b>: los expedientes de la planilla de trámites que todavía no tienen la resolución leída se cruzan igual, por el nombre del iniciador. Cada tarjeta los cuenta aparte, en el renglón punteado; el detalle está en Planilla de trámites.</div>
@@ -533,7 +533,7 @@ details.mas-cifras>summary:focus-visible{outline:2px solid var(--marca);outline-
     <div class="cab"><div><h1>Configuración</h1><p id="configSub">El criterio de antigüedad vale para todos los usuarios: al cambiarlo se guarda y se recalcula todo al instante, sin volver a leer los PDF.</p></div></div>
     <div class="panel" id="panelCriterio"><div class="cabp"><h2>Criterio de antigüedad</h2><span class="sub" id="subCriterio">vale para todos los usuarios</span></div><div class="cuerpo">
       <div class="controles">
-        <div class="grupo"><label for="regla">Regla</label><select id="regla"><option value="CORTE_FIJO">Posesión anterior al corte (ley vigente)</option><option value="PLAZO_MOVIL">Diez años antes de la presentación (proyecto)</option></select></div>
+        <div class="grupo"><label for="regla">Regla</label><select id="regla"><option value="CORTE_FIJO">Posesión anterior al corte (ley vigente)</option><option value="PLAZO_MOVIL">Diez años de posesión al día de hoy (proyecto)</option></select></div>
         <div class="grupo"><label for="corte">Fecha de corte</label><input id="corte" type="text" class="fecha" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" value="01/01/2006" style="width:130px"></div>
         <div class="grupo"><label for="margen">Margen de borde (meses)</label><input id="margen" type="number" min="0" max="36" value="12" style="width:90px"></div>
       </div>
@@ -2217,7 +2217,9 @@ const claveGrupo = d => agrupacion === 'departamento' ? dep(d) : agrupacion === 
 /** Lo que ordena la inscripción o la estima la planilla de la UEST: entra en los desplegables, el ranking y el mapa. */
 const evaluable = d => d.tipo_documento === 'RESOLUCION_INSCRIPCION' || d.tipo_documento === 'PLANILLA_UEST';
 const deLaPlanilla = r => r.fuente === 'planilla';
-const estadoInsc = d => { const i = d.inscripcion; if(!i) return 'SIN'; if(i.estado === 'PROVISORIA' || i.estado === 'OBSERVADA') return 'TRABADA'; if(i.estado === 'SIN_NOMBRE_PARA_CRUZAR') return 'SIN'; return i.estado; };
+// Un trámite que según la planilla todavía no tiene resolución no tiene nada que inscribir: "no figura" no dice nada.
+const sinResolucionPlanilla = d => d.tipo_documento === 'PLANILLA_UEST' && !d.resolucion_fecha && !d.resolucion_numero;
+const estadoInsc = d => { const i = d.inscripcion; if(!i) return 'SIN'; if(i.estado === 'NO_FIGURA_EN_PADRON' && sinResolucionPlanilla(d)) return 'SIN_RESOLUCION'; if(i.estado === 'PROVISORIA' || i.estado === 'OBSERVADA') return 'TRABADA'; if(i.estado === 'SIN_NOMBRE_PARA_CRUZAR') return 'SIN'; return i.estado; };
 
 /**
  * Filtros combinables: se elige como mucho uno por grupo y se suman entre sí (por ejemplo: elegibles + estimados
@@ -2568,7 +2570,6 @@ const hayPadron = () => !!(resumenSrv.padron && resumenSrv.padron.filas);
 const hayInventario = () => !!(resumenSrv.inventario && resumenSrv.inventario.cargado);
 const hayPlanilla = () => !!(resumenSrv.planilla && resumenSrv.planilla.cargada) || registros.some(deLaPlanilla);
 /** Un trámite que la planilla no registra con resolución: todavía no hay resolución que inscribir en el Registro. */
-const sinResolucionPlanilla = d => d.tipo_documento === 'PLANILLA_UEST' && !d.resolucion_fecha && !d.resolucion_numero;
 /** El cruce con el Padrón en palabras, para la ficha (largo) y el globo del mapa (corto). Sin Padrón cargado, lo dice. */
 const PADRON_CORTO = { INSCRIPTA: 'inscripta', PROVISORIA: 'provisoria', OBSERVADA: 'observada', NO_FIGURA_EN_PADRON: 'no figura', AMBIGUO: 'ambigua', SIN_NOMBRE_PARA_CRUZAR: 'sin nombre para cruzar' };
 function padronTexto(d, corto){
@@ -2617,7 +2618,10 @@ function loQueSeSabe(r){
   }
   // La resolución leída.
   const rev = d.revision || {}, archivo = r.tomo ? `${r.tomo.archivo} (páginas ${(Number(r.tomo.desde) || 0) + 1} a ${(Number(r.tomo.hasta) || 0) + 1})` : r.archivo;
-  const resolucion = est
+  const aparte = est && r.leida_aparte;
+  const resolucion = aparte
+    ? fila('Resolución leída', `ya hay un PDF de este expediente cargado, pero ${r.leida_aparte.tipo === 'RESOLUCION_TRAMITE' ? 'es una resolución de trámite: no dice desde cuándo posee' : r.leida_aparte.tipo === 'CEDULA_NOTIFICACION' ? 'es una cédula: no dice desde cuándo posee' : 'no se pudo leer' + (puedeCargar() ? ': falta leerlo con IA (Configuración)' : '')}. Mientras tanto vale la estimación. <a href="#" data-abrir="${esc(r.leida_aparte.hash)}">Ver ese documento</a>`, true)
+    : est
     ? fila('Resolución leída', 'todavía no: la estimación es lo que se declaró al iniciar el trámite, y la resolución puede fijar otra antigüedad. '
       + (puedeCargar() ? 'Para confirmarla, conseguí el PDF de la resolución y subilo en "Cargar resoluciones", en el menú: la lectura reemplaza a esta estimación.' : 'Se confirma cuando se lea la resolución.'), true)
     : fila('Resolución leída', esc(trozos([d.resolucion_numero ? 'N° ' + d.resolucion_numero + (d.resolucion_fecha ? ' del ' + isoATexto(d.resolucion_fecha) : '') : 'sin número legible',
@@ -2661,6 +2665,7 @@ function contarClases(D){
   const o = { ant: 0, pos: 0, sin: 0, borde: 0, noAplica: 0 };
   for(const d of D){ const c = cl(d);
     if(c === 'NO_APLICA'){ o.noAplica++; continue; }
+    if(d.sigue_estimada && c === 'REVISAR') continue;   // un PDF sin leer de un expediente que sigue estimado: ya cuenta la estimación
     if(c.startsWith('ELEGIBLE')) o.ant++; else if(c.startsWith('NO_ELEGIBLE')) o.pos++; else o.sin++;
     if(c.endsWith('_BORDE')) o.borde++; }
   o.ev = o.ant + o.pos + o.sin; return o;
@@ -2962,11 +2967,10 @@ function pintarPlanilla(){
     + (puedeCargar() ? '<div class="acciones"><button class="sec" data-ir="padron">Ir a cargar el Padrón</button></div>' : '');
   else {
     const porInsc = {}; for(const d of D){ const e = estadoInsc(d); porInsc[e] = (porInsc[e] || 0) + 1; }
-    const sinRes = D.filter(d => d.inscripcion && d.inscripcion.estado === 'NO_FIGURA_EN_PADRON' && sinResolucionPlanilla(d)).length;
     const fila = (t, e, col, nota) => { const n = porInsc[e] || 0;
       return `<div class="fila-m${n ? ' clicable' : ''}"${n ? ` data-lista="ESTIMADA+INSC:${e}" role="button" tabindex="0" title="Ver cuáles son en Expedientes"` : ''}><span>${t}${n && nota ? `<span class="mini" style="display:block">${nota}</span>` : ''}</span><b class="${col}">${miles(n)}</b></div>`; };
     $('siaPadronCuerpo').innerHTML = `<div id="siaPadronFilas">${fila('Inscriptas', 'INSCRIPTA', 'c-m')}${fila('Provisorias u observadas', 'TRABADA', 'c-a')}
-      ${fila('No figuran en el Padrón', 'NO_FIGURA_EN_PADRON', 'c-r', sinRes ? `${plural(sinRes, 'no tiene', 'no tienen')} resolución según la planilla` : '')}${fila('Ambiguas', 'AMBIGUO', 'c-g')}${fila('Sin cruzar', 'SIN', 'c-g', 'sin nombre del iniciador')}</div>
+      ${fila('No figuran en el Padrón', 'NO_FIGURA_EN_PADRON', 'c-r', 'con resolución según la planilla')}${fila('Sin resolución según la planilla', 'SIN_RESOLUCION', 'c-g', 'nada que inscribir todavía: no se cuentan como no inscriptos')}${fila('Ambiguas', 'AMBIGUO', 'c-g')}${fila('Sin cruzar', 'SIN', 'c-g', 'sin nombre del iniciador')}</div>
       <p class="mini" style="margin:0">El Padrón no trae DNI, cuenta ni expediente: el cruce es por nombre, y solo cuando el nombre aparece una vez de cada lado y el año cierra. Antes de dar uno por no inscripto, confirmalo a mano. Tocá un renglón para ver cuáles son.</p>`;
   }
   // Dónde está cada uno en el mapa.
@@ -3011,7 +3015,7 @@ function planillaExcel(lista){
       criterio: d.posesion_criterio ? CRITERIOS[d.posesion_criterio] || String(d.posesion_criterio).replace(/_/g, ' ').toLowerCase() : '',
       ubicacion: g.lat == null ? 'sin ubicar' : g.ubicacion_aproximada ? 'aproximada, por la localidad' : 'por la parcela de Catastro',
       lat: numExcel(f.lat), lon: numExcel(f.lon), superficie_poseida_m2: numExcel(f.superficie_poseida_m2), sup_mejoras_parcela: numExcel(f.sup_mejoras_parcela), valuacion_parcela: numExcel(f.valuacion_parcela),
-      inscripcion: d.inscripcion ? REGISTRO_EXCEL[d.inscripcion.estado] || d.inscripcion.estado : est ? '' : 'Sin cruzar con el Padrón',
+      inscripcion: estadoInsc(d) === 'SIN_RESOLUCION' ? 'Sin resolución según la planilla (nada que inscribir)' : d.inscripcion ? REGISTRO_EXCEL[d.inscripcion.estado] || d.inscripcion.estado : est ? '' : 'Sin cruzar con el Padrón',
       fecha_resolucion: fechaExcel(d.resolucion_fecha),
       controlada: est ? '' : rev.revisado ? 'sí' : 'no', dudas: est ? '' : d.revisar ? 'sí' : 'no', motivos: est ? '' : motivosEnPalabras(r).join(' · '),
       senales: (d.senales || []).map(senal).join(' · '),
@@ -3023,7 +3027,8 @@ $('expCsv').addEventListener('click', () => descargar('﻿' + planillaExcel(orde
 /** La lista para pedir los PDF: primero los del borde (donde la estimación puede cambiar), después los elegibles. */
 $('btnSIALista').addEventListener('click', () => {
   const orden = { ELEGIBLE_BORDE: 0, NO_ELEGIBLE_BORDE: 0, ELEGIBLE: 1 }, texto = { ELEGIBLE_BORDE: 'elegible, en el borde', NO_ELEGIBLE_BORDE: 'no elegible, en el borde', ELEGIBLE: 'elegible' };
-  const lista = registros.filter(r => deLaPlanilla(r) && cl(r.derivado) in orden).sort((a, b) => orden[cl(a.derivado)] - orden[cl(b.derivado)]
+  // Si ya hay un PDF cargado de ese expediente (de trámite o sin leer), no se pide.
+  const lista = registros.filter(r => deLaPlanilla(r) && !r.leida_aparte && cl(r.derivado) in orden).sort((a, b) => orden[cl(a.derivado)] - orden[cl(b.derivado)]
     || ((b.planilla && b.planilla.con_resolucion ? 1 : 0) - (a.planilla && a.planilla.con_resolucion ? 1 : 0)) || String(a.derivado.expediente).localeCompare(String(b.derivado.expediente)));
   const c = v => { const t = v == null ? '' : String(v); return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
   const filas = lista.map(r => { const d = r.derivado, p = r.planilla || {};

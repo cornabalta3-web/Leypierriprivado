@@ -796,20 +796,26 @@
     const P = window.PierriCore, SIA = window.PierriSIA;
     const filas = sia.filas || [], meta = { archivo: sia.archivo || null, cargado_en: sia.cargado_en || null };
     const porExp = new Map(filas.map(f => [f.expediente, f]));
-    const leidas = new Set();
+    const leidas = new Set(), aparte = new Map();
     for (const r of todos) {
       if (!r.derivado || r.repetido_de || r.error) continue;
       const e = SIA.canonExpediente(r.derivado.expediente), f = e && porExp.get(e); if (!f) continue;
       // Lo que dice la planilla del trámite de una resolución leída, para su ficha ("Lo que se sabe de este expediente").
       r.en_planilla = { fecha_ingreso: f.fecha_ingreso || null, antiguedad: f.antiguedad == null ? null : f.antiguedad, estado: f.estado || null, etapa: f.etapa || null };
-      // Un documento que no se pudo leer (sin tipo) no reemplaza a la estimación: no se sabe qué dice.
-      if (r.derivado.tipo_documento && P.clasificar(r.derivado) !== 'NO_APLICA') leidas.add(e);
+      // Manda la lectura si fija la posesión (con tipo, o sin tipo pero con fecha: si no, contaría dos veces), o si la
+      // resolución desestima o cancela: el trámite no prosperó. Una de trámite o una sin leer del todo no dicen la
+      // posesión: queda la estimación, que avisa que ese PDF ya está cargado, y la lectura no cuenta entre las evaluables.
+      const t = r.derivado.tipo_documento, k = P.clasificar(r.derivado);
+      if ((k !== 'NO_APLICA' && (t || k !== 'REVISAR')) || t === 'RESOLUCION_DESESTIMA' || t === 'RESOLUCION_CANCELA') leidas.add(e);
+      else { r.derivado.sigue_estimada = true; if (!aparte.has(e)) aparte.set(e, { hash: r.hash, tipo: t || null }); }
     }
+    for (const r of todos) if (r.derivado && r.derivado.sigue_estimada && leidas.has(SIA.canonExpediente(r.derivado.expediente))) delete r.derivado.sigue_estimada;
     const validacion = SIA.compararConLeidas(todos, porExp, cfg, T);
     const registros = [];
     for (const f of filas) {
       if (leidas.has(f.expediente)) continue;
       const r = SIA.registroDePlanilla(f, cfg, T, meta), g = r.derivado.geo, cta = g.cuenta_normalizada ? g.cuenta_normalizada.replace(/\D/g, '') : '';
+      if (aparte.has(f.expediente)) r.leida_aparte = aparte.get(f.expediente);
       if (cta && cat[cta]) P.enriquecerConCatastro(r.derivado, cat[cta].p || null, T);
       if (loc && g.lat == null) ubicarPorLocalidadRapido(r.derivado, loc);
       registros.push(r);
