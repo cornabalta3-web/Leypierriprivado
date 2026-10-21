@@ -1622,7 +1622,9 @@ function ir(v){
   // Abierto con doble clic (file://) algunos navegadores no dejan tocar la dirección: no debe cortar la navegación.
   try { if(location.hash !== '#' + v) history.replaceState(null, '', '#' + v); } catch(e) { /* sin historial */ }
   if(v !== 'expedientes' && !$('visor').classList.contains('oculto')) cerrarVisor();   // el PDF va con la ficha
-  if(v === 'mapa'){ if(!mapa) iniciarMapa(); setTimeout(() => { mapa.invalidateSize(); pintarMapa(); }, 60); }
+  // Sin conexión (abierto suelto, sin internet) Leaflet no carga: el mapa lo dice y la lista sigue andando.
+  if(v === 'mapa' && !window.L){ pendienteMapa = null; $('subMapa').textContent = 'El mapa no cargó: necesita conexión a internet. La lista anda igual.'; }
+  else if(v === 'mapa'){ if(!mapa) iniciarMapa(); setTimeout(() => { mapa.invalidateSize(); pintarMapa(); }, 60); }
   if(v === 'cargar' && SERVIDOR) cargarInventarioVista().catch(() => {});
   window.scrollTo(0, 0);
   // #padron o #inventario (direcciones viejas, o "Ir a cargar el Padrón"): se abre "Cargar y cruzar" en esa caja.
@@ -2469,6 +2471,7 @@ function filtrosActivos(){
 function vaciarFiltros(){
   IDS_FILTRO.forEach(id => $(id).value = ''); $('fSinUbicar').checked = false;
   $('buscar').value = ''; localidadSel = null; F.elig = 'TODOS'; F.origen = null; F.lect = null; F.ctrl = null; F.paso = null; F.res = null; marcarChips();
+  $('masFiltros').classList.add('oculto'); $('btnMas').setAttribute('aria-expanded', 'false');   // "Más filtros" vuelve a plegarse
 }
 function limpiarFiltros(){ guardados = null; vaciarFiltros(); pagina = 0; pintarTodo(); }
 /** Lo que dice cada botón de Próximo paso: corto, y sin tono de orden para quien solo consulta. */
