@@ -15,6 +15,7 @@
  *   filasSIA(matriz)                                la hoja (filas de celdas) → filas compactas, una por expediente
  *   registroDePlanilla(fila, cfg, tabla, meta)      un registro con la forma de los leídos, con fuente 'planilla'
  *   compararConLeidas(registros, porExp, cfg, tabla) cuánto acierta la planilla contra las resoluciones leídas
+ *   enMuestra(expediente)                           ¿cae en la muestra al azar fija (1 de cada 200)?
  *   canonExpediente(e)                              "0535-12345-2008" o "0535-012345/2008" → "0535-012345/2008"
  *
  * De la planilla se guarda solo lo que sirve para estimar, ubicar y cruzar. No se leen los testigos, el domicilio del
@@ -189,15 +190,33 @@
   }
 
   /**
+   * La muestra al azar para medir la planilla: 1 de cada 200 expedientes, elegidos con una cuenta fija sobre el número
+   * de expediente (FNV-1a de 32 bits sobre el número canónico; entra si el resto de dividir por 200 es cero). No se guarda nada:
+   * el mismo expediente cae siempre en la muestra o fuera de ella, en cualquier computadora. Como no depende de si es del
+   * borde ni de lo que se leyó primero, el acierto en la muestra no está sesgado como el de todo lo leído.
+   * @param {string} expediente   el número tal como viene (se pasa a la forma canónica)
+   */
+  const MUESTRA_CADA = 200;
+  function enMuestra(expediente) {
+    const e = canonExpediente(expediente); if (!e) return false;
+    let h = 0x811c9dc5;   // FNV-1a: por cada carácter, h = (h xor carácter) × el primo de FNV (2^24 + 2^8 + 0x93)
+    for (let i = 0; i < e.length; i++) { h ^= e.charCodeAt(i); h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0; }
+    return h % MUESTRA_CADA === 0;
+  }
+
+  /**
    * Cuánto acierta la planilla: para cada resolución leída (válida, que se puede evaluar) cuyo expediente está en la
    * planilla, compara si entra o no según la lectura y según la estimación. Deja en el registro leído lo que estimaba
-   * la planilla (r.planilla_estimaba) y devuelve el resumen.
+   * la planilla (r.planilla_estimaba) y devuelve el resumen, con la misma cuenta hecha solo sobre la muestra al azar
+   * (muestra: cuántos expedientes de la planilla caen en ella, cuántos tienen la resolución leída y cuántos coinciden).
    * @param {object[]} registros   los leídos, ya con su clasificación final (revisiones aplicadas)
    * @param {Map} porExp           expediente canónico → fila de la planilla
    */
   function compararConLeidas(registros, porExp, cfg, tabla) {
-    const out = { comparadas: 0, coinciden: 0, sin_comparar: 0, diferencia_mediana_anios: null, hasta_un_anio: 0 };
-    const difs = [];
+    const out = { comparadas: 0, coinciden: 0, sin_comparar: 0, diferencia_mediana_anios: null, hasta_un_anio: 0,
+      muestra: { expedientes: 0, leidas: 0, comparadas: 0, coinciden: 0 } };
+    const difs = [], M = out.muestra;
+    for (const e of porExp.keys()) if (enMuestra(e)) M.expedientes++;
     for (const r of registros || []) {
       if (!r.derivado || r.repetido_de || r.error || r.fuente === 'planilla' || !r.derivado.tipo_documento) continue;
       const c1 = P.clasificar(r.derivado); if (c1 === 'NO_APLICA') continue;
@@ -205,9 +224,12 @@
       const e = registroDePlanilla(f, cfg, tabla).derivado, c2 = P.clasificar(e);
       const evaluables = !/^(SIN_DATO|REVISAR)$/.test(c1) && c2 !== 'SIN_DATO';
       const coincide = evaluables ? c1.startsWith('ELEGIBLE') === c2.startsWith('ELEGIBLE') : null;
-      r.planilla_estimaba = { posee_desde: e.posee_desde, clasificacion: c2, coincide, fecha_ingreso: f.fecha_ingreso, antiguedad: numero(f.antiguedad) };
+      const m = enMuestra(f.expediente);
+      r.planilla_estimaba = { posee_desde: e.posee_desde, clasificacion: c2, coincide, fecha_ingreso: f.fecha_ingreso, antiguedad: numero(f.antiguedad), en_muestra: m };
+      if (m) M.leidas++;
       if (!evaluables) { out.sin_comparar++; continue; }
       out.comparadas++; if (coincide) out.coinciden++;
+      if (m) { M.comparadas++; if (coincide) M.coinciden++; }
       const d = Math.abs(Number(String(r.derivado.posee_desde).slice(0, 4)) - Number(String(e.posee_desde).slice(0, 4)));
       if (Number.isFinite(d)) { difs.push(d); if (d <= 1) out.hasta_un_anio++; }
     }
@@ -231,5 +253,5 @@
     }
   }
 
-  return { TIPO, canonExpediente, CAMPOS, filasSIA, registroDePlanilla, compararConLeidas, controlarCruce };
+  return { TIPO, canonExpediente, CAMPOS, filasSIA, registroDePlanilla, compararConLeidas, controlarCruce, enMuestra, MUESTRA_CADA };
 });

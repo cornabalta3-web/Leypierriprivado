@@ -3,7 +3,7 @@
 Una aplicación, una pantalla, una base de datos que acumula.
 
 - **pierri.js**: la aplicación. Se abre con un comando y aparece el Tablero en el navegador.
-- **Cargar resoluciones**: la pantalla del Tablero donde tirás los PDF, como vengan. Cada archivo cargado queda copiado en la carpeta `embudo`.
+- **Cargar y cruzar**: la pantalla del Tablero donde tirás los PDF, como vengan (y donde se cargan el Padrón del Registro y el inventario de digitalizados). Cada archivo cargado queda copiado en la carpeta `embudo`.
 - **pierri.db**: la base de datos. Todo lo procesado queda ahí. Se abre con DB Browser for SQLite (gratis) y se copia a otra computadora junto con la carpeta `embudo`.
 - **El Padrón**: la planilla del Registro General (`POS_al_….xls`). Se carga desde el Tablero y se cruza sola.
 
@@ -34,7 +34,7 @@ node pierri.js
 
 Se abre el navegador en http://localhost:3777 con el Tablero. Desde ahí:
 
-1. **Tirá los PDF en Cargar resoluciones.** Uno, tres, o mil; sueltos o tomos. Cada uno se lee y aparece en la lista con su expediente y su clasificación. Un archivo cargado dos veces se ignora; un expediente con dos resoluciones se queda con la más nueva y marca la otra como repetida.
+1. **Tirá los PDF en Cargar y cruzar.** Uno, tres, o mil; sueltos o tomos. Cada uno se lee y aparece en la lista con su expediente y su clasificación. Un archivo cargado dos veces se ignora; un expediente con dos resoluciones se queda con la más nueva y marca la otra como repetida.
 2. **Cargá el Inventario de la UEST** en la pantalla Inventario: el CSV de expedientes digitalizados (de Y-Neura) y, si lo tenés, el del SUAC con iniciador y DNI. Se fusionan solos por número de expediente. Con eso sabés cuántos expedientes hay, cuáles tienen la resolución escaneada y, apretando "Ubicar cuentas en Catastro", dónde está cada lote, antes de leer un solo PDF. Tarda unos minutos la primera vez; si se corta, volvés a apretar y sigue.
 3. **Cargá el Padrón** con el botón. Cruza por nombre (solo cuando el nombre es único de los dos lados) y cada resolución queda como inscripta, provisoria, observada, ambigua o "no figura".
 4. **Poné la clave de API** en Configuración si querés que las que el texto no pudo leer (escaneos ilegibles, dos rogantes) las lea la IA. Sin clave, todo lo que el texto resuelve se resuelve igual y gratis; lo demás queda marcado como incompleto. Con "Leer con IA las que quedaron sin leer" se leen después.
@@ -52,7 +52,7 @@ Si algún día llegan 10.000 archivos juntos, se pueden procesar sin el navegado
 
 ## Si nunca mandan las resoluciones
 
-- Bajarlas del sistema de la UEST aunque sea de a lotes; **Cargar resoluciones** las recibe como vengan.
+- Bajarlas del sistema de la UEST aunque sea de a lotes; **Cargar y cruzar** las recibe como vengan.
 - Cargar en la web la planilla de trámites de la UEST (SIA): estima la posesión de cada expediente sin los PDF y arma la lista de cuáles bajar primero.
 - Ir por el Padrón y Catastro si el Registro amplía la consulta con DNI o matrícula.
 - Un piloto de 100 resoluciones de una sola localidad para probar el circuito completo, incluido el relevamiento presencial, y con eso pedir el resto.
@@ -115,7 +115,7 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 **El permiso de GitHub (token)** queda guardado solo en tu computadora, cifrado con tu contraseña, nunca en el repositorio: adivinar tu contraseña permitiría leer, pero no escribir. Para usar otra computadora, o cuando el token vence: **Configuración**, **Permiso de GitHub**, pegarlo y **Guardar en esta computadora**. En una computadora prestada, al terminar: **Olvidar** y **Cerrar sesión**.
 
 **Cargar resoluciones desde la web** (solo el administrador)
-1. **Cargar resoluciones** (en el menú): arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
+1. **Cargar y cruzar** (en el menú), caja **Resoluciones en PDF**: arrastrar los PDF, tocar para elegirlos o, si son muchos, **Elegí la carpeta entera**.
 2. Cada PDF se lee en tu computadora, igual que en el kit sin clave de API: tomos, expedientes completos y sueltas. Se guarda en GitHub cifrado, el PDF original incluido, cada 250 archivos (o 60 MB) y al terminar. Lo que ya estaba se saltea: si se corta, se vuelve a elegir la misma carpeta y sigue.
 3. Con miles de PDF tarda (más o menos un segundo por archivo, según la conexión): la pestaña tiene que quedar abierta, pero la sesión no se cierra mientras trabaja. Si GitHub pide una pausa por la cantidad de pedidos, espera solo y sigue.
 4. Las escaneadas sin capa de texto quedan como "no se pudieron leer del todo". Cargar resoluciones nunca usa la IA: se completan después, con el botón (ver abajo).
@@ -142,9 +142,9 @@ En la web se hace todo lo del kit salvo "Volver a leer todo" y "Vaciar la base".
 6. Cuando se lee la resolución de un expediente de la planilla, manda la lectura y la estimación deja de aparecer como expediente aparte. La tarjeta **¿Cuánto acierta?** compara, en los expedientes que tienen las dos cosas, si la planilla y la resolución coinciden en si es elegible o no elegible. Antes de usar la estimación para decidir, conviene que esa comparación tenga un número razonable de casos.
 
 **Si algo ya está en el kit**
-- **Subir el relevamiento del kit**: en el kit, **Expedientes**, **Guardar JSON**; en la web, **Cargar resoluciones**, arrastrar ese JSON solo. Después borrar el JSON de Descargas: está sin cifrar.
+- **Subir el relevamiento del kit**: en el kit, **Configuración**, **Copia de respaldo completa (.json)**; en la web, **Cargar y cruzar**, arrastrar ese JSON solo. Después borrar el JSON de Descargas: está sin cifrar.
 - Subir el JSON del kit reemplaza lo que vino del kit, pero no toca lo leído en la web ni las correcciones hechas en la web: se aplican encima (si una misma resolución se corrigió en los dos lados, manda la corrección más nueva).
-- Para ver en la web los PDF de lo que leyó el kit, subí esos PDF en **Cargar resoluciones**: se reconocen, no se vuelven a leer y se guardan para verlos.
+- Para ver en la web los PDF de lo que leyó el kit, subí esos PDF en **Cargar y cruzar**: se reconocen, no se vuelven a leer y se guardan para verlos.
 
 **Lo que hay que saber**
 - La contraseña de cada uno es la única protección de la lectura: 12 caracteres o más, mejor una frase larga. No hay bloqueo por intentos fallidos, porque cualquiera puede bajarse los archivos cifrados y probar contraseñas en su propia computadora.
