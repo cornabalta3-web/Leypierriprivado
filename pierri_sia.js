@@ -14,6 +14,7 @@
  *
  *   filasSIA(matriz)                                la hoja (filas de celdas) → filas compactas, una por expediente
  *   registroDePlanilla(fila, cfg, tabla, meta)      un registro con la forma de los leídos, con fuente 'planilla'
+ *   tramiteCerrado(estado)                          'ANULADO' | 'ARCHIVADO' | null, según ESTADO TRAMITE
  *   compararConLeidas(registros, porExp, cfg, tabla) cuánto acierta la planilla contra las resoluciones leídas
  *   enMuestra(expediente)                           ¿cae en la muestra al azar fija (1 de cada 200)?
  *   canonExpediente(e)                              "0535-12345-2008" o "0535-012345/2008" → "0535-012345/2008"
@@ -158,10 +159,20 @@
     return { fecha: pos.fecha, precision: pos.precision, motivo, elegibilidad: P.evaluarElegibilidad(pos.fecha, cfg) };
   }
   const tipoInmueble = t => { const s = P.normalizarTexto(t); return /^RUR/.test(s) ? 'rural' : /^U/.test(s) ? 'urbano' : null; };
+  /**
+   * El estado del trámite según la planilla (ESTADO TRAMITE), si está cerrado: 'ANULADO' o 'ARCHIVADO' (empieza con
+   * ANULAD o ARCHIVAD, sin importar mayúsculas ni tildes). Cualquier otro estado (INC-Incompleto, OK, vacío) da null.
+   */
+  function tramiteCerrado(estado) {
+    const s = P.normalizarTexto(estado);
+    return /^ANULAD/.test(s) ? 'ANULADO' : /^ARCHIVAD/.test(s) ? 'ARCHIVADO' : null;
+  }
 
   /**
    * Un expediente de la planilla con la forma de un registro leído, para que el Tablero lo liste, lo ubique, lo cruce
    * con el Padrón y lo cuente igual que a los demás. Va con fuente 'planilla' y tipo PLANILLA_UEST: no es una lectura.
+   * Si la planilla da el trámite por anulado o archivado, el derivado lleva tramite_cerrado ('ANULADO' | 'ARCHIVADO'):
+   * se sigue viendo, pero no se cuenta como elegible ni como no elegible (PierriCore.clasificar lo deja en NO_APLICA).
    * @param {object} f      fila de filasSIA
    * @param {object} cfg    el criterio de elegibilidad
    * @param {object} tabla  TABLA_CODIGOS (departamentos y pedanías)
@@ -184,6 +195,8 @@
         localidad: f.localidad || null, calle: f.domicilio || null, tipo_inmueble: tipoInmueble(f.tipo_lugar) },
       senales: [], validaciones: [], revisar: false, motivos_revision: [], sin_estimar: est.motivo,
     };
+    const cerrado = tramiteCerrado(f.estado);
+    if (cerrado) derivado.tramite_cerrado = cerrado;
     return { hash: 'sia:' + f.expediente, archivo: m.archivo || null, cargado_en: m.cargado_en || null, fuente: 'planilla', extraido: null, derivado,
       planilla: { fecha_ingreso: f.fecha_ingreso, antiguedad: numero(f.antiguedad), estado: f.estado || null, etapa: f.etapa || null,
         superficie: f.superficie || null, tipo_lugar: f.tipo_lugar || null, con_resolucion: !!(fRes || f.resolucion_numero) } };
@@ -221,7 +234,9 @@
       if (!r.derivado || r.repetido_de || r.error || r.fuente === 'planilla' || !r.derivado.tipo_documento) continue;
       const c1 = P.clasificar(r.derivado); if (c1 === 'NO_APLICA') continue;
       const f = porExp.get(canonExpediente(r.derivado.expediente)); if (!f) continue;
-      const e = registroDePlanilla(f, cfg, tabla).derivado, c2 = P.clasificar(e);
+      // Se mide la estimación de la posesión, también si la planilla da el trámite por anulado o archivado.
+      const e = registroDePlanilla(f, cfg, tabla).derivado; delete e.tramite_cerrado;
+      const c2 = P.clasificar(e);
       const evaluables = !/^(SIN_DATO|REVISAR)$/.test(c1) && c2 !== 'SIN_DATO';
       const coincide = evaluables ? c1.startsWith('ELEGIBLE') === c2.startsWith('ELEGIBLE') : null;
       const m = enMuestra(f.expediente);
@@ -253,5 +268,5 @@
     }
   }
 
-  return { TIPO, canonExpediente, CAMPOS, filasSIA, registroDePlanilla, compararConLeidas, controlarCruce, enMuestra, MUESTRA_CADA };
+  return { TIPO, canonExpediente, CAMPOS, filasSIA, registroDePlanilla, tramiteCerrado, compararConLeidas, controlarCruce, enMuestra, MUESTRA_CADA };
 });

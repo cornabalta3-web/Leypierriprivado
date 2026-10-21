@@ -568,6 +568,9 @@
   function clasificar(d) {
     if (!d) return 'NO_APLICA';
     if (TIPOS_NO_EVALUABLES.includes(d.tipo_documento)) return 'NO_APLICA';
+    // Un trámite que la planilla de la UEST da por anulado o archivado (tramite_cerrado, pierri_sia.js) tampoco se
+    // evalúa: no es elegible ni no elegible. El Tablero lo nombra "Trámite anulado" o "Trámite archivado".
+    if (d.tramite_cerrado) return 'NO_APLICA';
     const e = d.elegibilidad || {};
     // Sin tipo es que no se pudo leer: no se sabe qué ordena. No se la da por "no aplica": queda para revisar.
     if (!d.tipo_documento && e.estado !== 'ELEGIBLE' && e.estado !== 'NO_ELEGIBLE') return 'REVISAR';
