@@ -12,7 +12,7 @@ Escribanía General de Gobierno de la Provincia de Córdoba.
 2. **Clasifica** cada expediente como **Elegible** o **No elegible**, marca los que quedan cerca del corte ("en el borde") y deja aparte los que no tienen fecha. Elegible quiere decir que cumple el requisito de antigüedad de la posesión según el criterio configurado; los demás requisitos de la ley se verifican en el trámite.
 3. **Ubica** el inmueble en el mapa, por número de cuenta contra el servicio de Catastro de Córdoba, y por localidad cuando no hay cuenta.
 4. **Cruza** con el padrón del Registro General para saber cuáles ya están inscriptas.
-5. **Muestra** todo en un tablero con cinco entradas: **Resumen** (cuántos son elegibles, qué falta y dónde están), **Expedientes** (lista y mapa con una sola barra de filtros, y la ficha de cada uno al lado de su PDF para controlarla), **Planilla de trámites** (solo en la web), **Cargar y cruzar** y **Configuración**. Cada resultado lleva su certeza: estimado con la planilla, leído o controlado.
+5. **Muestra** todo en un tablero con cinco entradas: **Resumen** (cuántos son elegibles —con la planilla, divididos en con resolución y sin resolución, sin contar los trámites anulados o archivados—, qué falta y dónde están), **Expedientes** (lista y mapa con una sola barra de filtros, y la ficha de cada uno al lado de su PDF para controlarla), **Planilla de trámites** (solo en la web), **Cargar y cruzar** y **Configuración**. Cada resultado lleva su certeza: estimado con la planilla, leído o controlado.
 
 Lee primero la capa de texto del PDF, que no tiene costo. Solo cuando el texto no alcanza —resoluciones escaneadas sin capa de texto— consulta un modelo de lenguaje. En las pruebas, la mayoría se resuelve sin costo.
 
