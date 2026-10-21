@@ -2692,7 +2692,9 @@ function pintarFiltrado(){
     // Sin la planilla (en el kit y en el modo suelto) no hay nada que conseguir: no aparece "Conseguir el PDF". "Anulado o
     // archivado" aparece solo si la planilla trae alguno.
     b.classList.toggle('oculto', PASOS_PLANILLA.includes(p) && !(p === 'CERRADO' ? hayCerrados : hayPlan) && F.paso !== 'PASO_' + p); });
-  const nMas = cuantosMas(); $('btnMas').textContent = nMas ? `Más filtros (${nMas} puesto${nMas === 1 ? '' : 's'})` : 'Más filtros: resolución, Registro, año, sin ubicar';
+  // "Resolución" (con o sin) es de la planilla: sin ella (el kit, el modo suelto) todo es una resolución, y no aparece.
+  $('fRes').closest('.grupo').classList.toggle('oculto', !hayPlan && !F.res);
+  const nMas = cuantosMas(); $('btnMas').textContent = nMas ? `Más filtros (${nMas} puesto${nMas === 1 ? '' : 's'})` : `Más filtros: ${hayPlan ? 'resolución, ' : ''}Registro, año, sin ubicar`;
   if(nMas){ $('masFiltros').classList.remove('oculto'); $('btnMas').setAttribute('aria-expanded', 'true'); }
   pintarEtiquetas();
   pintarTabla(); if(mapaVisible()) pintarMapa();
@@ -3319,13 +3321,15 @@ function fechaQueManda(r){
   const d = r.derivado, est = deLaPlanilla(r), cfg = config(), rev = d.revision || {}, pl = r.planilla || {};
   const corte = cfg.regla === 'CORTE_FIJO' ? 'corte ' + esc(isoATexto(cfg.fechaCorte)) : 'diez años de posesión al día de hoy';
   const res = [d.resolucion_numero ? 'Resolución N° ' + d.resolucion_numero : 'la resolución', d.resolucion_fecha ? 'del ' + isoATexto(d.resolucion_fecha) : ''].filter(Boolean).join(' ');
-  if(!d.posee_desde) return `<b>Fecha que manda:</b> ninguna todavía: ${esc(est ? d.sin_estimar || 'la planilla no trae con qué estimarla' : r.fuente === 'texto_incompleto' ? 'falta leer la resolución' : 'la resolución leída no dice desde cuándo posee')} · ${corte}`;
   const de = est ? `estimada con la planilla de trámites (ingresó el ${isoATexto(pl.fecha_ingreso) || '—'} declarando ${pl.antiguedad == null ? '—' : String(pl.antiguedad).replace('.', ',')} años)`
     : rev.posee_desde && rev.vale === 'ia' ? `la que leyó la IA al controlarla, elegida${rev.revisor ? ' por ' + rev.revisor : ''} mirando ${res}`
     : rev.posee_desde ? `corregida a mano${rev.revisor ? ' por ' + rev.revisor : ''} mirando ${res}`
     : `de ${res}, ${r.fuente === 'modelo' ? 'leída con IA' : 'leída automáticamente'}`;
-  // Un trámite anulado o archivado no se evalúa: la fecha estimada se muestra, pero no manda ningún resultado.
-  if(est && cerrado(d)) return `<b>Fecha estimada:</b> posee desde ${esc(fechaPosesion(d))} (estimado), ${esc(de)} · no se evalúa: ${esc(nombreCerrado(d).toLowerCase())} según la planilla`;
+  // Un trámite anulado o archivado no se evalúa: la fecha estimada (si la hay) se muestra, pero no manda ningún resultado ni va con el corte.
+  const noSeEvalua = () => ` · no se evalúa: ${esc(nombreCerrado(d).toLowerCase())} según la planilla`;
+  if(est && cerrado(d)) return d.posee_desde ? `<b>Fecha estimada:</b> posee desde ${esc(fechaPosesion(d))} (estimado), ${esc(de)}${noSeEvalua()}`
+    : `<b>Fecha estimada:</b> ninguna: ${esc(d.sin_estimar || 'la planilla no trae con qué estimarla')}${noSeEvalua()}`;
+  if(!d.posee_desde) return `<b>Fecha que manda:</b> ninguna todavía: ${esc(est ? d.sin_estimar || 'la planilla no trae con qué estimarla' : r.fuente === 'texto_incompleto' ? 'falta leer la resolución' : 'la resolución leída no dice desde cuándo posee')} · ${corte}`;
   return `<b>Fecha que manda:</b> posee desde ${esc(fechaPosesion(d))}${est ? ' (estimado)' : ''}, ${esc(de)} · ${corte}`;
 }
 /**
@@ -3960,7 +3964,8 @@ function pintarDepartamentosMapa(){
     capaDepMapa.clearLayers();
     const porDep = new Map();
     for(const r of vista){
-      const d = r.derivado; if(!evaluable(d)) continue;
+      // Como el panel "Por lugar": con un filtro de los que se cuentan tal cual, todo lo que pasa; si no, lo que se evalúa.
+      const d = r.derivado; if(!porFiltro && !evaluable(d)) continue;
       const k = claveDep(dep(d)); if(!k || k === claveDep('(SIN DEPARTAMENTO)')) continue;
       const f = porDep.get(k) || { total: 0, eleg: 0, est: 0 };
       f.total++; if(porFiltro || cl(d).startsWith('ELEGIBLE')){ f.eleg++; if(deLaPlanilla(r)) f.est++; }
