@@ -77,8 +77,35 @@ main{padding:24px 28px 60px;min-width:0}
 /* Los grupos de filtro van uno al lado del otro y bajan de renglón cuando no entran. */
 .grupos-filtro{display:flex;flex-wrap:wrap;gap:12px 34px;border-top:1px solid var(--fondo);padding-top:12px}
 .gf{display:flex;flex-direction:column;gap:7px;min-width:0}
-#filtrosMapa{border-top:0;padding-top:0}
-.gf .nota-gf{text-transform:none;letter-spacing:0;font-weight:400}
+/* Expedientes: una sola barra de filtros para la Lista y el Mapa, con un renglón por grupo. */
+#filtros{flex-direction:column;gap:10px}
+.fila-f{flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px}
+.fila-f .rotulo{width:110px;flex:none}
+.fila-lugar{margin-top:12px;border-top:1px solid var(--fondo);padding-top:12px}
+.mas-filtros{margin-top:10px}
+button.enlace{background:transparent;border-color:transparent;color:var(--acento);text-decoration:underline;padding-left:6px;padding-right:6px}
+button.chip.etiqueta-f{border-style:dashed}
+button.chip.etiqueta-f .x{margin-left:6px;font-weight:700}
+.bajada{display:flex;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;align-items:center;margin:14px 0 10px}
+.bajada p,.bajada-mapa{margin:0;font-size:13.5px;color:var(--texto2)}
+.bajada-mapa{margin:14px 0 10px}
+.mapa-dos{grid-template-columns:minmax(0,1fr) 320px}
+.pie-panel{border-top:1px solid var(--fondo)}
+.nota-roja{display:block;margin-top:4px;font-size:12px;color:var(--rojo);white-space:normal}
+.ver-mapa{font-size:12px;font-weight:600;white-space:nowrap}
+/* La marca de certeza, la misma en la lista, la ficha y el mapa: punteado = estimado con la planilla, lleno = leído, con
+   tilde = controlado. Con colores fijos, como los puntos del mapa: se ven igual con el modo oscuro. */
+.marca,.leyenda .punto.m-est,.leyenda .punto.m-lei,.leyenda .punto.m-ctrl{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:3px;margin-right:6px;vertical-align:-2px;font-style:normal;font-size:9px;font-weight:800;line-height:1;color:#fff;box-sizing:border-box}
+.leyenda .punto.m-est,.leyenda .punto.m-lei,.leyenda .punto.m-ctrl{border-radius:50%}
+.m-est{border:1.5px dashed #1d6b45;background:#e3f1e9} .m-lei{background:#1d6b45;border:1.5px solid #fff;box-shadow:0 0 0 1px #1d6b45} .m-ctrl{background:#0f3f28;border:1.5px solid #fff;box-shadow:0 0 0 1px #0f3f28}
+.tag .tilde-c{margin-right:4px}
+.sin-mapa{margin:10px 0 0;font-size:13px}
+#ranking2 small.sin-parcela{display:block;color:var(--texto3)}
+.ranking .item.otros{cursor:default}
+.tilde-mapa{color:#fff;font:800 11px/12px sans-serif;text-align:center;pointer-events:none}
+.sin-mapa.resalte{outline:2px solid var(--ambar);outline-offset:3px;border-radius:4px}
+/* En el teléfono el globo del mapa no puede ser más ancho que el mapa: si no, se corta y la × queda afuera. */
+@media (max-width:760px){.leaflet-popup-content{max-width:calc(100vw - 140px)}.fila-f .rotulo{width:100%}}
 .busca-fila{display:flex;gap:8px;align-items:stretch}
 .busca-fila input{flex:1;min-width:0}
 .controles .casilla{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--texto);margin:0 0 9px;cursor:pointer;white-space:nowrap}
@@ -428,81 +455,64 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
   </section>
 
   <section class="vista oculto" id="v-expedientes">
-    <div class="cab"><div><div class="titulo-inter"><h1>Expedientes</h1><div class="interruptor" role="group" aria-label="Ver como"><a href="#expedientes" data-ir-vista="expedientes" aria-current="page">Lista</a><a href="#mapa" data-ir-vista="mapa">Mapa</a></div></div><p id="subTabla"></p></div>
-      <div class="acciones"><button id="expCsv" class="sec" title="Un archivo que abre Excel con las filas que muestra la lista: títulos y valores en castellano, fechas dd/mm/aaaa y de dónde sale cada fila">Bajar en Excel lo que estoy viendo</button></div></div>
-    <div class="panel">
-      <div class="cuerpo">
-        <!-- En el teléfono los filtros se pliegan bajo "Filtros"; el buscador queda siempre a la vista. -->
-        <div class="busca-fila"><input id="buscar" type="search" placeholder="Buscar por expediente, nombre, DNI, matrícula, cuenta o localidad"><button id="btnFiltros" class="sec btn-filtros" aria-expanded="false" aria-controls="filtrosCuerpo">Filtros</button></div>
-        <div class="filtros-cuerpo" id="filtrosCuerpo">
-        <div class="grupos-filtro" id="filtros">
-          <div class="gf">
-            <span class="rotulo">Posesión</span>
-            <div class="acciones"><button class="chip on" data-f="TODOS">Todas</button><button class="chip v" data-f="ELEGIBLE">Elegibles</button><button class="chip a" data-f="BORDE" title="cerca del corte (dentro del margen): están dentro de las elegibles y de las no elegibles, y la resolución puede cambiar el resultado">En el borde</button><button class="chip" data-f="NO_ELEGIBLE">No elegibles</button><button class="chip" data-f="SIN_DATO">Sin fecha</button></div>
-          </div>
-          <div class="gf oculto" id="gfOrigen">
-            <span class="rotulo">Origen</span>
-            <div class="acciones"><button class="chip on" data-f="ORIGEN_TODOS">Todos</button><button class="chip" data-f="LEIDA">Con la resolución leída</button><button class="chip" data-f="ESTIMADA" title="fecha de ingreso menos la antigüedad declarada al iniciar el trámite: es una estimación, no lo que fijó la resolución">Estimados con la planilla</button></div>
-          </div>
-          <div class="gf">
-            <span class="rotulo">Lectura<span class="nota-gf oculto"> · solo lo leído</span></span>
-            <div class="acciones"><button class="chip" data-f="POR_TEXTO">Por texto</button><button class="chip" data-f="CON_IA">Con IA</button><button class="chip a" data-f="SIN_LEER">Sin leer</button></div>
-          </div>
-          <div class="gf">
-            <span class="rotulo">Control<span class="nota-gf oculto"> · sin contar la planilla</span></span>
-            <div class="acciones"><button class="chip" data-f="CONTROLADA">Controladas a mano</button><button class="chip" data-f="SIN_CONTROLAR">Sin controlar</button><button class="chip a" data-f="CON_DUDAS">Con dudas</button></div>
-          </div>
-        </div>
-        <div class="controles" style="margin-top:10px;border-top:1px solid var(--fondo);padding-top:12px">
-          <div class="grupo"><label for="fDep">Departamento</label><select id="fDep"><option value="">Todos</option></select></div>
-          <div class="grupo"><label for="fLoc">Localidad</label><select id="fLoc"><option value="">Todas</option></select></div>
-          <div class="grupo"><label for="fSec">Sección / barrio</label><select id="fSec"><option value="">Todas</option></select></div>
-          <label class="casilla" for="fSinUbicar"><input type="checkbox" id="fSinUbicar"> Sin ubicar en el mapa</label>
-          <div class="grupo"><label for="fInsc">Registro</label><select id="fInsc"><option value="">Cualquiera</option><option value="INSCRIPTA">Inscripta</option><option value="TRABADA">Provisoria u observada</option><option value="NO_FIGURA_EN_PADRON">No figura en el Padrón</option><option value="AMBIGUO">Ambigua</option><option value="SIN_RESOLUCION">Sin resolución según la planilla</option><option value="SIN">Sin cruzar</option></select></div>
-          <div class="grupo"><label for="fAnioD">Año de la resolución: desde</label><select id="fAnioD"><option value="">—</option></select></div>
-          <div class="grupo"><label for="fAnioH">hasta</label><select id="fAnioH"><option value="">—</option></select></div>
-          <button id="fLimpiar" class="sec">Limpiar filtros</button>
-        </div>
-        </div>
+    <div class="cab"><div><div class="titulo-inter"><h1>Expedientes</h1><div class="interruptor" role="group" aria-label="Ver como"><a href="#expedientes" data-ir-vista="expedientes" aria-current="page">Lista</a><a href="#mapa" data-ir-vista="mapa">Mapa</a></div></div></div></div>
+    <!-- Una sola barra de filtros para la lista y el mapa: lo que se elige vale para las dos (es el mismo estado). -->
+    <div class="panel barra-f"><div class="cuerpo">
+      <!-- En el teléfono los filtros se pliegan bajo "Filtros"; el buscador queda siempre a la vista. -->
+      <div class="busca-fila"><input id="buscar" type="search" aria-label="Buscar" placeholder="Buscar por expediente, nombre, DNI, matrícula, cuenta o localidad"><button id="btnFiltros" class="sec btn-filtros" aria-expanded="false" aria-controls="filtrosCuerpo">Filtros</button></div>
+      <div class="filtros-cuerpo" id="filtrosCuerpo">
+      <div class="grupos-filtro" id="filtros">
+        <div class="gf fila-f"><span class="rotulo">Resultado</span>
+          <div class="acciones"><button class="chip on" data-f="TODOS">Todos</button><button class="chip v" data-f="ELEGIBLE">Elegibles</button><button class="chip a" data-f="BORDE" title="cerca del corte (dentro del margen): están dentro de las elegibles y de las no elegibles, y la resolución puede cambiar el resultado">En el borde</button><button class="chip" data-f="NO_ELEGIBLE">No elegibles</button><button class="chip" data-f="SIN_DATO">Sin fecha</button></div></div>
+        <div class="gf fila-f"><span class="rotulo">Próximo paso</span>
+          <div class="acciones" id="chipsPaso"><button class="chip" data-f="PASO_PDF">Conseguir el PDF</button><button class="chip" data-f="PASO_LEER">Leer</button><button class="chip" data-f="PASO_CONTROLAR">Controlar</button><button class="chip" data-f="PASO_PADRON">Confirmar en el Padrón</button><button class="chip" data-f="PASO_NADA">Sin pendientes</button></div></div>
+        <!-- Los filtros que no tienen botón (los abre una tarjeta: "estimados con la planilla", "sin leer"…) se ven acá y se sacan con la ×. -->
+        <div class="gf fila-f oculto" id="gfOtros"><span class="rotulo">Además</span><div class="acciones" id="etiquetasF"></div></div>
       </div>
-      <div class="tabla-scroll">
-        <table>
-          <thead><tr>
-            <th data-k="expediente">Expediente</th><th class="col-rog" data-k="rogante">Rogante o iniciador</th><th data-k="posee_desde">Posee desde</th><th data-k="clasif">Estado</th>
-            <th class="col-sec" data-k="localidad">Localidad</th><th class="col-sec" data-k="manzana">Manzana</th><th class="col-sec" data-k="fuente">Origen</th><th class="col-sec" data-k="cargado">Cargada</th>
-          </tr></thead>
-          <tbody id="filas"></tbody>
-        </table>
+      <div class="controles fila-lugar">
+        <div class="grupo"><label for="fDep">Lugar: departamento</label><select id="fDep"><option value="">Todos</option></select></div>
+        <div class="grupo"><label for="fLoc">› localidad</label><select id="fLoc"><option value="">Todas</option></select></div>
+        <div class="grupo"><label for="fSec">› sección o barrio</label><select id="fSec"><option value="">Todas</option></select></div>
+        <button id="btnMas" class="sec" aria-expanded="false" aria-controls="masFiltros">Más filtros: Registro, año de la resolución, sin ubicar</button>
+        <button id="fLimpiar" class="enlace">Limpiar</button>
       </div>
-      <div class="vacio oculto" id="vacio">Nada coincide con ese filtro.</div>
-      <div class="pag"><span id="pagInfo"></span><span class="acciones" id="pagNums"></span></div>
-    </div>
-  </section>
-
-  <section class="vista oculto" id="v-mapa">
-    <div class="cab"><div><div class="titulo-inter"><h1>Expedientes</h1><div class="interruptor" role="group" aria-label="Ver como"><a href="#expedientes" data-ir-vista="expedientes">Lista</a><a href="#mapa" data-ir-vista="mapa" aria-current="page">Mapa</a></div></div><p id="subMapa"></p></div>
-      <div class="acciones"><button id="expKml" class="sec">Bajar para Google Maps (.kml)</button><button id="btnCatastro" class="sec">Ubicar en Catastro</button></div></div>
-    <!-- Los mismos filtros de Expedientes (el mismo estado): lo que se elige acá cambia la lista, y al revés. -->
-    <div class="panel"><div class="cuerpo" style="padding:12px 18px">
-      <div class="grupos-filtro" id="filtrosMapa">
-        <div class="gf">
-          <span class="rotulo">Posesión</span>
-          <div class="acciones"><button class="chip on" data-f="TODOS">Todas</button><button class="chip v" data-f="ELEGIBLE">Elegibles</button><button class="chip a" data-f="BORDE" title="cerca del corte (dentro del margen): están dentro de las elegibles y de las no elegibles, y la resolución puede cambiar el resultado">En el borde</button><button class="chip" data-f="NO_ELEGIBLE">No elegibles</button><button class="chip" data-f="SIN_DATO">Sin fecha</button></div>
-        </div>
-        <div class="gf oculto" id="gfOrigenMapa">
-          <span class="rotulo">Origen</span>
-          <div class="acciones"><button class="chip on" data-f="ORIGEN_TODOS">Todos</button><button class="chip" data-f="LEIDA">Con la resolución leída</button><button class="chip" data-f="ESTIMADA" title="fecha de ingreso menos la antigüedad declarada al iniciar el trámite: es una estimación, no lo que fijó la resolución">Estimados con la planilla</button></div>
-        </div>
-        <div class="gf"><label class="rotulo" for="fInscMapa">Registro</label><select id="fInscMapa"></select></div>
+      <div class="controles mas-filtros oculto" id="masFiltros">
+        <div class="grupo"><label for="fInsc">Registro</label><select id="fInsc"><option value="">Cualquiera</option><option value="INSCRIPTA">Inscripta</option><option value="TRABADA">Provisoria u observada</option><option value="NO_FIGURA_EN_PADRON">No figura en el Padrón</option><option value="AMBIGUO">Ambigua</option><option value="SIN_RESOLUCION">Sin resolución según la planilla</option><option value="SIN">Sin cruzar</option></select></div>
+        <div class="grupo"><label for="fAnioD">Año de la resolución: desde</label><select id="fAnioD"><option value="">—</option></select></div>
+        <div class="grupo"><label for="fAnioH">hasta</label><select id="fAnioH"><option value="">—</option></select></div>
+        <label class="casilla" for="fSinUbicar"><input type="checkbox" id="fSinUbicar"> Sin ubicar en el mapa</label>
+      </div>
       </div>
     </div></div>
-    <div class="dos" style="grid-template-columns:minmax(0,1fr) 320px">
-      <div class="panel"><div class="cuerpo">
-        <div id="mapa"></div>
-        <div class="leyenda"><span><i class="punto f-v"></i>Elegible</span><span><i class="punto f-a"></i>En el borde</span><span><i class="punto f-g"></i>No elegible</span><span><i class="punto f-r"></i>Sin fecha o con dudas</span><span id="leyendaEst" class="oculto"><i class="punto" style="background:rgba(29,107,69,.35);border:1.5px solid #1d6b45;width:11px;height:11px"></i>Claro: estimado con la planilla</span><span><i class="punto" style="background:transparent;border:2px dashed #5b6675;width:11px;height:11px"></i>Ubicación aproximada (por localidad)</span><span style="margin-left:6px" id="leyendaDep">Departamentos sombreados según los elegibles; se apagan desde el control de capas.</span></div>
-        <p class="mini" style="margin:0">El punto es la parcela madre según Catastro (la del titular registral). Al acercar se dibujan los límites oficiales; con "Satélite" se ve la construcción. Los filtros de arriba son los mismos de Expedientes: lo que se elige acá cambia la lista, y al revés.</p>
-      </div></div>
-      <div class="panel"><div class="cabp"><h2>Agrupado</h2><div class="acciones" id="agrupar2"><button class="chip" data-g="departamento">Dpto.</button><button class="chip on" data-g="localidad">Localidad</button><button class="chip" data-g="seccion">Sección</button></div></div><div class="cuerpo ranking" id="ranking2"></div></div>
+
+    <div id="v-lista">
+      <div class="bajada"><p id="subTabla"></p><div class="acciones"><button id="expCsv" class="sec" title="Un archivo que abre Excel con las filas que muestra la lista: títulos y valores en castellano, fechas dd/mm/aaaa y de dónde sale cada fila">Bajar en Excel lo que estoy viendo</button></div></div>
+      <div class="panel">
+        <div class="tabla-scroll">
+          <table>
+            <thead><tr>
+              <th data-k="expediente">Expediente</th><th class="col-rog" data-k="rogante">Nombre</th><th data-k="posee_desde">Posee desde</th><th data-k="clasif">Resultado</th><th class="col-sec" data-k="localidad">Lugar</th><th data-k="paso">Próximo paso</th>
+            </tr></thead>
+            <tbody id="filas"></tbody>
+          </table>
+        </div>
+        <div class="vacio oculto" id="vacio">Nada coincide con ese filtro.</div>
+        <div class="pag"><span id="pagInfo"></span><span class="acciones" id="pagNums"></span></div>
+      </div>
+      <div class="leyenda leyenda-cert"><span><i class="marca m-est"></i>punteado = estimado con la planilla</span><span><i class="marca m-lei"></i>lleno = leído</span><span><i class="marca m-ctrl">✓</i>con tilde = controlado (a mano o con IA)</span></div>
+    </div>
+
+    <div id="v-mapa" class="oculto">
+      <p id="subMapa" class="bajada-mapa"></p>
+      <div class="dos mapa-dos">
+        <div class="panel"><div class="cuerpo">
+          <div id="mapa"></div>
+          <div class="leyenda" id="leyendaMapa"><span><i class="punto m-est"></i>punteado = estimado con la planilla</span><span><i class="punto m-lei"></i>lleno = leído</span><span><i class="punto m-ctrl">✓</i>con tilde = controlado</span><span>El color dice el resultado: <b class="c-v">verde</b> elegible · <b class="c-a">ocre</b> en el borde · <b class="c-g">gris</b> no elegible · <b class="c-r">rojo</b> sin fecha</span><span id="leyendaDep"></span></div>
+        </div></div>
+        <div class="panel"><div class="cabp"><h2 id="hPorLugar">Por lugar</h2><div class="acciones" id="agrupar2"><button class="chip" data-g="departamento">Dpto.</button><button class="chip on" data-g="localidad">Localidad</button><button class="chip" data-g="seccion">Sección</button></div></div>
+          <div class="cuerpo ranking" id="ranking2"></div>
+          <div class="cuerpo pie-panel"><div class="acciones"><button id="expKml" class="sec">Bajar para Google Maps (.kml)</button><button id="btnCatastro" class="sec">Ubicar en Catastro</button></div></div></div>
+      </div>
     </div>
   </section>
 
@@ -1602,9 +1612,13 @@ function ir(v){
   if(v === 'planilla' && !WEB) v = 'resumen';
   // Al salir de Expedientes vuelven los filtros que había antes de abrir un expediente (desde el mapa, por ejemplo).
   if(guardados && v !== 'expedientes') restaurarFiltros();
-  VISTAS.forEach(x => $('v-' + x).classList.toggle('oculto', x !== v));
-  // Lista y Mapa son dos maneras de ver Expedientes: en el menú queda marcado Expedientes.
-  document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.dataset.vista === (v === 'mapa' ? 'expedientes' : v)));
+  // Lista y Mapa son dos maneras de ver la misma pantalla, Expedientes, con la misma barra de filtros: #mapa abre
+  // Expedientes con el mapa (la dirección vieja sigue andando). En el menú queda marcado Expedientes.
+  const seccion = v === 'mapa' ? 'expedientes' : v;
+  VISTAS.forEach(x => { if(x !== 'mapa') $('v-' + x).classList.toggle('oculto', x !== seccion); });
+  $('v-lista').classList.toggle('oculto', v !== 'expedientes'); $('v-mapa').classList.toggle('oculto', v !== 'mapa');
+  document.querySelectorAll('.interruptor a').forEach(a => { if(a.dataset.irVista === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.dataset.vista === seccion));
   // Abierto con doble clic (file://) algunos navegadores no dejan tocar la dirección: no debe cortar la navegación.
   try { if(location.hash !== '#' + v) history.replaceState(null, '', '#' + v); } catch(e) { /* sin historial */ }
   if(v !== 'expedientes' && !$('visor').classList.contains('oculto')) cerrarVisor();   // el PDF va con la ficha
@@ -2208,6 +2222,8 @@ const claveGrupo = d => agrupacion === 'departamento' ? dep(d) : agrupacion === 
 /** Lo que ordena la inscripción o la estima la planilla de la UEST: entra en los desplegables, el ranking y el mapa. */
 const evaluable = d => d.tipo_documento === 'RESOLUCION_INSCRIPCION' || d.tipo_documento === 'PLANILLA_UEST';
 const deLaPlanilla = r => r.fuente === 'planilla';
+/** ¿Se dibuja en el mapa? Solo lo que tiene parcela de Catastro (o coordenadas de la lectura): lo ubicado solo por la localidad no se apila en el centro. */
+const enElMapa = r => { const g = r.derivado.geo; return !!g && g.lat != null && g.lon != null && !g.ubicacion_aproximada; };
 // Un trámite que según la planilla todavía no tiene resolución no tiene nada que inscribir: "no figura" no dice nada.
 const sinResolucionPlanilla = d => d.tipo_documento === 'PLANILLA_UEST' && !d.resolucion_fecha && !d.resolucion_numero;
 const estadoInsc = d => { const i = d.inscripcion; if(!i) return 'SIN'; if(i.estado === 'NO_FIGURA_EN_PADRON' && sinResolucionPlanilla(d)) return 'SIN_RESOLUCION'; if(i.estado === 'PROVISORIA' || i.estado === 'OBSERVADA') return 'TRABADA'; if(i.estado === 'SIN_NOMBRE_PARA_CRUZAR') return 'SIN'; return i.estado; };
@@ -2291,9 +2307,9 @@ function aciertoPlanilla(v){
  * Origen separa lo leído de lo estimado con la planilla de la UEST. Lectura y Control son solo de lo leído: la planilla
  * no tiene nada que leer ni que controlar a mano, así que no entra en ninguno de sus botones.
  * Las tarjetas (Resumen, Planilla de trámites, Padrón) abren la lista con abrirLista('BORDE+ESTIMADA'…), con estos
- * mismos nombres. LEIDA_PLANILLA (leídas cuyo expediente está en la planilla) no tiene botón: marca "Con la resolución leída".
- * El mapa tiene su propia barra (Posesión, Origen y Registro) con los mismos botones sobre este mismo estado: tocar uno en
- * el mapa cambia la lista y al revés, y los botones de las dos pantallas quedan marcados igual.
+ * mismos nombres. En la barra hay botones solo para Resultado y Próximo paso: Origen, Lectura, Control y "con resolución"
+ * no tienen botón (los reemplaza el próximo paso), y cuando una tarjeta los pone se ven en la barra como etiquetas que se
+ * sacan con la ×. La barra es una sola para la Lista y el Mapa: lo que se elige vale para las dos.
  */
 const GRUPO_DE = { TODOS: 'elig', ELEGIBLE: 'elig', BORDE: 'elig', NO_ELEGIBLE: 'elig', SIN_DATO: 'elig',
   ORIGEN_TODOS: 'origen', LEIDA: 'origen', ESTIMADA: 'origen', LEIDA_PLANILLA: 'origen',
@@ -2304,11 +2320,24 @@ const GRUPO_DE = { TODOS: 'elig', ELEGIBLE: 'elig', BORDE: 'elig', NO_ELEGIBLE: 
 // paso: el próximo paso (proximoPaso); res: solo lo que tiene resolución, leída o según la planilla (lo abre el Padrón).
 const F = { elig: 'TODOS', origen: null, lect: null, ctrl: null, paso: null, res: null };
 const IDS_FILTRO = ['fDep','fLoc','fSec','fInsc','fAnioD','fAnioH'];
-const CHIPS = '#filtros .chip, #filtrosMapa .chip';
+const CHIPS = '#filtros .chip[data-f]';
 function marcarChips(){
   document.querySelectorAll(CHIPS).forEach(x => { const f = x.dataset.f, g = GRUPO_DE[f];
-    x.classList.toggle('on', g === 'elig' ? F.elig === f : f === 'ORIGEN_TODOS' ? !F.origen : f === 'LEIDA' ? F.origen === 'LEIDA' || F.origen === 'LEIDA_PLANILLA' : F[g] === f); });
+    const on = g === 'elig' ? F.elig === f : F[g] === f; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+  pintarEtiquetas();
 }
+/** Los filtros sin botón que están puestos (los abrió una tarjeta), como etiquetas con ×: nunca quedan ocultos. */
+const ETIQUETA_F = { LEIDA: 'con la resolución leída', ESTIMADA: 'estimados con la planilla', LEIDA_PLANILLA: 'de la planilla, con la resolución leída',
+  POR_TEXTO: 'leídas por texto', CON_IA: 'leídas con IA', SIN_LEER: 'sin leer', CONTROLADA: 'controladas a mano', SIN_CONTROLAR: 'sin controlar',
+  CON_DUDAS: 'con dudas', CON_RESOLUCION: 'con resolución' };
+function pintarEtiquetas(){
+  const et = ['origen', 'lect', 'ctrl', 'res'].filter(g => F[g]).map(g => [g, ETIQUETA_F[F[g]] || F[g]]);
+  if(localidadSel) et.push(['loc', localidadSel]);
+  $('etiquetasF').innerHTML = et.map(([g, t]) => `<button class="chip etiqueta-f on" data-quitar="${g}" title="Sacar este filtro">${esc(t)}<span class="x" aria-hidden="true">×</span></button>`).join('');
+  $('gfOtros').classList.toggle('oculto', !et.length);
+}
+$('etiquetasF').addEventListener('click', e => { const b = e.target.closest('[data-quitar]'); if(!b) return;
+  if(b.dataset.quitar === 'loc') localidadSel = null; else F[b.dataset.quitar] = null; marcarChips(); filtrar(); });
 function ponerFiltro(f){
   if(f === 'SIN_UBICAR'){ $('fSinUbicar').checked = true; return; }
   const g = GRUPO_DE[f]; if(!g) return;
@@ -2319,28 +2348,37 @@ function ponerFiltro(f){
  * viendo: los filtros quedan guardados y vuelven al salir de Expedientes o con "volver a lo que estaba viendo".
  * Si mientras tanto se toca un filtro, lo guardado se descarta: ya se está mirando otra cosa.
  */
-const vistaActual = () => VISTAS.find(x => !$('v-' + x).classList.contains('oculto'));
-function estadoFiltros(){ return { F: Object.assign({}, F), sel: IDS_FILTRO.map(id => $(id).value), sinUbicar: $('fSinUbicar').checked, buscar: $('buscar').value, localidadSel, pagina, desde: vistaActual() }; }
+const vistaActual = () => mapaVisible() ? 'mapa' : VISTAS.find(x => x !== 'mapa' && !$('v-' + x).classList.contains('oculto'));
+/** ¿Se está viendo el mapa? Es la otra cara de Expedientes: las dos cosas tienen que estar a la vista. */
+function mapaVisible(){ return !$('v-expedientes').classList.contains('oculto') && !$('v-mapa').classList.contains('oculto'); }
+function estadoFiltros(){ return { F: Object.assign({}, F), sel: IDS_FILTRO.map(id => $(id).value), sinUbicar: $('fSinUbicar').checked, buscar: $('buscar').value, localidadSel, pagina, desde: vistaActual(),
+  // El acercamiento del mapa también vuelve: al volver de un expediente, el mapa queda donde estaba.
+  encuadre: mapa && mapaVisible() ? { c: mapa.getCenter(), z: mapa.getZoom() } : null }; }
+let encuadreGuardado = null;   // lo usa pintarMapa una vez, en lugar de encuadrar todo
 function restaurarFiltros(){
   const g = guardados; guardados = null; if(!g) return;
   Object.assign(F, g.F); marcarChips(); $('fSinUbicar').checked = g.sinUbicar; $('buscar').value = g.buscar; localidadSel = g.localidadSel;
   // Los desplegables se llenan según lo elegido en el anterior (departamento → localidad → sección): si la opción
   // todavía no está, se agrega; el próximo dibujo los vuelve a llenar y la conserva.
   IDS_FILTRO.forEach((id, i) => { const s = $(id), v = g.sel[i]; if(v && ![...s.options].some(o => o.value === v)) s.add(new Option(v, v)); s.value = v; });
+  encuadreGuardado = g.desde === 'mapa' ? g.encuadre : null;
   pintarTodo(); pagina = g.pagina; pintarTabla();
 }
-/** Filtrar desde la barra del mapa no lo vuelve a encuadrar: queda donde la persona lo dejó (acercado a un barrio, por ejemplo). */
+/**
+ * Con el mapa a la vista, tocar un botón de Resultado o de Próximo paso no lo vuelve a encuadrar: queda donde la persona
+ * lo dejó (acercado a un barrio, por ejemplo). Elegir un Lugar sí lo encuadra en ese lugar.
+ */
 let mantenerEncuadre = false;
-function filtrar(desde){ guardados = null; pagina = 0; mantenerEncuadre = !!(desde && desde.closest('#v-mapa')); try{ pintarTodo(); } finally { mantenerEncuadre = false; } }
+function filtrar(desde){ guardados = null; pagina = 0; mantenerEncuadre = !!(desde && desde.classList && desde.classList.contains('chip') && mapaVisible()); try{ pintarTodo(); } finally { mantenerEncuadre = false; } }
 document.querySelectorAll(CHIPS).forEach(b => b.addEventListener('click', () => {
   const g = GRUPO_DE[b.dataset.f];
-  if(g !== 'elig' && b.dataset.f !== 'ORIGEN_TODOS' && b.classList.contains('on')) F[g] = null; else ponerFiltro(b.dataset.f);
+  if(g !== 'elig' && b.classList.contains('on')) F[g] = null; else ponerFiltro(b.dataset.f);
   marcarChips(); filtrar(b); }));
 IDS_FILTRO.concat('fSinUbicar').forEach(id => $(id).addEventListener('change', () => filtrar()));
-// El Registro del mapa es el mismo desplegable de Expedientes: las mismas opciones, y elegir en uno pone el otro.
-$('fInscMapa').innerHTML = $('fInsc').innerHTML;
-$('fInscMapa').addEventListener('change', e => { $('fInsc').value = e.target.value; filtrar(e.target); });
 $('fLimpiar').addEventListener('click', () => limpiarFiltros());
+// "Más filtros" (Registro, año de la resolución, sin ubicar): plegado. Si alguno está puesto, el botón dice cuántos.
+$('btnMas').addEventListener('click', () => { const abierto = $('masFiltros').classList.toggle('oculto') === false; $('btnMas').setAttribute('aria-expanded', abierto ? 'true' : 'false'); });
+const cuantosMas = () => ['fInsc', 'fAnioD', 'fAnioH'].filter(id => $(id).value).length + ($('fSinUbicar').checked ? 1 : 0);
 // En el teléfono: "Filtros" abre y cierra el recuadro; el buscador queda afuera, siempre a la vista.
 $('btnFiltros').addEventListener('click', () => { const c = $('filtrosCuerpo'), abierto = c.classList.toggle('abierto'); $('btnFiltros').setAttribute('aria-expanded', abierto ? 'true' : 'false'); });
 /** Llena los desplegables con los valores que realmente existen en los datos cargados. */
@@ -2362,7 +2400,18 @@ function poblarFiltros(){
 // Se espera a que termine de escribir: con miles de resoluciones, redibujar en cada letra congelaba la pantalla.
 let esperaBusqueda = null;
 $('buscar').addEventListener('input', () => { guardados = null; clearTimeout(esperaBusqueda); esperaBusqueda = setTimeout(() => { pagina = 0; pintarTodo(); }, 200); });
-function pasa(r, ignorarLoc){
+/** Lo que hay elegido en los desplegables y el buscador, leído una sola vez por dibujo (no en cada una de las filas). */
+function leerFiltros(){ return { dep: $('fDep').value, loc: $('fLoc').value, sec: $('fSec').value, insc: $('fInsc').value, sinUbic: $('fSinUbicar').checked,
+  aD: Number($('fAnioD').value), aH: Number($('fAnioH').value), q: P.normalizarTexto($('buscar').value) }; }
+// El texto en que se busca, normalizado una vez por expediente: con la planilla son decenas de miles.
+const TEXTO_BUSCA = new WeakMap();
+const textoBusca = d => { let t = TEXTO_BUSCA.get(d); if(t === undefined){ t = P.normalizarTexto([d.expediente, d.rogantes_todos, d.dni_principal, (d.matriculas||[]).join(' '), d.geo && d.geo.cuenta_normalizada, loc(d), d.geo && d.geo.catastro && d.geo.catastro.nomenclatura_legible].join(' ')); TEXTO_BUSCA.set(d, t); } return t; };
+/**
+ * ¿Pasa los filtros? ignorarLoc: sin la localidad elegida en el panel (la usaba el mapa); ignorarPaso: sin el próximo
+ * paso (para contar cuántos hay en cada paso con los demás filtros puestos). fv = leerFiltros(), una vez por dibujo.
+ */
+function pasa(r, ignorarLoc, ignorarPaso, fv){
+  fv = fv || leerFiltros();
   const d = r.derivado, c = cl(d), est = deLaPlanilla(r);
   if(F.elig === 'ELEGIBLE' && !c.startsWith('ELEGIBLE')) return false;
   if(F.elig === 'NO_ELEGIBLE' && !c.startsWith('NO_ELEGIBLE')) return false;
@@ -2378,19 +2427,19 @@ function pasa(r, ignorarLoc){
   if(F.ctrl === 'CONTROLADA' && !(d.revision && d.revision.revisado)) return false;
   if(F.ctrl === 'SIN_CONTROLAR' && d.revision && d.revision.revisado) return false;
   if(F.ctrl === 'CON_DUDAS' && !d.revisar) return false;
-  if(F.paso && F.paso !== 'PASO_' + proximoPaso(r)) return false;
+  if(!ignorarPaso && F.paso && F.paso !== 'PASO_' + proximoPaso(r)) return false;
   if(F.res && sinResolucionPlanilla(d)) return false;
-  if($('fSinUbicar').checked && d.geo && d.geo.lat != null) return false;
-  if($('fDep').value && dep(d) !== $('fDep').value) return false;
-  if($('fLoc').value && loc(d) !== $('fLoc').value) return false;
-  if($('fSec').value && sec(d) !== $('fSec').value) return false;
-  if($('fInsc').value && estadoInsc(d) !== $('fInsc').value) return false;
-  const aD = Number($('fAnioD').value), aH = Number($('fAnioH').value), ar = Number(d.resolucion_anio);
-  if(aD && !(ar >= aD)) return false;
-  if(aH && !(ar <= aH)) return false;
+  // "Sin ubicar en el mapa": lo que el mapa no dibuja (sin parcela de Catastro ni coordenadas de la lectura).
+  if(fv.sinUbic && enElMapa(r)) return false;
+  if(fv.dep && dep(d) !== fv.dep) return false;
+  if(fv.loc && loc(d) !== fv.loc) return false;
+  if(fv.sec && sec(d) !== fv.sec) return false;
+  if(fv.insc && estadoInsc(d) !== fv.insc) return false;
+  const ar = Number(d.resolucion_anio);
+  if(fv.aD && !(ar >= fv.aD)) return false;
+  if(fv.aH && !(ar <= fv.aH)) return false;
   if(!ignorarLoc && localidadSel && claveGrupo(d) !== localidadSel) return false;
-  const q = P.normalizarTexto($('buscar').value);
-  if(q){ const texto = P.normalizarTexto([d.expediente, d.rogantes_todos, d.dni_principal, (d.matriculas||[]).join(' '), d.geo && d.geo.cuenta_normalizada, loc(d), d.geo && d.geo.catastro && d.geo.catastro.nomenclatura_legible].join(' ')); if(!texto.includes(q)) return false; }
+  if(fv.q && !textoBusca(d).includes(fv.q)) return false;
   return true;
 }
 
@@ -2422,7 +2471,26 @@ function vaciarFiltros(){
   $('buscar').value = ''; localidadSel = null; F.elig = 'TODOS'; F.origen = null; F.lect = null; F.ctrl = null; F.paso = null; F.res = null; marcarChips();
 }
 function limpiarFiltros(){ guardados = null; vaciarFiltros(); pagina = 0; pintarTodo(); }
-function pintarTodo(){ poblarFiltros(); $('fInscMapa').value = $('fInsc').value; vista = registros.filter(r => pasa(r)); pintarMetricas(); pintarTabla(); pintarRanking(); pintarPadron(); pintarPlanilla(); if(!$('v-mapa').classList.contains('oculto')) pintarMapa(); pintarUltimos(); }
+/** Lo que dice cada botón de Próximo paso: corto, y sin tono de orden para quien solo consulta. */
+const CHIP_PASO = { PDF: ['Conseguir el PDF', 'Falta el PDF'], LEER: ['Leer', 'Falta leer'], CONTROLAR: ['Controlar', 'Falta controlar'],
+  PADRON: ['Confirmar en el Padrón', 'Falta el Padrón'], NADA: ['Sin pendientes', 'Sin pendientes'] };
+const pasoCorto = p => CHIP_PASO[p][puedeCargar() ? 0 : 1];
+let cuentaPasos = {};
+function pintarTodo(){
+  poblarFiltros();
+  // Un solo recorrido: la lista (con todos los filtros) y cuántos hay en cada próximo paso con los demás filtros puestos.
+  const fv = leerFiltros(); cuentaPasos = {}; PASOS.forEach(x => cuentaPasos[x] = 0); vista = [];
+  for(const r of registros){ if(!pasa(r, false, true, fv)) continue; const p = proximoPaso(r); cuentaPasos[p]++; if(!F.paso || F.paso === 'PASO_' + p) vista.push(r); }
+  const hayPlan = registros.some(deLaPlanilla);
+  document.querySelectorAll('#chipsPaso .chip').forEach(b => { const p = b.dataset.f.slice(5);
+    b.textContent = `${pasoCorto(p)} · ${miles(cuentaPasos[p])}`;
+    // Sin la planilla (en el kit y en el modo suelto) no hay nada que conseguir: no aparece "Conseguir el PDF".
+    b.classList.toggle('oculto', p === 'PDF' && !hayPlan && F.paso !== 'PASO_PDF'); });
+  const nMas = cuantosMas(); $('btnMas').textContent = nMas ? `Más filtros (${nMas} puesto${nMas === 1 ? '' : 's'})` : 'Más filtros: Registro, año de la resolución, sin ubicar';
+  if(nMas){ $('masFiltros').classList.remove('oculto'); $('btnMas').setAttribute('aria-expanded', 'true'); }
+  pintarEtiquetas();
+  pintarMetricas(); pintarTabla(); pintarPadron(); pintarPlanilla(); if(mapaVisible()) pintarMapa(); pintarUltimos();
+}
 /** "21/09/2026 18:42", siempre con reloj de 24 horas (sin él, Chrome pone la tarde como "02:17" sin a. m. ni p. m.). */
 function fechaHora(iso){ const f = new Date(iso); return isNaN(f) ? '—' : f.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''); }
 /**
@@ -2778,13 +2846,15 @@ function pintarUltimos(){
   const i = resumenSrv.inventario || {}; $('ultInv').innerHTML = i.cargado ? ultimoArchivo(i.archivo || 'inventario', i.cargado_en, i.total ? plural(i.total, 'expediente', 'expedientes') : '') : ultimoArchivo();
 }
 /** La etiqueta del estado. Lo estimado con la planilla dice "(estimado)" y va punteado, sin relleno: no es lo leído. */
-function tagDe(c, est){
-  const t = (col, texto) => `<span class="tag ${col}${est ? ' tag-est' : ''}"${est ? ' title="estimado con la planilla de la UEST: no se leyó la resolución"' : ''}>${conEstimado(texto, est)}</span>`;
-  const borde = c.endsWith('_BORDE') ? ' <span class="tag p-a">Borde</span>' : '';
-  if(c.startsWith('ELEGIBLE')) return t('p-v', 'Elegible') + borde;
-  if(c.startsWith('NO_ELEGIBLE')) return t('p-g', 'No elegible') + borde;
-  if(c === 'NO_APLICA') return t('p-g', 'No aplica');
-  return t('p-r', 'Sin fecha');
+/**
+ * La etiqueta del resultado con la marca de certeza: punteado y sin relleno = estimado con la planilla ("(estimado)");
+ * lleno = leído; lleno con tilde = controlado (a mano o con IA). Una sola etiqueta: "Elegible, en el borde" va en ocre.
+ */
+function tagDe(c, est, ctrl){
+  const [col, texto] = c === 'ELEGIBLE' ? ['p-v', 'Elegible'] : c === 'ELEGIBLE_BORDE' ? ['p-a', 'Elegible, en el borde'] : c === 'NO_ELEGIBLE_BORDE' ? ['p-a', 'No elegible, en el borde']
+    : c === 'NO_ELEGIBLE' ? ['p-g', 'No elegible'] : c === 'NO_APLICA' ? ['p-g', 'No aplica'] : ['p-r', 'Sin fecha'];
+  const titulo = est ? 'estimado con la planilla de trámites: no se leyó la resolución' : ctrl ? 'con la resolución leída y controlada contra el documento' : 'con la resolución leída, todavía sin controlar';
+  return `<span class="tag ${col}${est ? ' tag-est' : ctrl ? ' tag-ctrl' : ''}" title="${titulo}">${ctrl ? '<span class="tilde-c" aria-hidden="true">✓</span>' : ''}${conEstimado(texto, est)}</span>`;
 }
 function tagInsc(d){
   const i = d.inscripcion; if(!i) return '';
@@ -2802,7 +2872,7 @@ const ORDEN_FUENTE = { texto: 0, modelo: 1, texto_incompleto: 2, planilla: 3 };
 const valorOrden = (r, k) => { const d = r.derivado;
   switch(k){ case 'expediente': return d.expediente || null; case 'rogante': return d.rogante_principal || null; case 'posee_desde': return d.posee_desde || null;
     case 'clasif': return ORDEN_CLASE[cl(d)] ?? null; case 'localidad': { const l = loc(d); return l === '(SIN LOCALIDAD)' ? null : l; } case 'manzana': return mz(d) || null;
-    case 'fuente': return ORDEN_FUENTE[r.fuente] ?? null; case 'cargado': return r.cargado_en || null; default: return null; } };
+    case 'fuente': return ORDEN_FUENTE[r.fuente] ?? null; case 'cargado': return r.cargado_en || null; case 'paso': return PASOS.indexOf(proximoPaso(r)); default: return null; } };
 document.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click', () => { if(orden.k === th.dataset.k) orden.asc = !orden.asc; else orden = { k: th.dataset.k, asc: true }; pintarTabla(); }));
 /**
  * La lista en el orden elegido. La clave de orden se calcula una vez por fila, no en cada comparación. Lo que no tiene
@@ -2810,8 +2880,10 @@ document.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click
  */
 function ordenar(lista){
   const dir = orden.asc ? 1 : -1, cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
-  return lista.map(r => [valorOrden(r, orden.k), r.derivado.posee_desde ? 0 : 1, r.derivado.expediente || '\uffff', r])
-    .sort((a, b) => (a[0] == null) - (b[0] == null) || (a[0] == null ? 0 : cmp(a[0], b[0]) * dir) || a[1] - b[1] || cmp(a[2], b[2])).map(x => x[3]);
+  // En "Controlar" van primero las lecturas que no coinciden con lo que estimaba la planilla (elegible o no elegible).
+  const choque = F.paso === 'PASO_CONTROLAR' ? r => chocaConPlanilla(r) ? 0 : 1 : () => 0;
+  return lista.map(r => [valorOrden(r, orden.k), r.derivado.posee_desde ? 0 : 1, r.derivado.expediente || '\uffff', r, choque(r)])
+    .sort((a, b) => a[4] - b[4] || (a[0] == null) - (b[0] == null) || (a[0] == null ? 0 : cmp(a[0], b[0]) * dir) || a[1] - b[1] || cmp(a[2], b[2])).map(x => x[3]);
 }
 function pintarTabla(){
   document.querySelectorAll('th[data-k]').forEach(th => { th.classList.toggle('orden', th.dataset.k === orden.k); th.classList.toggle('asc', th.dataset.k === orden.k && orden.asc); });
@@ -2821,32 +2893,32 @@ function pintarTabla(){
   const desde = pagina * POR_PAG, pag = lista.slice(desde, desde + POR_PAG);
   const activos = filtrosActivos(), hayPlan = registros.some(deLaPlanilla);
   // La bajada dice siempre de qué está hecho lo que se ve: cuánto es estimado con la planilla y cuánto está leído.
-  let nEst = 0; if(hayPlan) for(const r of lista) if(deLaPlanilla(r)) nEst++;
+  let nEst = 0, nChoca = 0; for(const r of lista){ if(deLaPlanilla(r)) nEst++; else if(F.paso === 'PASO_CONTROLAR' && chocaConPlanilla(r)) nChoca++; }
   const g = guardados;
-  $('subTabla').innerHTML = `Mostrando ${miles(total)} de ${miles(registros.length)}` + (hayPlan ? ` · ${plural(nEst, 'estimado', 'estimados')} con la planilla · ${miles(total - nEst)} con la resolución leída` : '')
-    + (activos.length ? ` · <b style="color:var(--ambar)">filtrando por: ${esc(activos.join(', '))}</b> · <a href="#" id="verTodas">ver todas</a>` : '')
+  $('subTabla').innerHTML = `Mostrando <b>${miles(total)}</b> de ${miles(registros.length)}` + (hayPlan ? ` · ${plural(nEst, 'estimado', 'estimados')} con la planilla · ${miles(total - nEst)} con la resolución leída` : '')
+    + (nChoca ? ` · primero ${nChoca === 1 ? 'la que no coincide' : `las ${miles(nChoca)} que no coinciden`} con la planilla` : '')
+    + (activos.length ? ` · <b style="color:var(--ambar)">filtrando por: ${esc(activos.join(', '))}</b> · <a href="#" id="verTodas">ver todos</a>` : '')
     + (g ? ` · <a href="#" id="volverAntes">${g.desde === 'mapa' ? 'volver al mapa' : 'volver a lo que estaba viendo'}</a>` : '');
   const vt = $('verTodas'); if(vt) vt.addEventListener('click', e => { e.preventDefault(); limpiarFiltros(); });
   const va = $('volverAntes'); if(va) va.addEventListener('click', e => { e.preventDefault(); if(g.desde && g.desde !== 'expedientes') ir(g.desde); else restaurarFiltros(); });
-  // Lo que se baja es lo que se ve, y el botón lo dice. Origen, Lectura y Control: solo con la planilla cargada se aclara.
+  // Lo que se baja es lo que se ve, y el botón lo dice.
   $('expCsv').textContent = `Bajar en Excel lo que estoy viendo (${miles(total)})`; $('expCsv').disabled = !total;
-  ['gfOrigen', 'gfOrigenMapa'].forEach(id => $(id).classList.toggle('oculto', !hayPlan)); document.querySelectorAll('#filtros .nota-gf').forEach(e => e.classList.toggle('oculto', !hayPlan));
   const nAct = activos.length; $('btnFiltros').textContent = nAct ? `Filtros (${nAct})` : 'Filtros';
   $('vacio').classList.toggle('oculto', total > 0 || !registros.length);
   $('pagInfo').textContent = total ? `${miles(desde + 1)}–${miles(Math.min(desde + POR_PAG, total))} de ${miles(total)}` : '';
   pintarPaginacion(total);
   $('filas').innerHTML = pag.map(r => {
-    const d = r.derivado, c = cl(d);
+    const d = r.derivado, c = cl(d), est = deLaPlanilla(r), pe = r.planilla_estimaba;
     const marcas = (d.senales || []).filter(s => !/COMPARTID|NOMBRE_SEGUN_OCR/.test(s)).map(senal).concat(r.inventario && (r.inventario.cuenta_coincide === false || r.inventario.resolucion_coincide === false) ? ['difiere del inventario'] : []).join(' · ');
+    const lugar = esc([d.geo && d.geo.dep_nombre, mz(d)].filter(Boolean).join(' · '));
+    const verMapa = `<a href="#" class="ver-mapa" data-ver-mapa="${esc(r.hash)}" title="${enElMapa(r) ? 'Ver este expediente en el mapa' : 'No está en el mapa: la ficha dice por qué'}">Ver en el mapa</a>`;
     return `<tr class="fila ${d.revision && d.revision.revisado ? 'rev' : ''}" data-i="${registros.indexOf(r)}">
-      <td class="exp">${esc(d.expediente || '—')}<div class="mini">${esc(d.resolucion_numero ? d.resolucion_numero + '/' + (d.resolucion_anio || '') : '')}</div><div class="mini solo-movil">${esc(d.rogante_principal || '')}</div></td>
+      <td class="exp">${esc(d.expediente || '—')}<div class="mini">${esc(d.resolucion_numero ? d.resolucion_numero + '/' + (d.resolucion_anio || '') : '')}</div><div class="mini solo-movil">${esc(d.rogante_principal || '')}<br>${esc(loc(d))} · ${verMapa}</div></td>
       <td class="col-rog">${esc(d.rogante_principal || '—')}${d.cantidad_rogantes > 1 ? ` <span class="mini">+${d.cantidad_rogantes - 1}</span>` : ''}${marcas ? `<div class="mini">${esc(marcas)}</div>` : ''}</td>
       <td><b>${esc(d.posee_desde ? d.posee_desde.slice(0, 4) : '—')}</b><div class="mini">${!d.posee_desde ? '' : d.posee_desde_precision === 'anio' ? 'año aprox.' : d.posee_desde_precision === 'mes' ? 'mes ' + esc(d.posee_desde.slice(5, 7)) : esc(d.posee_desde.slice(8, 10) + '/' + d.posee_desde.slice(5, 7))}</div></td>
-      <td>${tagDe(c, deLaPlanilla(r))}${tagInsc(d)}${d.revisar && !deLaPlanilla(r) ? ' <span class="tag p-r">Con dudas</span>' : ''}</td>
-      <td class="col-sec">${esc(loc(d))}<div class="mini">${esc([d.geo && d.geo.ped_nombre, d.geo && d.geo.dep_nombre].filter(Boolean).join(' · '))}</div></td>
-      <td class="col-sec">${esc(mz(d) || '—')}</td>
-      <td class="col-sec">${r.fuente === 'planilla' ? '<span class="mini">estimado con la planilla</span>' : `<span class="mini">resolución ${r.fuente === 'texto' ? 'leída por texto' : r.fuente === 'modelo' ? 'leída con IA' : 'sin leer'}</span>`}</td>
-      <td class="col-sec"><span class="mini">${esc(fechaCarga(r.cargado_en))}</span></td>
+      <td>${tagDe(c, est, certeza(r) === 'controlado')}${tagInsc(d)}${d.revisar && !est ? ' <span class="tag p-r">Con dudas</span>' : ''}${!est && chocaConPlanilla(r) ? `<span class="nota-roja">la planilla estimaba ${esc(nombreClase(pe.clasificacion))}${pe.posee_desde ? ' (' + esc(pe.posee_desde.slice(0, 4)) + ')' : ''}</span>` : ''}</td>
+      <td class="col-sec">${esc(loc(d))}${lugar ? `<div class="mini">${lugar}</div>` : ''}<div>${verMapa}</div></td>
+      <td>${esc(pasoCorto(proximoPaso(r)))}</td>
     </tr>`;
   }).join('');
 }
@@ -2870,6 +2942,7 @@ function pintarPaginacion(total){
   $('pagNums').querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => { pagina = Number(b.dataset.p); pintarTabla(); window.scrollTo(0, 0); }));
 }
 $('filas').addEventListener('click', e => {
+  if(e.target.closest('[data-ver-mapa],[data-ubicar]')) return;   // los atiende el documento (verEnMapa, Ubicar en Catastro)
   const vp = e.target.closest('[data-verpdf]');
   if(vp){ abrirVisor(vp.dataset); return; }
   const caja = e.target.closest('.revision');
@@ -2882,8 +2955,8 @@ $('filas').addEventListener('click', e => {
   const rog = (e2.rogantes || []).map(x => { const dom = x.domicilio || {};
     return [x.apellido_nombre || 'sin nombre legible', x.dni ? 'DNI ' + x.dni : 'sin DNI', x.estado_civil, [dom.calle, dom.numero, dom.localidad].filter(Boolean).join(' ')].filter(Boolean).map(esc).join(' · '); }).join('<br>');
   const rev = d.revision || {};
-  if(deLaPlanilla(r)){ tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="8" class="detalle">${fichaPlanilla(r)}</td></tr>`); return; }
-  tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="8" class="detalle"><p style="margin:0 0 10px;font-size:14px"><b class="${cl(d).startsWith('ELEGIBLE') ? 'c-v' : cl(d).startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(VEREDICTOS[cl(d)] || cl(d))}</b> · posee desde ${esc(fechaPosesion(d))} · ${config().regla === 'CORTE_FIJO' ? 'corte ' + esc((config().fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p><dl>
+  if(deLaPlanilla(r)){ tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="6" class="detalle">${fichaPlanilla(r)}</td></tr>`); return; }
+  tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="6" class="detalle"><p style="margin:0 0 10px;font-size:14px"><b class="${cl(d).startsWith('ELEGIBLE') ? 'c-v' : cl(d).startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(VEREDICTOS[cl(d)] || cl(d))}</b> · posee desde ${esc(fechaPosesion(d))} · ${config().regla === 'CORTE_FIJO' ? 'corte ' + esc((config().fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p>${fichaMapa(r)}<dl>
     <dt>Rogantes</dt><dd>${rog || '—'}</dd>
     <dt>Posesión</dt><dd>${esc(fechaPosesion(d))}${d.posee_desde ? ' — ' + esc(CRITERIOS[d.posesion_criterio] || (d.posesion_criterio ? String(d.posesion_criterio).replace(/_/g, ' ').toLowerCase() : 'sin decir cómo se fijó')) : ''}${e2.posesion && e2.posesion.texto_original ? `<br><span class="mini">dice: «${esc(e2.posesion.texto_original)}»</span>` : ''}</dd>
     <dt>Inmueble</dt><dd>${esc([e2.inmueble && e2.inmueble.calle, e2.inmueble && e2.inmueble.numero, e2.inmueble && e2.inmueble.manzana && 'mz ' + e2.inmueble.manzana, e2.inmueble && e2.inmueble.superficie_texto].filter(Boolean).join(' · ') || '—')}</dd>
@@ -2916,12 +2989,50 @@ $('filas').addEventListener('click', e => {
 });
 
 /**
+ * Por qué un expediente no está en el mapa, en palabras: sin cuenta, Catastro no encontró la parcela, todavía no se
+ * consultó, o está ubicado solo por la localidad (eso no se dibuja: se cuenta en "Por lugar").
+ */
+function porQueNoEnMapa(r){
+  const g = r.derivado.geo || {}, c = g.catastro || {}, aprox = g.lat != null && g.ubicacion_aproximada;
+  const por = !g.cuenta_normalizada ? 'no tiene cuenta para buscar su parcela en Catastro'
+    : c.encontrada === false ? `Catastro no encontró la parcela de la cuenta ${g.cuenta_normalizada}`
+    : `la cuenta ${g.cuenta_normalizada} todavía no se consultó en Catastro`;
+  return por + (aprox ? `. Está ubicado solo por la localidad (${loc(r.derivado)}): no se dibuja, se cuenta en "Por lugar"` : '');
+}
+/** "Ver en el mapa" en la ficha; si no se puede, por qué, y "Ubicar en Catastro" a quien puede cargar (si hay cuenta). */
+function fichaMapa(r){
+  if(enElMapa(r)) return `<div class="acciones" style="margin:0 0 10px"><button class="sec" data-ver-mapa="${esc(r.hash)}">Ver en el mapa</button></div>`;
+  const g = r.derivado.geo || {}, ubicar = SERVIDOR && puedeCargar() && g.cuenta_normalizada && !(g.catastro && g.catastro.encontrada);
+  return `<p class="sin-mapa mini">No está en el mapa: ${esc(porQueNoEnMapa(r))}.${ubicar ? ' <button class="sec" data-ubicar="1">Ubicar en Catastro</button>' : ''}</p>`;
+}
+/**
+ * "Ver en el mapa" (en cada fila y en la ficha): pasa a Mapa, lo centra y abre su globo. Si no está en el mapa, abre la
+ * ficha y marca el renglón que dice por qué. Si no pasa los filtros puestos, lo busca por su número.
+ */
+let pendienteMapa = null;
+function verEnMapa(hash){
+  const r = registros.find(x => x.hash === hash); if(!r) return;
+  if(!enElMapa(r)){
+    const marcar = () => { const m = document.querySelector('tr.det .sin-mapa'); if(m){ m.classList.add('resalte'); setTimeout(() => m.classList.remove('resalte'), 2200); try{ m.scrollIntoView({ block: 'center', behavior: 'smooth' }); }catch(e){} } };
+    const fila = !mapaVisible() && document.querySelector(`#filas tr.fila[data-i="${registros.indexOf(r)}"]`);
+    if(fila){ if(!(fila.nextElementSibling && fila.nextElementSibling.classList.contains('det'))) fila.click(); marcar(); }
+    else { abrirExpediente(hash); setTimeout(marcar, 160); }
+    return;
+  }
+  guardados = null;
+  if(!vista.includes(r)){ vaciarFiltros(); $('buscar').value = r.derivado.expediente || ''; pagina = 0; pintarTodo(); }
+  pendienteMapa = r;
+  if(mapaVisible()) pintarMapa(); else ir('mapa');
+}
+document.addEventListener('click', e => { const a = e.target.closest('[data-ver-mapa]'); if(!a) return; e.preventDefault(); verEnMapa(a.dataset.verMapa); });
+document.addEventListener('click', e => { const a = e.target.closest('[data-ubicar]'); if(!a) return; e.preventDefault(); const b = $('btnCatastro'); if(b && !b.disabled){ a.disabled = true; b.click(); } });
+/**
  * La ficha de un expediente estimado con la planilla de la UEST: quién lo inició, dónde está y, abajo, lo que se sabe de
  * él (qué se declaró al iniciar el trámite, qué falta para confirmarlo, Catastro, el Padrón y el inventario).
  */
 function fichaPlanilla(r){
   const d = r.derivado, g = d.geo || {}, cfg = config(), k = cl(d);
-  return `<p style="margin:0 0 10px;font-size:14px"><b class="${k.startsWith('ELEGIBLE') ? 'c-v' : k.startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(conEstimado(VEREDICTOS[k] || k, true))}</b> · con la planilla de la UEST, sin la resolución leída · ${cfg.regla === 'CORTE_FIJO' ? 'corte ' + esc((cfg.fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p><dl>
+  return `<p style="margin:0 0 10px;font-size:14px"><b class="${k.startsWith('ELEGIBLE') ? 'c-v' : k.startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(conEstimado(VEREDICTOS[k] || k, true))}</b> · con la planilla de la UEST, sin la resolución leída · ${cfg.regla === 'CORTE_FIJO' ? 'corte ' + esc((cfg.fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p>${fichaMapa(r)}<dl>
     <dt>Iniciador</dt><dd>${esc(d.rogante_principal || '—')}${d.dni_principal ? ' · DNI ' + esc(d.dni_principal) : ''}</dd>
     <dt>Inmueble</dt><dd>${esc([g.localidad, g.calle, g.ped_nombre && 'pedanía ' + g.ped_nombre, g.cuenta_normalizada ? 'cuenta ' + g.cuenta_normalizada : 'sin cuenta'].filter(Boolean).join(' · '))}</dd>
   </dl>
@@ -3007,26 +3118,35 @@ $('siaPadronCuerpo').addEventListener('keydown', e => { const t = e.target.close
  * resolución leída o la estimación con la planilla de la UEST. A una estimación no se le pone nada que no sabe
  * (Registro, control a mano, dudas): no hay resolución leída.
  */
-const COLUMNAS_EXCEL = [['origen', 'Origen'], ['lectura', 'Cómo se leyó'], ['expediente', 'Expediente'], ['clasificacion', 'Resultado'], ['posee_desde', 'Posee desde'],
+const COLUMNAS_EXCEL = [['certeza', 'Certeza'], ['expediente', 'Expediente'], ['clasificacion', 'Resultado'], ['posee_desde', 'Posee desde'],
   ['precision', 'Precisión de la fecha'], ['criterio', 'Cómo se fijó la antigüedad'], ['rogante', 'Rogante o iniciador'], ['dni', 'DNI'], ['cuil', 'CUIL'], ['cantidad_rogantes', 'Cantidad de rogantes'],
   ['departamento', 'Departamento'], ['pedania', 'Pedanía'], ['localidad_catastro', 'Localidad según Catastro'], ['localidad_resolucion', 'Localidad según la resolución o la planilla'],
   ['nomenclatura', 'Nomenclatura catastral'], ['manzana_catastro', 'Manzana (Catastro)'], ['parcela_catastro', 'Parcela (Catastro)'], ['manzana_resolucion', 'Manzana según la resolución'],
   ['ubicacion', 'Ubicación en el mapa'], ['lat', 'Latitud'], ['lon', 'Longitud'], ['cuenta', 'Cuenta'], ['matriculas', 'Matrículas'], ['titulares_registrales', 'Titulares registrales'],
   ['superficie_poseida_m2', 'Superficie poseída (m²)'], ['estado_parcela', 'Estado de la parcela (Catastro)'], ['sup_mejoras_parcela', 'Superficie construida (m², Catastro)'], ['valuacion_parcela', 'Valuación (Catastro)'],
-  ['inscripcion', 'Registro'], ['resolucion', 'Resolución N°'], ['fecha_resolucion', 'Fecha de la resolución'], ['controlada', 'Controlada a mano'], ['dudas', 'Con dudas'], ['motivos', 'Motivos de las dudas'],
+  ['inscripcion', 'Registro'], ['resolucion', 'Resolución N°'], ['fecha_resolucion', 'Fecha de la resolución'], ['dudas', 'Con dudas'], ['motivos', 'Motivos de las dudas'],
   ['senales', 'Señales'], ['grupo_domicilio', 'Grupo de domicilio compartido'], ['grupo_matricula', 'Grupo de matrícula compartida'], ['archivo', 'Archivo']];
 const REGISTRO_EXCEL = { INSCRIPTA: 'Inscripta', PROVISORIA: 'Provisoria', OBSERVADA: 'Observada', NO_FIGURA_EN_PADRON: 'No figura en el Padrón (cruce por nombre)', AMBIGUO: 'Ambigua', SIN_NOMBRE_PARA_CRUZAR: 'Sin nombre para cruzar' };
 /** "1998-03-15" → "15/03/1998"; con precisión de mes, "03/1998"; de año, "1998" (no se inventa el día). */
 const fechaExcel = (f, prec) => { if(!f) return ''; const [a, m, d] = String(f).slice(0, 10).split('-'); return prec === 'anio' ? a : prec === 'mes' ? `${m}/${a}` : `${d}/${m}/${a}`; };
 const numExcel = x => x == null || x === '' ? '' : String(x).replace('.', ',');   // Excel en castellano usa la coma decimal
 const mayus1 = t => t ? t[0].toUpperCase() + t.slice(1) : '';
+/**
+ * La certeza en una sola columna del Excel (antes eran tres: origen, cómo se leyó y si se controló): la misma marca de la
+ * lista, en palabras. Lo estimado lo dice siempre.
+ */
+function certezaExcel(r){
+  const c = certeza(r), rev = r.derivado.revision || {};
+  if(c === 'estimado') return 'Estimado con la planilla (sin la resolución leída)';
+  if(c === 'controlado') return rev.revisado ? 'Controlado a mano' : 'Controlado con IA';
+  return r.fuente === 'texto_incompleto' ? 'Sin leer del todo: el texto del PDF no alcanzó' : r.fuente === 'modelo' ? 'Leído con IA, sin controlar' : 'Leído por texto, sin controlar';
+}
 function planillaExcel(lista){
   const c = v => { const t = v == null ? '' : String(v); return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
   const filas = lista.filter(r => r.derivado).map(r => {
     const f = P.aFilaPlanilla(r), d = r.derivado, g = d.geo || {}, est = deLaPlanilla(r), rev = d.revision || {};
     const o = Object.assign({}, f, {
-      origen: est ? 'Estimado con la planilla de la UEST' : 'Resolución leída',
-      lectura: est ? '' : r.fuente === 'texto' ? 'por texto' : r.fuente === 'modelo' ? 'con IA' : 'sin leer',
+      certeza: certezaExcel(r),
       clasificacion: conEstimado(mayus1(nombreClase(f.clasificacion)), est), posee_desde: fechaExcel(d.posee_desde, d.posee_desde_precision),
       precision: !d.posee_desde ? '' : ({ anio: 'año aproximado', mes: 'mes', fecha: 'día' })[d.posee_desde_precision] || '',
       criterio: d.posesion_criterio ? CRITERIOS[d.posesion_criterio] || String(d.posesion_criterio).replace(/_/g, ' ').toLowerCase() : '',
@@ -3034,7 +3154,7 @@ function planillaExcel(lista){
       lat: numExcel(f.lat), lon: numExcel(f.lon), superficie_poseida_m2: numExcel(f.superficie_poseida_m2), sup_mejoras_parcela: numExcel(f.sup_mejoras_parcela), valuacion_parcela: numExcel(f.valuacion_parcela),
       inscripcion: estadoInsc(d) === 'SIN_RESOLUCION' ? 'Sin resolución según la planilla (nada que inscribir)' : d.inscripcion ? REGISTRO_EXCEL[d.inscripcion.estado] || d.inscripcion.estado : est ? '' : 'Sin cruzar con el Padrón',
       fecha_resolucion: fechaExcel(d.resolucion_fecha),
-      controlada: est ? '' : rev.revisado ? 'sí' : 'no', dudas: est ? '' : d.revisar ? 'sí' : 'no', motivos: est ? '' : motivosEnPalabras(r).join(' · '),
+      dudas: est ? '' : d.revisar ? 'sí' : 'no', motivos: est ? '' : motivosEnPalabras(r).join(' · '),
       senales: (d.senales || []).map(senal).join(' · '),
       grupo_domicilio: f.cluster_domicilio, grupo_matricula: f.cluster_matricula });
     return COLUMNAS_EXCEL.map(([k]) => c(o[k])).join(';'); });
@@ -3115,39 +3235,53 @@ async function guardarRevision(caja){
   }catch(err){ est.textContent = 'No se pudo guardar: ' + err.message; }
   btn.disabled = false;
 }
-function pintarRanking(){
-  $('ranking2').innerHTML = armarRanking(true, 40);
-  enlazarRanking();
-}
 /**
- * Ranking de localidades: con los filtros (el del mapa) o sobre todo lo cargado (Resumen). Cada lugar dice "198 elegibles
- * de 238" y, con la planilla cargada, cuántas de esas son estimadas y cuántas leídas (la barra las pinta distinto).
- * En el mapa, con Posesión filtrada (por ejemplo, "No elegibles"), cada lugar cuenta lo que pasa el filtro: contar ahí
- * las elegibles daría todo cero.
+ * "Por lugar", al costado del mapa: cuántos hay en cada lugar con los filtros puestos, con la parte estimada rayada y
+ * cuántos no se dibujan porque no tienen parcela. Sin Lugar elegido, por departamento o por localidad (los botones); con
+ * un departamento, sus localidades; con una localidad, sus secciones. Tocar un lugar lo pone en el filtro Lugar.
+ * Con Resultado filtrado (por ejemplo, "No elegibles"), cada lugar cuenta lo que pasa el filtro: contar ahí las
+ * elegibles daría todo cero.
  */
 const RANKING_FILTRADO = { ELEGIBLE: ['elegible', 'elegibles'], BORDE: ['en el borde', 'en el borde'], NO_ELEGIBLE: ['no elegible', 'no elegibles'], SIN_DATO: ['sin fecha', 'sin fecha'] };
-function armarRanking(conFiltros, cuantos){
-  const m = new Map(), porFiltro = conFiltros && RANKING_FILTRADO[F.elig];
-  for(const r of registros){ if(conFiltros && !pasa(r, true)) continue; const d = r.derivado; if(!evaluable(d)) continue; const k = claveGrupo(d);
-    if(!m.has(k)) m.set(k, { nombre: k, dep: agrupacion === 'departamento' ? '' : (d.geo && d.geo.dep_nombre || ''), total: 0, eleg: 0, est: 0 }); const f = m.get(k); f.total++;
+const nivelLugar = () => $('fSec').value || $('fLoc').value ? 'seccion' : $('fDep').value ? 'localidad' : agrupacion;
+const claveNivel = (d, n) => n === 'departamento' ? dep(d) : n === 'seccion' ? (sec(d) || '(SIN SECCIÓN)') : loc(d);
+const NIVEL_PLURAL = { departamento: 'departamentos', localidad: 'localidades', seccion: 'secciones' };
+function pintarRanking(){
+  const nivel = nivelLugar(), lugarPuesto = !!($('fDep').value || $('fLoc').value || $('fSec').value), CUANTOS = 40;
+  $('hPorLugar').textContent = 'Por lugar · ' + NIVEL_PLURAL[nivel]; $('agrupar2').classList.toggle('oculto', lugarPuesto);
+  const m = new Map(), porFiltro = RANKING_FILTRADO[F.elig], conEst = registros.some(deLaPlanilla);
+  for(const r of vista){ const d = r.derivado; if(!evaluable(d)) continue; const k = claveNivel(d, nivel);
+    if(!m.has(k)) m.set(k, { nombre: k, dep: nivel === 'departamento' ? '' : (d.geo && d.geo.dep_nombre || ''), total: 0, eleg: 0, est: 0, sin: 0 }); const f = m.get(k); f.total++;
+    if(!enElMapa(r)) f.sin++;
     if(porFiltro || cl(d).startsWith('ELEGIBLE')){ f.eleg++; if(deLaPlanilla(r)) f.est++; } }
-  const lista = Array.from(m.values()).sort((a, b) => b.eleg - a.eleg || b.total - a.total), max = Math.max(1, ...lista.map(x => x.eleg));
-  const conEst = registros.some(deLaPlanilla), w = x => (x / max * 100).toFixed(2);
-  const comp = x => conEst ? [x.est ? plural(x.est, 'estimada', 'estimadas') : '', x.eleg - x.est ? plural(x.eleg - x.est, 'leída', 'leídas') : ''].filter(Boolean).join(' · ') : '';
+  const lista = [...m.values()].sort((a, b) => b.eleg - a.eleg || b.total - a.total), max = Math.max(1, ...lista.map(x => x.eleg)), w = x => (x / max * 100).toFixed(2);
+  const comp = x => conEst ? [x.est ? plural(x.est, 'estimado', 'estimados') : '', x.eleg - x.est ? plural(x.eleg - x.est, 'leído', 'leídos') : ''].filter(Boolean).join(' · ') : '';
   const cifra = x => porFiltro ? `${miles(x.eleg)}<small>${porFiltro[x.eleg === 1 ? 0 : 1]}</small>` : `${miles(x.eleg)}<small>${x.eleg === 1 ? 'elegible' : 'elegibles'} de ${miles(x.total)}</small>`;
-  const nota = conFiltros ? `${porFiltro ? 'Cuántos hay en cada lugar' : 'Elegibles de cada lugar'}, con los filtros de arriba.` : conEst ? 'Elegibles de cada lugar, de todos sus expedientes.' : '';
-  const html = lista.slice(0, cuantos).map(x => `<div class="item ${localidadSel === x.nombre ? 'on' : ''}" data-loc="${esc(x.nombre)}"><span>${esc(x.nombre)}<small>${esc([x.dep, comp(x)].filter(Boolean).join(' · '))}</small></span><div class="barra"><i class="est" style="width:${w(x.est)}%"></i><i style="width:${w(x.eleg - x.est)}%"></i></div><span class="cifra">${cifra(x)}</span></div>`).join('')
-    + (lista.length && (nota || conEst) ? `<div class="mini" style="margin-top:6px">${nota}${conEst ? ' Suma lo estimado con la planilla de la UEST (más claro en la barra) y lo leído en la resolución.' : ''}</div>` : '') || `<div class="vacio">${conFiltros && registros.length ? 'Nada coincide con estos filtros.' : 'Sin datos todavía.'}</div>`;
-  return html;
+  const sinP = x => x.sin ? `<small class="sin-parcela">${miles(x.sin)} sin parcela, no se ${x.sin === 1 ? 'dibuja' : 'dibujan'}</small>` : '';
+  const item = x => `<div class="item" data-nivel="${nivel}" data-lugar="${esc(x.nombre)}" role="button" tabindex="0" title="Ponerlo en el filtro Lugar"><span>${esc(x.nombre)}<small>${esc([x.dep, comp(x)].filter(Boolean).join(' · '))}</small>${sinP(x)}</span><div class="barra"><i class="est" style="width:${w(x.est)}%"></i><i style="width:${w(x.eleg - x.est)}%"></i></div><span class="cifra">${cifra(x)}</span></div>`;
+  // Lo que no entra en la lista se suma en un renglón: así lo que dice el panel suma lo que se ve.
+  const resto = lista.slice(CUANTOS), otros = resto.length ? resto.reduce((o, x) => { o.eleg += x.eleg; o.total += x.total; o.sin += x.sin; return o; }, { eleg: 0, total: 0, sin: 0 }) : null;
+  $('ranking2').innerHTML = lista.length ? lista.slice(0, CUANTOS).map(item).join('')
+    + (otros ? `<div class="item otros"><span>${plural(resto.length, 'lugar más', 'lugares más')}${sinP(otros)}</span><span class="cifra">${cifra(otros)}</span></div>` : '')
+    + `<div class="mini" style="margin-top:6px">${porFiltro ? 'Cuántos hay en cada lugar' : 'Elegibles de cada lugar'}, con los filtros de arriba. Tocar un lugar lo pone en el filtro Lugar.${conEst ? ' La parte rayada es lo estimado con la planilla; la llena, lo leído en la resolución.' : ''}</div>`
+    : `<div class="vacio">${registros.length ? 'Nada coincide con estos filtros.' : 'Sin datos todavía.'}</div>`;
 }
-function enlazarRanking(){
-  $('ranking2').querySelectorAll('.item').forEach(el => el.addEventListener('click', () => { localidadSel = localidadSel === el.dataset.loc ? null : el.dataset.loc; pagina = 0; pintarTodo(); }));
+/** Pone un lugar del panel en el filtro Lugar (departamento › localidad › sección) y vuelve a dibujar. */
+function ponerLugar(nivel, v){
+  const pon = (id, val) => { const s = $(id); if(val && ![...s.options].some(o => o.value === val)) s.add(new Option(val, val)); s.value = val; };
+  if(nivel === 'seccion' && v === '(SIN SECCIÓN)') return;
+  if(nivel === 'departamento'){ pon('fDep', v); pon('fLoc', ''); pon('fSec', ''); }
+  else if(nivel === 'localidad'){ pon('fLoc', v); pon('fSec', ''); }
+  else pon('fSec', v);
+  localidadSel = null; filtrar();
 }
-// Botones para cambiar el nivel de agrupación (departamento / localidad / sección catastral)
+$('ranking2').addEventListener('click', e => { const t = e.target.closest('.item[data-lugar]'); if(t) ponerLugar(t.dataset.nivel, t.dataset.lugar); });
+$('ranking2').addEventListener('keydown', e => { const t = e.target.closest('.item[data-lugar]'); if(t && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); ponerLugar(t.dataset.nivel, t.dataset.lugar); } });
+// Botones para cambiar el nivel del panel cuando no hay Lugar elegido (departamento / localidad / sección catastral)
 document.querySelectorAll('#agrupar2 .chip').forEach(b => b.addEventListener('click', () => {
   agrupacion = b.dataset.g; localidadSel = null;
   document.querySelectorAll('#agrupar2 .chip').forEach(x => x.classList.toggle('on', x.dataset.g === agrupacion));
-  pagina = 0; pintarTodo();
+  if(mapaVisible()) pintarRanking();
 }));
 /**
  * El cruce con el Padrón, en su caja de "Cargar y cruzar". Se cuenta solo lo que tiene resolución: las leídas y los
@@ -3224,11 +3358,12 @@ function abrirExpediente(hash){
   const r = registros.find(x => x.hash === hash); if(!r) return;
   if(mapa) mapa.closePopup();
   if(!guardados) guardados = estadoFiltros();
+  // Primero se pasa a la lista: así el mapa no se vuelve a dibujar encuadrado en este expediente (al volver, queda como estaba).
+  ir('expedientes');
   vaciarFiltros(); pagina = 0;
   // Con número se la busca; sin número se va a la página donde está en la lista completa.
   if(r.derivado.expediente){ $('buscar').value = r.derivado.expediente; pintarTodo(); }
   else { pintarTodo(); pagina = Math.max(0, Math.floor(ordenar(vista).indexOf(r) / POR_PAG)); pintarTabla(); }
-  ir('expedientes');
   setTimeout(() => {
     const idx = String(registros.indexOf(r));
     const fila = document.querySelector(`#filas tr.fila[data-i="${idx}"]`);
@@ -3240,7 +3375,7 @@ function abrirExpediente(hash){
 document.addEventListener('click', e => { const a = e.target.closest('[data-abrir]'); if(!a) return; e.preventDefault(); abrirExpediente(a.dataset.abrir); });
 /** Los expedientes de una misma parcela, juntos en la lista (se buscan por la cuenta). Lo que se estaba viendo vuelve con "volver". */
 document.addEventListener('click', e => { const a = e.target.closest('[data-cuenta]'); if(!a) return; e.preventDefault();
-  if(!guardados) guardados = estadoFiltros(); vaciarFiltros(); pagina = 0; $('buscar').value = a.dataset.cuenta; pintarTodo(); ir('expedientes'); });
+  if(mapa) mapa.closePopup(); if(!guardados) guardados = estadoFiltros(); ir('expedientes'); vaciarFiltros(); pagina = 0; $('buscar').value = a.dataset.cuenta; pintarTodo(); });
 /** Lleva a la tabla de Expedientes filtrada por estado en el Registro, para ver cuáles son. Las tarjetas del Registro cuentan lo leído. */
 /** Los nombres de Catastro y los del inventario difieren en abreviaturas: Gral./General, Pte./Presidente. */
 const CLAVE_DEP = new Map();   // son 26 departamentos: se normaliza cada nombre una sola vez
@@ -3298,7 +3433,8 @@ function iniciarMapa(){
 const LEYENDA_DEP = { ELEGIBLE: 'los elegibles', BORDE: 'los del borde', NO_ELEGIBLE: 'los no elegibles', SIN_DATO: 'los que no tienen fecha' };
 function pintarDepartamentosMapa(){
   const porFiltro = RANKING_FILTRADO[F.elig], azul = porFiltro && F.elig !== 'ELEGIBLE';
-  $('leyendaDep').textContent = `Departamentos sombreados según ${LEYENDA_DEP[F.elig] || 'los elegibles'}; se apagan desde el control de capas.`;
+  const conEst = vista.some(deLaPlanilla);
+  $('leyendaDep').textContent = `Departamentos sombreados según ${LEYENDA_DEP[F.elig] || 'los elegibles'}${conEst ? ' (incluye lo estimado con la planilla)' : ''}; se apagan desde el control de capas.`;
   if(!window.DEPARTAMENTOS || !capaDepMapa) return;
   try {
     capaDepMapa.clearLayers();
@@ -3306,8 +3442,8 @@ function pintarDepartamentosMapa(){
     for(const r of vista){
       const d = r.derivado; if(!evaluable(d)) continue;
       const k = claveDep(dep(d)); if(!k || k === claveDep('(SIN DEPARTAMENTO)')) continue;
-      const f = porDep.get(k) || { total: 0, eleg: 0 };
-      f.total++; if(porFiltro || cl(d).startsWith('ELEGIBLE')) f.eleg++;
+      const f = porDep.get(k) || { total: 0, eleg: 0, est: 0 };
+      f.total++; if(porFiltro || cl(d).startsWith('ELEGIBLE')){ f.eleg++; if(deLaPlanilla(r)) f.est++; }
       porDep.set(k, f);
     }
     const max = Math.max(1, ...[...porDep.values()].map(v => v.eleg));
@@ -3317,69 +3453,102 @@ function pintarDepartamentosMapa(){
         const t = v.eleg / max;
         return { color: '#16436e', weight: 1.2,
           fillColor: azul ? (t > .66 ? '#0f2f4e' : t > .33 ? '#16436e' : t > .12 ? '#5a7fa6' : '#b9cbe0') : t > .66 ? '#12492f' : t > .33 ? '#1d6b45' : t > .12 ? '#5a9b78' : '#b9d8c7', fillOpacity: .5 }; },
-      onEachFeature: (f, c) => { const v = porDep.get(claveDep(f.properties.n)) || { total: 0, eleg: 0 };
-        c.bindTooltip(`<b>${esc(f.properties.n)}</b><br>${porFiltro ? `${miles(v.eleg)} ${porFiltro[v.eleg === 1 ? 0 : 1]}` : `${miles(v.eleg)} ${v.eleg === 1 ? 'elegible' : 'elegibles'} de ${miles(v.total)}`}`, { sticky: true }); }
+      // El cartel dice de qué está hecha la cifra: cuánto es estimado con la planilla y cuánto está leído.
+      onEachFeature: (f, c) => { const v = porDep.get(claveDep(f.properties.n)) || { total: 0, eleg: 0, est: 0 };
+        c.bindTooltip(`<b>${esc(f.properties.n)}</b><br>${porFiltro ? `${miles(v.eleg)} ${porFiltro[v.eleg === 1 ? 0 : 1]}` : `${miles(v.eleg)} ${v.eleg === 1 ? 'elegible' : 'elegibles'} de ${miles(v.total)}`}`
+          + (conEst && v.eleg ? `<br><span class="mini">${plural(v.est, 'estimado', 'estimados')} con la planilla · ${miles(v.eleg - v.est)} con la resolución leída</span>` : ''), { sticky: true }); }
     }).addTo(capaDepMapa);
   } catch(err) { console.error('No se pudieron dibujar los departamentos en el mapa:', err); }
 }
 const COLOR = { v: '#1d6b45', a: '#c9911e', g: '#8a94a6', r: '#c9463a' };
+/** El color de un punto dice el resultado (el mejor de los que hay ahí): verde elegible, ocre en el borde, gris no elegible, rojo sin fecha. */
+const colorDe = cls => cls.some(c => c === 'ELEGIBLE') ? 'v' : cls.some(c => c.endsWith('_BORDE')) ? 'a' : cls.every(c => c === 'NO_ELEGIBLE' || c === 'NO_APLICA') ? 'g' : 'r';
+/**
+ * La forma dice la certeza: punteado = estimado con la planilla, lleno = leído, lleno con tilde = controlado. Un punto
+ * con varios expedientes se dibuja punteado si alguno es estimado (lo estimado nunca se ve como firme) y con tilde solo si
+ * todos están controlados; el globo dice cuántos hay de cada uno.
+ */
+const certezaPunto = rs => rs.some(deLaPlanilla) ? 'estimado' : rs.every(r => certeza(r) === 'controlado') ? 'controlado' : 'leido';
+const claveCoord = g => g.lat.toFixed(6) + ',' + g.lon.toFixed(6);
+/** Los puntos con lo que se ve: un grupo por parcela (por coordenadas). Lo usan el mapa y el .kml, así bajan lo mismo. */
+function puntosDelMapa(){
+  const grupos = new Map(); let sin = 0;
+  for(const r of vista){ if(!enElMapa(r)){ sin++; continue; } const k = claveCoord(r.derivado.geo); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(r); }
+  return { grupos, sin };
+}
+let MARCA_DE = new Map();   // expediente → su punto, para "Ver en el mapa"
 function pintarMapa(){
   if(!mapa) return;
-  pintarDepartamentosMapa();
-  capa.clearLayers();
-  const grupos = new Map();
-  for(const r of vista){ const d = r.derivado; if(!d.geo || d.geo.lat == null) continue; const k = d.geo.lat.toFixed(6) + ',' + d.geo.lon.toFixed(6); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(r); }
-  const pts = [];
+  pintarDepartamentosMapa(); pintarRanking();
+  capa.clearLayers(); MARCA_DE = new Map();
+  const { grupos, sin: nSin } = puntosDelMapa(), pts = [];
   for(const [k, rs] of grupos){
     const ds = rs.map(r => r.derivado);
     const [lat, lon] = k.split(',').map(Number); pts.push([lat, lon]);
-    const cls = ds.map(cl);
-    const col = cls.some(c => c === 'ELEGIBLE') ? COLOR.v : cls.some(c => c.endsWith('_BORDE')) ? COLOR.a : cls.every(c => c === 'NO_ELEGIBLE' || c === 'NO_APLICA') ? COLOR.g : COLOR.r;
-    const aprox = ds.every(d => d.geo.ubicacion_aproximada), est = rs.every(deLaPlanilla);
-    // El globo se arma recién al abrirlo, y con los primeros 25: en el centro de una localidad puede haber miles. Dice
-    // cuántos son y de dónde sale cada uno (estimado con la planilla o leído), con su estado en el Padrón y en Catastro.
-    const html = () => { const nEst = rs.filter(deLaPlanilla).length, nLei = rs.length - nEst;
-      return `<div style="font:12.5px Public Sans,sans-serif;max-width:310px"><b>${esc(loc(ds[0]))}</b>${aprox ? '' : ' · ' + esc(mz(ds[0]))}<br>` +
+    const col = COLOR[colorDe(ds.map(cl))], cert = certezaPunto(rs), radio = 7 + Math.min(ds.length, 8);
+    // El globo se arma recién al abrirlo, y con los primeros 25. Dice cuántos son y la certeza de cada uno (estimado,
+    // leído o controlado), con lo que dice cada fuente: la planilla, el Padrón, Catastro y el inventario.
+    const html = () => { const nEst = rs.filter(deLaPlanilla).length, nLei = rs.length - nEst, cuentas = new Set(ds.map(d => d.geo.cuenta_normalizada).filter(Boolean));
+      return `<div style="font:12.5px Public Sans,sans-serif;max-width:100%"><b>${esc(loc(ds[0]))}</b>${mz(ds[0]) ? ' · ' + esc(mz(ds[0])) : ''}<br>` +
       `<span class="globo-cuenta">${rs.length === 1 ? (nEst ? 'Un expediente, estimado con la planilla de la UEST (no se leyó la resolución)' : 'Un expediente, con la resolución leída')
         : `${miles(rs.length)} expedientes en este punto: ` + (nEst && nLei ? `${plural(nEst, 'estimado', 'estimados')} con la planilla · ${miles(nLei)} con la resolución leída` : nEst ? 'todos estimados con la planilla (no se leyó la resolución)' : 'todos con la resolución leída')}</span><br>` +
-      (aprox ? `<span style="color:var(--ambar)">Ubicación aproximada: centro de la localidad, porque no hay parcela de Catastro para ${ds.length > 1 ? 'estos expedientes' : 'este expediente'}.</span><br>` : '') +
       (hayPadron() ? '' : '<span class="mini">Padrón del Registro: no cargado.</span><br>') +
       // La lista corre adentro del globo: con varios en el mismo punto, el globo no tapa todo el mapa.
-      '<div class="globo-lista" style="margin-top:4px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding-right:4px">' + rs.slice(0, 25).map(r => { const d = r.derivado, est = deLaPlanilla(r), ed = edificacion(d.geo && d.geo.catastro);
+      '<div class="globo-lista" style="margin-top:4px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding-right:4px">' + rs.slice(0, 25).map(r => { const d = r.derivado, c = certeza(r), ed = edificacion(d.geo && d.geo.catastro), pe = r.planilla_estimaba;
         return `<div class="globo-exp"><a href="#" data-abrir="${esc(r.hash)}" style="font-weight:700">${esc(d.expediente || 'sin número')}</a> — ${esc(d.rogante_principal || '')}<br><span class="mini">`
-          + esc([mayus1(nombreClase(cl(d))) + (est ? ' (estimado)' : ' · resolución leída'), hayPadron() && 'Padrón: ' + padronTexto(d, true), ed && 'Catastro: ' + ed].filter(Boolean).join(' · '))
+          + esc([mayus1(nombreClase(cl(d))) + (c === 'estimado' ? ' (estimado)' : c === 'controlado' ? ' · resolución leída y controlada' : ' · resolución leída'),
+            c !== 'estimado' && pe && pe.clasificacion && 'la planilla estimaba ' + nombreClase(pe.clasificacion), hayPadron() && 'Padrón: ' + padronTexto(d, true), ed && 'Catastro: ' + ed,
+            hayInventario() && 'Inventario: ' + (r.inventario ? r.inventario.estado_digitalizacion || 'figura' : 'no está')].filter(Boolean).join(' · '))
           + (SERVIDOR && !WEB ? ` · <a href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">ver PDF</a>` : '') + '</span></div>'; }).join('') + '</div>' +
-      (rs.length > 25 ? `<div class="mini" style="margin-top:6px">y ${miles(rs.length - 25)} más: elegí la localidad en el panel de la derecha para verlos en Expedientes.</div>` : '') +
-      `<div class="mini" style="margin-top:4px">Tocá el número para abrir el expediente.</div></div>`; };
-    // Lleno: resolución leída. Claro: estimado con la planilla. Borde punteado: ubicación aproximada, por la localidad.
-    L.circleMarker([lat, lon], aprox
-      ? { radius: 9 + Math.min(ds.length, 8), color: est ? '#fff' : col, weight: est ? 2 : 2.5, dashArray: '4 3', fillColor: col, fillOpacity: est ? .3 : .18 }
-      : est ? { radius: 7 + Math.min(ds.length, 8), color: '#fff', weight: 1.5, fillColor: col, fillOpacity: .35 }
-      : { radius: 7 + Math.min(ds.length, 8), color: '#fff', fillColor: col, fillOpacity: .9, weight: 1.5 }).bindPopup(html).addTo(capa);
+      (rs.length > 25 ? `<div class="mini" style="margin-top:6px">y ${miles(rs.length - 25)} más: ${cuentas.size === 1 ? `<a href="#" data-cuenta="${esc([...cuentas][0])}">verlos todos en la lista</a>` : `<a href="#" data-ver-loc="${esc(loc(ds[0]))}">ver los de ${esc(loc(ds[0]))} en la lista</a>`}.</div>` : '') +
+      `<div class="mini" style="margin-top:4px">Tocá el número para abrir la ficha.</div></div>`; };
+    const estilo = cert === 'estimado' ? { radius: radio, color: col, weight: 2, dashArray: '3 3', fillColor: col, fillOpacity: .22 }
+      : cert === 'controlado' ? { radius: radio + 1, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1 }
+      : { radius: radio, color: '#fff', weight: 1.5, fillColor: col, fillOpacity: .9 };
+    // En el teléfono el globo no puede tapar los botones + y −: se corre un poco al abrirse.
+    const m = L.circleMarker([lat, lon], estilo).bindPopup(html, { autoPanPaddingTopLeft: L.point(48, 10) }).addTo(capa);
+    if(cert === 'controlado') L.marker([lat, lon], { icon: L.divIcon({ className: 'tilde-mapa', html: '✓', iconSize: [12, 12] }), interactive: false, keyboard: false }).addTo(capa);
+    for(const r of rs) MARCA_DE.set(r, m);
   }
-  $('leyendaEst').classList.toggle('oculto', !vista.some(deLaPlanilla));
-  // La línea del mapa: cuántos se ven con los filtros, de cuántos hay en el mapa, de qué están hechos y "ver todos".
-  const ubic = vista.filter(r => r.derivado.geo && r.derivado.geo.lat != null), nAprox = ubic.filter(r => r.derivado.geo.ubicacion_aproximada).length;
-  const nEstU = ubic.filter(deLaPlanilla).length, act = filtrosActivos();
-  let enMapa = 0; if(act.length) for(const r of registros) if(r.derivado.geo && r.derivado.geo.lat != null) enMapa++;
-  $('subMapa').innerHTML = (act.length ? `${miles(ubic.length)} de ${miles(enMapa)} expedientes en el mapa` : `${miles(ubic.length)} expedientes en el mapa`)
-    + (registros.some(deLaPlanilla) ? ` (${plural(nEstU, 'estimado', 'estimados')} con la planilla · ${miles(ubic.length - nEstU)} con la resolución leída)` : '')
-    + (nAprox ? ` · ${miles(nAprox)} con ubicación aproximada (por localidad)` : '') + (vista.length - ubic.length ? ` · ${miles(vista.length - ubic.length)} sin ubicar (sin cuenta ni localidad legible)` : '')
+  // La línea del mapa: cuántos pasan los filtros, de qué están hechos, cuántos se dibujan y cuántos no tienen parcela.
+  const nEst = vista.filter(deLaPlanilla).length, nCtrl = vista.filter(r => certeza(r) === 'controlado').length, act = filtrosActivos(), nMapa = vista.length - nSin;
+  $('subMapa').innerHTML = `<b>${miles(vista.length)}</b>${act.length ? ` de ${miles(registros.length)}` : ''} ${(act.length ? registros.length : vista.length) === 1 ? 'expediente' : 'expedientes'}`
+    + (registros.some(deLaPlanilla) ? ` · ${plural(nEst, 'estimado', 'estimados')} con la planilla · ${miles(vista.length - nEst)} con la resolución leída` : '') + (nCtrl ? ` (${plural(nCtrl, 'controlado', 'controlados')})` : '')
+    + ` · <b>${miles(nMapa)} en el mapa</b>` + (nSin ? ` · ${miles(nSin)} sin parcela, no se ${nSin === 1 ? 'dibuja' : 'dibujan'} (se cuentan en "Por lugar")` : '')
     + (act.length ? ` · <b style="color:var(--ambar)">filtrando por: ${esc(act.join(', '))}</b> · <a href="#" id="verTodosMapa">ver todos</a>` : '');
   const vt = $('verTodosMapa'); if(vt) vt.addEventListener('click', e => { e.preventDefault(); limpiarFiltros(); });
-  if(pts.length && !mantenerEncuadre) mapa.fitBounds(pts, { padding: [24, 24], maxZoom: 16 });
+  $('expKml').textContent = `Bajar para Google Maps (.kml) (${miles(nMapa)})`; $('expKml').disabled = !nMapa;
+  // "Ver en el mapa": se centra en ese expediente y se abre su globo. Si no, vuelve el acercamiento guardado, o se encuadra todo.
+  const pend = pendienteMapa; pendienteMapa = null;
+  const mPend = pend && MARCA_DE.get(pend);
+  if(mPend){ encuadreGuardado = null; mapa.setView(mPend.getLatLng(), Math.max(mapa.getZoom(), 16)); mPend.openPopup();
+    if(window.matchMedia && matchMedia('(max-width:760px)').matches) try{ $('mapa').scrollIntoView({ block: 'start' }); }catch(e){} }
+  else if(encuadreGuardado){ mapa.setView(encuadreGuardado.c, encuadreGuardado.z); encuadreGuardado = null; }
+  else if(pts.length && !mantenerEncuadre) mapa.fitBounds(pts, { padding: [24, 24], maxZoom: 16 });
 }
+/** "ver los de esta localidad en la lista" (globo con muchos): la lista con los mismos filtros, más esa localidad. */
+document.addEventListener('click', e => { const a = e.target.closest('[data-ver-loc]'); if(!a) return; e.preventDefault();
+  if(mapa) mapa.closePopup(); guardados = estadoFiltros();
+  const s = $('fLoc'), v = a.dataset.verLoc; $('fDep').value = ''; $('fSec').value = ''; if(![...s.options].some(o => o.value === v)) s.add(new Option(v, v)); s.value = v;
+  ir('expedientes'); pagina = 0; pintarTodo(); });
 
 $('expJson').addEventListener('click', () => descargar(JSON.stringify({ sistema: 'Relevamiento Ley Pierri', autor: 'Baltasar Corna Fantin', organismo: 'Escribanía General de Gobierno de Córdoba', fecha: new Date().toISOString(), origen: origenNombre, config: config(), resumen: resumenSrv, resultados: registros }, null, 1), 'relevamiento_ley_pierri.json', 'application/json'));
+/**
+ * El .kml para Google Maps baja lo mismo que dibuja el mapa (con la parcela). Cada punto lleva el color del resultado,
+ * más claro si incluye estimados, y la certeza en el nombre: "estimado", "incluye estimados", "leído" o "controlado".
+ */
 $('expKml').addEventListener('click', () => {
-  const grupos = new Map();
-  for(const r of vista){ const d = r.derivado; if(!d.geo || d.geo.lat == null) continue; const k = d.geo.lat.toFixed(6) + ',' + d.geo.lon.toFixed(6); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(Object.assign({ _est: deLaPlanilla(r) }, d)); }
+  const { grupos } = puntosDelMapa();
   const x = s => String(s == null ? '' : s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-  const marcas = Array.from(grupos.entries()).map(([k, ds]) => { const [lat, lon] = k.split(',');
-    const desc = ds.map(d => `${d.expediente} — ${d.rogante_principal || ''} — ${mayus1(nombreClase(cl(d)))}${d._est ? ' (estimado con la planilla de la UEST, sin la resolución leída)' : ''} — posee desde ${fechaExcel(d.posee_desde, d.posee_desde_precision) || '?'}`).join('\n');
-    const eleg = ds.some(d => cl(d) === 'ELEGIBLE'), est = ds.every(d => d._est);
-    return `<Placemark><name>${x(loc(ds[0]) + ' ' + mz(ds[0]) + ' (' + ds.length + ')')}</name><description>${x(desc)}</description><styleUrl>#${eleg ? (est ? 'est' : 'eleg') : 'otro'}</styleUrl><Point><coordinates>${lon},${lat},0</coordinates></Point></Placemark>`; }).join('\n');
-  descargar(`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Relevamiento Ley Pierri</name><description>Escribanía General de Gobierno de Córdoba · Baltasar Corna Fantin · {FECHA}</description><Style id="eleg"><IconStyle><color>ff456b1d</color><scale>1.1</scale></IconStyle></Style><Style id="otro"><IconStyle><color>ffa6948a</color><scale>0.9</scale></IconStyle></Style><Style id="est"><IconStyle><color>8c456b1d</color><scale>0.9</scale></IconStyle></Style>\n${marcas}</Document></kml>`.replace('{FECHA}', new Date().toLocaleDateString('es-AR')), 'relevamiento_ley_pierri.kml', 'application/vnd.google-earth.kml+xml');
+  const CERT_KML = { estimado: 'estimado con la planilla', leido: 'leído', controlado: 'controlado' };
+  const marcas = Array.from(grupos.entries()).map(([k, rs]) => { const [lat, lon] = k.split(','), ds = rs.map(r => r.derivado);
+    const desc = rs.map(r => { const d = r.derivado, c = certeza(r); return `${d.expediente} — ${d.rogante_principal || ''} — ${mayus1(nombreClase(cl(d)))}${c === 'estimado' ? ' (estimado con la planilla de la UEST, sin la resolución leída)' : c === 'controlado' ? ' (resolución leída y controlada)' : ' (resolución leída)'} — posee desde ${fechaExcel(d.posee_desde, d.posee_desde_precision) || '?'}`; }).join('\n');
+    const cert = certezaPunto(rs), nEst = rs.filter(deLaPlanilla).length, cual = nEst && nEst < rs.length ? 'incluye estimados' : CERT_KML[cert];
+    return `<Placemark><name>${x([loc(ds[0]), mz(ds[0])].filter(Boolean).join(' ') + ' (' + ds.length + ') · ' + cual)}</name><description>${x(desc)}</description><styleUrl>#${colorDe(ds.map(cl))}${cert === 'estimado' ? '-est' : ''}</styleUrl><Point><coordinates>${lon},${lat},0</coordinates></Point></Placemark>`; }).join('\n');
+  // Los colores del mapa, en el orden de KML (aabbggrr); lo que incluye estimados, translúcido.
+  const KML_COL = { v: '456b1d', a: '1e91c9', g: 'a6948a', r: '3a46c9' };
+  const estilos = Object.entries(KML_COL).map(([k, c]) => `<Style id="${k}"><IconStyle><color>ff${c}</color><scale>1.1</scale></IconStyle></Style><Style id="${k}-est"><IconStyle><color>8c${c}</color><scale>0.9</scale></IconStyle></Style>`).join('');
+  descargar(`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Relevamiento Ley Pierri</name><description>Escribanía General de Gobierno de Córdoba · Baltasar Corna Fantin · {FECHA}</description>${estilos}\n${marcas}</Document></kml>`.replace('{FECHA}', new Date().toLocaleDateString('es-AR')), 'relevamiento_ley_pierri.kml', 'application/vnd.google-earth.kml+xml');
 });
 function descargar(contenido, nombre, tipo){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([contenido], { type: tipo })); a.download = nombre; a.click(); URL.revokeObjectURL(a.href); }
 /** Un aviso arriba de la pantalla, se esté donde se esté. Lo que salió bien se va solo; un error queda hasta cerrarlo. */
