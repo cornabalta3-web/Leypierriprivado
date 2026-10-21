@@ -177,7 +177,9 @@
   function hastaCuando(h) {
     if (!h || typeof h.get !== 'function') return null;
     const ra = Number(h.get('retry-after')), reset = Number(h.get('x-ratelimit-reset'));
-    const t = ra > 0 ? Date.now() + ra * 1000 : reset > 0 ? reset * 1000 : null;
+    // x-ratelimit-reset dice cuándo se renueva el cupo por hora: solo vale si ese cupo se agotó. Con un límite secundario
+    // (cupo libre y sin retry-after) no se sabe la hora, y el aviso dice "esperá unos minutos".
+    const t = ra > 0 ? Date.now() + ra * 1000 : reset > 0 && h.get('x-ratelimit-remaining') === '0' ? reset * 1000 : null;
     return t ? new Date(t + 59999).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) : null;   // redondeado al minuto siguiente
   }
   function errorGitHub(status, j, h) {
@@ -771,7 +773,7 @@
       margenBordeMeses: Number.isFinite(m) && m >= 0 ? Math.min(36, Math.round(m)) : actual.margenBordeMeses };
     if (nuevo.regla === actual.regla && nuevo.fechaCorte === actual.fechaCorte && nuevo.margenBordeMeses === actual.margenBordeMeses) return { ok: true, sin_cambios: true };
     exigirToken();
-    const texto = (nuevo.regla === 'CORTE_FIJO' ? 'corte fijo: posesión anterior al ' + nuevo.fechaCorte.split('-').reverse().join('/') : 'plazo móvil de diez años')
+    const texto = (nuevo.regla === 'CORTE_FIJO' ? 'corte fijo: posesión anterior al ' + nuevo.fechaCorte.split('-').reverse().join('/') : 'plazo móvil de 10 años al día de hoy (proyecto PE-13/26, con media sanción)')
       + ` · borde ±${nuevo.margenBordeMeses} meses`;
     await guardarUno(s, 'criterio', () => Object.assign({}, nuevo, { en: ahora(), por: s.usuario }), 'cambio_de_criterio', texto);
     return { ok: true };
@@ -878,12 +880,18 @@
     const conPlanilla = sia ? todos.concat(sia.registros) : todos;
     if (sia && indiceInv) B.anexarInventario(sia.registros, indiceInv);
     // El Padrón. Lo leído se cruza solo, igual que en el kit: la planilla no le cambia el resultado ni los conteos. La
-    // planilla se cruza junto con lo leído (si su iniciador también tiene una resolución leída, su expediente queda
-    // ambiguo), y después lo leído se vuelve a cruzar solo, que es lo que queda.
+    // planilla se cruza junto con lo leído (si su iniciador también tiene una resolución leída de otro expediente, queda
+    // ambiguo), y después lo leído se vuelve a cruzar solo, que es lo que queda. Una lectura del mismo expediente que una
+    // estimación (de trámite o sin leer, que no la reemplaza) no entra en ese cruce: si no, la estimación daría
+    // "ambigua" por su propio expediente.
     let cruce = null;
     if (c.padron) {
       const filasP = c.padron.filas || [], inv = indiceInv || new Map();
-      if (sia) { B.cruzarConPadron(conPlanilla, filasP, inv); window.PierriSIA.controlarCruce(sia.registros); }
+      if (sia) {
+        const canon = window.PierriSIA.canonExpediente, expEst = new Set(sia.registros.map(r => canon(r.derivado.expediente)).filter(Boolean));
+        const otras = todos.filter(r => !r.derivado || !expEst.has(canon(r.derivado.expediente)));
+        B.cruzarConPadron(otras.concat(sia.registros), filasP, inv); window.PierriSIA.controlarCruce(sia.registros);
+      }
       cruce = B.cruzarConPadron(todos, filasP, inv);
     }
     P.detectarClusters(todos.filter(r => r.derivado && !r.repetido_de && !r.error).map(r => r.derivado));

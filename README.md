@@ -9,10 +9,10 @@ Escribanía General de Gobierno de la Provincia de Córdoba.
 ## Qué hace
 
 1. **Lee** cada resolución en PDF y extrae los datos: número de expediente, rogante, DNI, fecha desde la que se declara la posesión, número de cuenta, matrícula, tipo de documento.
-2. **Clasifica** cada expediente como elegible, no elegible, de borde o a revisar, aplicando el criterio de antigüedad de la ley.
+2. **Clasifica** cada expediente como **Elegible** o **No elegible**, marca los que quedan cerca del corte ("en el borde") y deja aparte los que no tienen fecha. Elegible quiere decir que cumple el requisito de antigüedad de la posesión según el criterio configurado; los demás requisitos de la ley se verifican en el trámite.
 3. **Ubica** el inmueble en el mapa, por número de cuenta contra el servicio de Catastro de Córdoba, y por localidad cuando no hay cuenta.
 4. **Cruza** con el padrón del Registro General para saber cuáles ya están inscriptas.
-5. **Muestra** todo en un tablero local: listado filtrable, mapa, y el expediente abierto al lado de su PDF para corregir a mano lo que haga falta.
+5. **Muestra** todo en un tablero con cinco entradas: **Resumen** (cuántos son elegibles, qué falta y dónde están), **Expedientes** (lista y mapa con una sola barra de filtros, y la ficha de cada uno al lado de su PDF para controlarla), **Planilla de trámites** (solo en la web), **Cargar y cruzar** y **Configuración**. Cada resultado lleva su certeza: estimado con la planilla, leído o controlado.
 
 Lee primero la capa de texto del PDF, que no tiene costo. Solo cuando el texto no alcanza —resoluciones escaneadas sin capa de texto— consulta un modelo de lenguaje. En las pruebas, la mayoría se resuelve sin costo.
 
@@ -80,7 +80,7 @@ El sistema trata datos personales de miles de ciudadanos: nombre, DNI, domicilio
 | `pierri_lector.js` | lectura de un PDF: carril texto y carril modelo |
 | `pierri_tomos.js` | tomos y carril texto, compartido entre el kit y la web |
 | `pierri_base.js` | Padrón, inventario y repetidos para la web, con las reglas del kit |
-| `pierri_sia.js` | la planilla de trámites de la UEST: estima la posesión de cada expediente sin el PDF (solo la web) |
+| `pierri_sia.js` | la planilla de trámites (SIA): estima la posesión de cada expediente sin el PDF y fija la muestra al azar (solo la web) |
 | `procesar_lote.js` | el motor de línea de comandos para carpetas grandes |
 | `cruzar_padron.js` | cruce con el padrón del Registro General |
 | `web/pierri_web.js` | la versión web: el sistema desde un link; lee los PDF en el navegador y guarda todo cifrado en GitHub |

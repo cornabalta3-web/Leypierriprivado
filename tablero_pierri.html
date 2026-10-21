@@ -113,9 +113,11 @@ button.chip.etiqueta-f .x{margin-left:6px;font-weight:700}
 /* En pantallas angostas los filtros se pliegan bajo "Filtros", cerrados de entrada. */
 .btn-filtros{display:none}
 @media (max-width:760px){.btn-filtros{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.filtros-cuerpo:not(.abierto){display:none}.grupos-filtro{gap:12px}}
-/* En el teléfono el rogante va debajo del número de expediente: así entra la columna Estado, que dice si es estimado. */
-.solo-movil{display:none}
-@media (max-width:760px){#v-expedientes .col-rog{display:none}#filas .solo-movil{display:block;font-weight:400;color:var(--texto);margin-top:3px}#v-expedientes th{white-space:normal}#v-expedientes th,#filas td{padding:9px 8px}}
+/* En ventanas de menos de 1180 px (media pantalla, o el escalado de Windows al 125 %) el lugar y "Ver en el mapa" van
+   debajo del número de expediente, y por debajo de 900 px también el nombre: así la lista entra sin cortarse a la derecha. */
+.solo-movil,.sin-col-lugar{display:none}
+@media (max-width:1180px){#v-expedientes .col-sec{display:none}#filas .sin-col-lugar{display:block;font-weight:400;color:var(--texto);margin-top:3px;white-space:normal}#filas .tag{white-space:normal}}
+@media (max-width:900px){#v-expedientes .col-rog{display:none}#filas .solo-movil{display:block;font-weight:400;color:var(--texto);margin-top:3px;white-space:normal}#v-expedientes th{white-space:normal}#v-expedientes th,#filas td{padding:9px 8px}}
 button.chip.v.on{border-color:var(--verde);background:var(--verde)}
 button.chip.a.on{border-color:#c9911e;background:var(--ambar2);color:var(--ambar)}
 .protagonista{background:var(--blanco);border:1px solid var(--linea);border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:11px}
@@ -141,6 +143,19 @@ button.chip.a.on{border-color:#c9911e;background:var(--ambar2);color:var(--ambar
 .protagonista .barra.comp{height:16px;border-radius:6px;gap:0}
 .tramo-ctrl{background:var(--verde-firme);color:var(--blanco)}
 .protagonista .cuadro.tramo-ctrl{width:13px;height:13px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;vertical-align:-2px}
+/* Planilla de trámites: el archivo arriba, el reparto en una barra que se toca (rayado = estimado) y tres paneles. */
+.archivo-sia{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--blanco);border:1px solid var(--linea);border-radius:12px;padding:10px 16px;font-size:14px}
+.archivo-sia #siaSub{overflow-wrap:anywhere;min-width:0}
+.panel.reparto-sia{border:2px dashed var(--verde);padding:18px 22px;gap:12px}
+.barra-sia{display:flex;height:22px;border-radius:6px;overflow:hidden;gap:2px}
+.barra-sia a{display:block;min-width:6px} .barra-sia a:hover{filter:brightness(.9)} .barra-sia a:focus-visible{outline:2px solid var(--marca);outline-offset:-2px}
+.barra-sia .tramo-est{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.5) 0 6px,transparent 6px 12px)}
+.leyenda-sia{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px}
+.leyenda-sia a{color:var(--texto);text-decoration:none;border-radius:4px} .leyenda-sia a:hover b{text-decoration:underline} .leyenda-sia .mini{color:var(--texto2)}
+.leyenda-sia .cuadro{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+.reparto-sia .linea{font-size:12.5px;color:var(--texto2);line-height:1.45;margin:0}
+.tres-sia{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;align-items:start}
+.tres-sia .fila-m{font-size:14px}
 .pasos{gap:0}
 .pasos .paso{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 6px;border-bottom:1px solid var(--linea);border-radius:6px}
 .pasos .paso .txt{display:flex;flex-direction:column;gap:2px}
@@ -307,7 +322,9 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 #mapa,#mapaInv{position:relative;z-index:0} #mapa{height:560px;border-radius:var(--r);border:1px solid var(--linea);background:var(--suave)}
 .leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--texto2)}
 .punto{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
-@media (max-width:760px){.app{grid-template-columns:1fr}nav{position:static;height:auto;flex-direction:row;flex-wrap:wrap;padding:12px}.logo{padding:4px 10px;width:100%}nav .pie{width:100%;padding:6px 10px 0}nav .pie:last-child{display:none}main{padding:16px}.cab h1{font-size:22px}#mapa{height:380px}.col-sec{display:none}}
+/* En el teléfono el menú va en una sola fila que se corre de costado (antes ocupaba media pantalla en cada vista):
+   el logo, las cinco entradas, el usuario con sus botones y el modo oscuro. */
+@media (max-width:760px){.app{grid-template-columns:1fr}nav{position:static;height:auto;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;align-items:center;gap:2px;padding:8px 10px;scrollbar-width:thin}.logo{padding:0 8px 0 0;width:auto;flex:0 0 auto}.logo small{display:none}nav a.item{flex:0 0 auto;white-space:nowrap;padding:8px 10px}nav .pie{width:auto;flex:0 0 auto;margin-top:0;padding:0 4px}nav .pie.usuario-pie{display:flex;align-items:center;gap:6px;white-space:nowrap}nav .pie.usuario-pie br{display:none}nav .pie.usuario-pie button{margin-top:0}nav .pie.usuario-pie b{display:inline}nav .pie:last-child{display:none}main{padding:16px}.cab h1{font-size:22px}#mapa{height:380px}.col-sec{display:none}}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--blanco);color:var(--texto)}
 .leaflet-container a.leaflet-popup-close-button{color:var(--texto2)}
 .leaflet-popup-content a{color:var(--acento)}
@@ -450,27 +467,34 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
   </section>
 
   <section class="vista oculto" id="v-planilla">
-    <div class="cab"><div><h1>Planilla de trámites de la UEST</h1><p id="siaBajada">La exportación del sistema de la UEST, un expediente por fila. Con la fecha de ingreso del trámite menos la antigüedad que se declaró al iniciarlo se <b>estima</b> desde cuándo posee cada uno, sin abrir el PDF. Es una estimación: cuando se lee la resolución, manda la lectura.</p></div>
-      <div class="acciones" id="siaAcciones"><button id="btnSIA" class="sec">Cargar planilla (.xlsx)</button><button id="btnSIALista">Bajar la lista para pedir los PDF</button></div></div>
+    <!-- Como el mockup Planilla.dc.html: el archivo, el reparto en una barra que se toca, cuánto se le puede creer, qué PDF
+         pedir y dónde está cada uno. Todo lo de esta pantalla es estimado, salvo lo que ya tiene la resolución leída. -->
+    <div class="cab"><div><h1>Planilla de trámites</h1><p id="siaBajada">La planilla de trámites (SIA), un expediente por fila. Estima desde cuándo posee cada uno: la fecha de ingreso menos la antigüedad que se declaró al iniciar el trámite. Es una <b>estimación</b>: cuando se lee la resolución, manda la lectura.</p></div></div>
     <input id="fileSIA" type="file" accept=".xlsx,.xls" class="oculto">
-    <div class="origen" id="siaSub"></div>
+    <div class="archivo-sia" id="siaArchivo"><span id="siaSub"></span><div class="acciones" id="siaAcciones"><button id="btnSIA" class="sec">Cargar planilla (.xlsx): reemplaza la anterior</button></div></div>
     <div id="siaProgreso" class="mini"></div>
     <div class="panel oculto" id="siaVacia"><div class="cuerpo" style="padding:22px 24px;gap:10px">
       <h2 style="font-size:18px">Todavía no se cargó la planilla</h2>
-      <p style="margin:0;max-width:760px">Es la exportación del sistema de la UEST (SIA), con un expediente por fila. Con la fecha de ingreso de cada trámite menos la antigüedad que se declaró al iniciarlo, el sistema <b>estima</b> si cada expediente es elegible o no elegible por la antigüedad de la posesión, sin abrir un solo PDF. Es una estimación: cuando se lee la resolución de un expediente, manda la lectura.</p>
+      <p style="margin:0;max-width:760px">Es la planilla de trámites (SIA), con un expediente por fila. Con la fecha de ingreso de cada trámite menos la antigüedad que se declaró al iniciarlo, el sistema <b>estima</b> si cada expediente es elegible o no elegible por la antigüedad de la posesión, sin abrir un solo PDF. Es una estimación: cuando se lee la resolución de un expediente, manda la lectura.</p>
       <div class="acciones" id="siaVaciaAcc"><button id="btnSIAVacia">Cargar planilla (.xlsx)</button><span class="mini">Se lee en esta computadora y se guarda cifrada; la ven todos los usuarios.</span></div>
       <p class="mini oculto" id="siaVaciaConsulta" style="margin:0">La carga el administrador: cuando esté, acá se ve qué estima y cuánto se le puede creer.</p>
     </div></div>
     <div class="oculto" id="siaCuerpo" style="display:flex;flex-direction:column;gap:18px">
-      <div class="dos" style="grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)">
-        <div class="protagonista est" id="siaPrincipal"></div>
-        <div class="panel" id="siaCreer"><div class="cabp"><h2>¿Cuánto se le puede creer?</h2><span class="sub">la planilla contra las resoluciones leídas</span></div><div class="cuerpo" id="siaCreerCuerpo"></div></div>
+      <section class="panel reparto-sia" id="siaReparto" aria-labelledby="hReparto">
+        <h2 class="rotulo-bloque" id="hReparto">Reparto (estimado) · tocá una parte para ver la lista</h2>
+        <div class="barra-sia" id="siaBarra" role="group" aria-label="Reparto de la planilla"></div>
+        <div class="leyenda-sia" id="siaLeyenda"></div>
+        <p class="linea" id="siaAclara"></p>
+      </section>
+      <div class="tres-sia">
+        <section class="panel" id="siaCreer" aria-labelledby="hCreer"><div class="cabp"><h2 id="hCreer">¿Cuánto se le puede creer?</h2></div><div class="cuerpo" id="siaCreerCuerpo"></div></section>
+        <section class="panel" id="siaPedir" aria-labelledby="hPedir"><div class="cabp"><h2 id="hPedir">Pedir los PDF</h2></div><div class="cuerpo"><div id="siaPedirCuerpo"></div>
+          <div class="acciones"><button id="btnSIALista">Bajar la lista para pedir los PDF</button></div>
+          <p class="mini" style="margin:0">Con la columna "Para qué". El resto, desde Expedientes, filtrando por lugar.</p></div></section>
+        <section class="panel" id="siaCatastro" aria-labelledby="hUbic"><div class="cabp"><h2 id="hUbic">Ubicación</h2></div><div class="cuerpo"><div id="siaCatastroCuerpo"></div>
+          <div class="acciones"><button id="btnSIAUbicar" class="sec">Ubicar en Catastro lo que falta</button></div></div></section>
       </div>
-      <div class="tarjetas" id="siaTarjetas"></div>
-      <div class="dos" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
-        <div class="panel" id="siaPadron"><div class="cabp"><h2>Cruce con el Padrón</h2><span class="sub">por el nombre del iniciador</span></div><div class="cuerpo" id="siaPadronCuerpo"></div></div>
-        <div class="panel" id="siaCatastro"><div class="cabp"><h2>Ubicación en el mapa</h2><button id="btnSIAUbicar" class="sec">Ubicar en Catastro</button></div><div class="cuerpo" id="siaCatastroCuerpo"></div></div>
-      </div>
+      <p class="mini" id="siaPadronCuerpo" style="margin:0"></p>
     </div>
   </section>
 
@@ -547,7 +571,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
         </div></div>
         <div class="panel"><div class="cabp"><h2 id="hPorLugar">Por lugar</h2><div class="acciones" id="agrupar2"><button class="chip" data-g="departamento">Dpto.</button><button class="chip on" data-g="localidad">Localidad</button><button class="chip" data-g="seccion">Sección</button></div></div>
           <div class="cuerpo ranking" id="ranking2"></div>
-          <div class="cuerpo pie-panel"><div class="acciones"><button id="expKml" class="sec">Bajar para Google Maps (.kml)</button><button id="btnCatastro" class="sec">Ubicar en Catastro</button></div></div></div>
+          <div class="cuerpo pie-panel"><div class="acciones"><button id="expKml" class="sec">Bajar para Google Maps (.kml)</button><button id="btnCatastro" class="sec">Ubicar en Catastro lo que falta</button></div></div></div>
       </div>
     </div>
   </section>
@@ -556,7 +580,7 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     <div class="cab"><div><h1>Configuración</h1><p id="configSub">El criterio de antigüedad vale para todos los usuarios: al cambiarlo se guarda y se recalcula todo al instante, sin volver a leer los PDF.</p></div></div>
     <div class="panel" id="panelCriterio"><div class="cabp"><h2>Criterio de antigüedad</h2><span class="sub" id="subCriterio">vale para todos los usuarios</span></div><div class="cuerpo">
       <div class="controles">
-        <div class="grupo"><label for="regla">Regla</label><select id="regla"><option value="CORTE_FIJO">Posesión anterior al corte (ley vigente)</option><option value="PLAZO_MOVIL">Plazo móvil: diez años de posesión al día de hoy (proyecto PE-13/26, con media sanción)</option></select></div>
+        <div class="grupo"><label for="regla">Regla</label><select id="regla"><option value="CORTE_FIJO">Posesión anterior al corte (ley vigente)</option><option value="PLAZO_MOVIL">Plazo móvil de 10 años al día de hoy (proyecto PE-13/26, con media sanción)</option></select></div>
         <div class="grupo"><label for="corte">Fecha de corte</label><input id="corte" type="text" class="fecha" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" value="01/01/2006" style="width:130px"></div>
         <div class="grupo"><label for="margen">Margen de borde (meses)</label><input id="margen" type="number" min="0" max="36" value="12" style="width:90px"></div>
       </div>
@@ -1876,15 +1900,21 @@ async function cargarArchivo(f){
   try{
     const txt = await f.text();
     // Puede ser el JSON de "Guardar JSON" (un objeto, en varias líneas), un arreglo, o un resultados.jsonl (una resolución por línea).
-    let lista = null;
-    try{ const todo = JSON.parse(txt.replace(/^\ufeff/, '')); lista = Array.isArray(todo) ? todo : todo && Array.isArray(todo.resultados) ? todo.resultados : [todo]; if(todo && todo.resumen && typeof todo.resumen === 'object') resumenSrv = todo.resumen; }
+    let lista = null, cfgCopia = null;
+    try{ const todo = JSON.parse(txt.replace(/^\ufeff/, '')); lista = Array.isArray(todo) ? todo : todo && Array.isArray(todo.resultados) ? todo.resultados : [todo]; if(todo && todo.resumen && typeof todo.resumen === 'object') resumenSrv = todo.resumen;
+      if(todo && todo.config && typeof todo.config === 'object') cfgCopia = todo.config; }
     catch(e){ lista = txt.split('\n').filter(l => l.trim()).map(l => { try{ return JSON.parse(l); }catch(e2){ return null; } }).filter(Boolean); }
     if(lista.length && lista[0] && lista[0].resultados) lista = lista[0].resultados;
     registros = lista.filter(r => r && r.derivado && !r.repetido_de);
     if(!registros.length){ avisar('Ese archivo no tiene resoluciones adentro. Acá solo entra el resultados.jsonl o la copia de respaldo (.json). Para cargar PDF hay que abrir el programa con 2_abrir.bat y entrar a http://localhost:3777.', true); return; }
     origenNombre = f.name;
     $('origen').innerHTML = `<span>Archivo <b>${esc(f.name)}</b></span><span><b>${registros.length}</b> resoluciones</span>`;
+    // La copia de respaldo trae el criterio con que se guardó: abierta suelta, se usa ese (si es uno válido), y se avisa.
+    const usaCopia = !SERVIDOR && cfgCopia && (cfgCopia.regla === 'CORTE_FIJO' || cfgCopia.regla === 'PLAZO_MOVIL') && textoAIso(isoATexto(cfgCopia.fechaCorte))
+      && cfgCopia.margenBordeMeses != null && cfgCopia.margenBordeMeses !== '' && Number.isFinite(Number(cfgCopia.margenBordeMeses));
+    if(usaCopia) ponerCriterio({ regla: cfgCopia.regla, fechaCorte: cfgCopia.fechaCorte, margenBordeMeses: Number(cfgCopia.margenBordeMeses) }, true);
     recalcularLocal(); ir('resumen');
+    if(usaCopia){ const c = config(); avisar('Se usa el criterio de la copia: ' + (c.regla === 'CORTE_FIJO' ? 'posesión anterior al ' + isoATexto(c.fechaCorte) : 'plazo móvil de 10 años al día de hoy') + ` (borde ±${c.margenBordeMeses} ${c.margenBordeMeses === 1 ? 'mes' : 'meses'}). Se puede cambiar en Configuración.`); }
   }catch(err){ avisar('No se pudo leer el archivo: ' + err.message, true); }
 }
 
@@ -2095,7 +2125,10 @@ if(SERVIDOR){
     b.disabled = false; b.textContent = 'Leer con IA las que quedaron sin leer'; });
   /** Consulta Catastro de a tandas hasta terminar: cada tanda queda guardada, así que si se corta, se vuelve a tocar y sigue. */
   async function ubicarEnCatastro(boton){
-    const rotulo = boton.textContent; boton.disabled = true;
+    // Una carga por vez: los dos botones (el del mapa y el de la planilla) quedan apagados mientras corre.
+    if(cargando || (WEB && window.PIERRI_WEB.ocupado())){ avisar('Esperá a que termine la carga que está en curso.', true); return; }
+    cargando = true;
+    const rotulo = boton.textContent, botones = [$('btnCatastro'), $('btnSIAUbicar')]; botones.forEach(b => b.disabled = true);
     let ubicadas = 0, consultadas = 0, fallas = null, r = {};
     try{
       for(let vuelta = 0; vuelta < 200; vuelta++){
@@ -2114,8 +2147,10 @@ if(SERVIDOR){
     }catch(err){
       avisar('Catastro: ' + err.message + (err.consultadas ? ' Lo consultado en esta tanda quedó en esta pestaña: volvé a tocar y se guarda sin volver a consultarlo.' : consultadas ? ' Lo consultado hasta acá quedó guardado: volvé a tocar y sigue donde quedó.' : ''), true);
       if(consultadas) await cargarDesdeServidor().catch(() => {});
+    } finally {
+      cargando = false; boton.textContent = rotulo; botones.forEach(b => b.disabled = false);
+      $('btnSIAUbicar').disabled = !(resumenSrv.planilla && resumenSrv.planilla.cargada);
     }
-    boton.textContent = rotulo; boton.disabled = false;
   }
   $('btnCatastro').addEventListener('click', () => ubicarEnCatastro($('btnCatastro')));
   $('btnSIAUbicar').addEventListener('click', () => ubicarEnCatastro($('btnSIAUbicar')));
@@ -2353,24 +2388,46 @@ const chocaConPlanilla = r => !!(r.planilla_estimaba && r.planilla_estimaba.coin
 const escaneada = r => !!(r.inventario && /resoluci/i.test(r.inventario.estado_digitalizacion || ''));
 /** ¿Cae en la muestra al azar fija (1 de cada 200 por el número de expediente)? La cuenta vive en pierri_sia.js. */
 const enMuestra = r => !!(window.PierriSIA && window.PierriSIA.enMuestra && window.PierriSIA.enMuestra(r.derivado.expediente));
+/**
+ * "Pedir los PDF" (lo usan la Planilla de trámites, el Resumen y la lista que se baja): los estimados que todavía no
+ * tienen ningún PDF cargado (próximo paso "Conseguir el PDF"), en tres grupos y en este orden fijo:
+ *   [0] del borde, con la resolución escaneada según el inventario: la resolución puede cambiar el resultado y ya está
+ *       escaneada;
+ *   [1] el resto del borde;
+ *   [2] la muestra al azar que no está en el borde: sirve para medir cuánto acierta la planilla.
+ * Dentro de cada grupo, primero los que según la planilla tienen resolución, y después por número. El resto se pide desde
+ * Expedientes, filtrando por lugar.
+ * @returns {Array<Array<Object>>} los tres grupos de registros
+ */
+function paraPedir(){
+  const g = [[], [], []], conRes = r => r.planilla && r.planilla.con_resolucion ? 0 : 1;
+  for(const r of registros){ if(proximoPaso(r) !== 'PDF') continue;
+    if(cl(r.derivado).endsWith('_BORDE')) g[escaneada(r) ? 0 : 1].push(r); else if(enMuestra(r)) g[2].push(r); }
+  for(const x of g) x.sort((a, b) => conRes(a) - conRes(b) || String(a.derivado.expediente).localeCompare(String(b.derivado.expediente)));
+  return g;
+}
+const PARA_QUE = ['Del borde, con la resolución escaneada: la resolución puede cambiar el resultado', 'Del borde: la resolución puede cambiar el resultado', 'Muestra al azar: para medir cuánto acierta la planilla'];
 /** Cuántos hay en cada paso: { PDF: n, LEER: n, … }. */
 function contarPasos(lista){ const o = {}; PASOS.forEach(p => o[p] = 0); for(const r of lista) o[proximoPaso(r)]++; return o; }
 // Las mismas funciones, a mano de las pruebas (solo funciones: ningún dato).
-window.PierriPasos = Object.freeze({ certeza, proximoPaso, PASOS, contarPasos, chocaConPlanilla });
+window.PierriPasos = Object.freeze({ certeza, proximoPaso, PASOS, contarPasos, chocaConPlanilla, paraPedir });
 /**
  * ¿Cuánto acierta la planilla? Dos renglones, siempre juntos: en la muestra al azar (el que vale, porque no depende de
  * qué se leyó primero) y en todo lo leído (no es al azar: se piden primero las del borde). Hasta 30 comparadas va como
- * "x de y"; recién después, en porcentaje. v = resumen.planilla.validacion (pierri_sia.js, compararConLeidas).
- * @returns {{muestra: string, todo: string}} HTML, sin datos de archivos (solo números)
+ * "x de y"; desde 31, en porcentaje. v = resumen.planilla.validacion (pierri_sia.js, compararConLeidas).
+ * @returns {{muestra: string, todo: string, cifraMuestra: ?string, cifraTodo: ?string}} HTML las dos primeras y texto las
+ *   dos cifras sueltas ("27 de 30", "87 % de 94"; null si no hay con qué medir), sin datos de archivos (solo números)
  */
 function aciertoPlanilla(v){
   v = v || {}; const m = v.muestra || {}, cmp = Number(v.comparadas) || 0, mc = Number(m.comparadas) || 0;
-  const cuanto = (si, de) => de >= 30 ? `el <b>${Math.round(si / de * 100)} %</b> de ${miles(de)}` : `<b>${miles(si)} de ${miles(de)}</b>`;
+  // Hasta 30 comparadas, "x de y"; desde 31, el porcentaje.
+  const cuanto = (si, de) => de > 30 ? `el <b>${Math.round(si / de * 100)} %</b> de ${miles(de)}` : `<b>${miles(si)} de ${miles(de)}</b>`;
+  const cifra = (si, de) => de > 30 ? `${Math.round(si / de * 100)} % de ${miles(de)}` : `${miles(si)} de ${miles(de)}`;
   const muestra = mc ? `En la muestra al azar coincide en ${cuanto(m.coinciden, mc)}${mc < 30 ? ': todavía son pocas para sacar conclusiones' : ''}${m.expedientes ? ` (la muestra son ${miles(m.expedientes)} expedientes, 1 de cada 200 por su número; ${miles(m.leidas || 0)} con la resolución leída)` : ''}.`
     : `En la muestra al azar todavía no se puede medir: ${m.expedientes ? `son ${miles(m.expedientes)} expedientes (1 de cada 200 por su número) y ninguno tiene la resolución leída con fecha` : 'ningún expediente de la muestra tiene la resolución leída'}.`;
   const todo = cmp ? `En todo lo leído coincide en ${cuanto(v.coinciden, cmp)} (no es al azar: se piden primero las del borde).`
     : 'En todo lo leído todavía no se puede medir: ninguno de sus expedientes tiene la resolución leída.';
-  return { muestra, todo };
+  return { muestra, todo, cifraMuestra: mc ? cifra(Number(m.coinciden) || 0, mc) : null, cifraTodo: cmp ? cifra(Number(v.coinciden) || 0, cmp) : null };
 }
 
 /**
@@ -2434,14 +2491,14 @@ function restaurarFiltros(){
   // todavía no está, se agrega; el próximo dibujo los vuelve a llenar y la conserva.
   IDS_FILTRO.forEach((id, i) => { const s = $(id), v = g.sel[i]; if(v && ![...s.options].some(o => o.value === v)) s.add(new Option(v, v)); s.value = v; });
   encuadreGuardado = g.desde === 'mapa' ? g.encuadre : null;
-  pintarTodo(); pagina = g.pagina; pintarTabla();
+  pintarFiltrado(); pagina = g.pagina; pintarTabla();
 }
 /**
  * Con el mapa a la vista, tocar un botón de Resultado o de Próximo paso no lo vuelve a encuadrar: queda donde la persona
  * lo dejó (acercado a un barrio, por ejemplo). Elegir un Lugar sí lo encuadra en ese lugar.
  */
 let mantenerEncuadre = false;
-function filtrar(desde){ guardados = null; pagina = 0; mantenerEncuadre = !!(desde && desde.classList && desde.classList.contains('chip') && mapaVisible()); try{ pintarTodo(); } finally { mantenerEncuadre = false; } }
+function filtrar(desde){ guardados = null; pagina = 0; mantenerEncuadre = !!(desde && desde.classList && desde.classList.contains('chip') && mapaVisible()); try{ pintarFiltrado(); } finally { mantenerEncuadre = false; } }
 document.querySelectorAll(CHIPS).forEach(b => b.addEventListener('click', () => {
   const g = GRUPO_DE[b.dataset.f];
   if(g !== 'elig' && b.classList.contains('on')) F[g] = null; else ponerFiltro(b.dataset.f);
@@ -2471,7 +2528,7 @@ function poblarFiltros(){
 }
 // Se espera a que termine de escribir: con miles de resoluciones, redibujar en cada letra congelaba la pantalla.
 let esperaBusqueda = null;
-$('buscar').addEventListener('input', () => { guardados = null; clearTimeout(esperaBusqueda); esperaBusqueda = setTimeout(() => { pagina = 0; pintarTodo(); }, 200); });
+$('buscar').addEventListener('input', () => { guardados = null; clearTimeout(esperaBusqueda); esperaBusqueda = setTimeout(() => { pagina = 0; pintarFiltrado(); }, 200); });
 /** Lo que hay elegido en los desplegables y el buscador, leído una sola vez por dibujo (no en cada una de las filas). */
 function leerFiltros(){ return { dep: $('fDep').value, loc: $('fLoc').value, sec: $('fSec').value, insc: $('fInsc').value, sinUbic: $('fSinUbicar').checked,
   aD: Number($('fAnioD').value), aH: Number($('fAnioH').value), q: P.normalizarTexto($('buscar').value) }; }
@@ -2543,13 +2600,17 @@ function vaciarFiltros(){
   $('buscar').value = ''; localidadSel = null; F.elig = 'TODOS'; F.origen = null; F.lect = null; F.ctrl = null; F.paso = null; F.res = null; marcarChips();
   $('masFiltros').classList.add('oculto'); $('btnMas').setAttribute('aria-expanded', 'false');   // "Más filtros" vuelve a plegarse
 }
-function limpiarFiltros(){ guardados = null; vaciarFiltros(); pagina = 0; pintarTodo(); }
+function limpiarFiltros(){ guardados = null; vaciarFiltros(); pagina = 0; pintarFiltrado(); }
 /** Lo que dice cada botón de Próximo paso: corto, y sin tono de orden para quien solo consulta. */
 const CHIP_PASO = { PDF: ['Conseguir el PDF', 'Falta el PDF'], LEER: ['Leer', 'Falta leer'], CONTROLAR: ['Controlar', 'Falta controlar'],
   PADRON: ['Confirmar en el Padrón', 'Falta el Padrón'], NADA: ['Sin pendientes', 'Sin pendientes'] };
 const pasoCorto = p => CHIP_PASO[p][puedeCargar() ? 0 : 1];
 let cuentaPasos = {};
-function pintarTodo(){
+/**
+ * Lo que depende de los filtros: la barra, la lista y el mapa (si se ve). Es lo único que se vuelve a dibujar al tocar un
+ * filtro o escribir en el buscador; el Resumen, la Planilla y el Padrón no dependen de los filtros (pintarTodo).
+ */
+function pintarFiltrado(){
   poblarFiltros();
   // Un solo recorrido: la lista (con todos los filtros) y cuántos hay en cada próximo paso con los demás filtros puestos.
   const fv = leerFiltros(); cuentaPasos = {}; PASOS.forEach(x => cuentaPasos[x] = 0); vista = [];
@@ -2562,8 +2623,10 @@ function pintarTodo(){
   const nMas = cuantosMas(); $('btnMas').textContent = nMas ? `Más filtros (${nMas} puesto${nMas === 1 ? '' : 's'})` : 'Más filtros: Registro, año de la resolución, sin ubicar';
   if(nMas){ $('masFiltros').classList.remove('oculto'); $('btnMas').setAttribute('aria-expanded', 'true'); }
   pintarEtiquetas();
-  pintarMetricas(); pintarTabla(); pintarPadron(); pintarPlanilla(); if(mapaVisible()) pintarMapa(); pintarUltimos();
+  pintarTabla(); if(mapaVisible()) pintarMapa();
 }
+/** Todo: al traer los datos o cambiar el criterio. Además de lo filtrado, el Resumen, el Padrón, la Planilla y los últimos archivos. */
+function pintarTodo(){ pintarFiltrado(); pintarMetricas(); pintarPadron(); pintarPlanilla(); pintarUltimos(); }
 /** "21/09/2026 18:42", siempre con reloj de 24 horas (sin él, Chrome pone la tarde como "02:17" sin a. m. ni p. m.). */
 function fechaHora(iso){ const f = new Date(iso); return isNaN(f) ? '—' : f.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''); }
 /**
@@ -2618,7 +2681,7 @@ function fechaPosesion(d){
 }
 /** El tipo de documento en palabras (por dentro el sistema guarda códigos como RESOLUCION_INSCRIPCION). */
 const TIPO_NOMBRE = { RESOLUCION_INSCRIPCION: 'ordena la inscripción', RESOLUCION_RECTIFICA: 'rectifica o amplía', RESOLUCION_DESESTIMA: 'desestima', RESOLUCION_CANCELA: 'cancela',
-  RESOLUCION_TRAMITE: 'de trámite', CEDULA_NOTIFICACION: 'cédula de notificación', NO_ES_RESOLUCION: 'no es una resolución', PLANILLA_UEST: 'estimada con la planilla de la UEST' };
+  RESOLUCION_TRAMITE: 'de trámite', CEDULA_NOTIFICACION: 'cédula de notificación', NO_ES_RESOLUCION: 'no es una resolución', PLANILLA_UEST: 'estimada con la planilla de trámites' };
 /** Los perfiles como se llaman en pantalla (por dentro: veedor, editor, admin). */
 const PERFIL = { veedor: 'Consulta', editor: 'Revisión', admin: 'Administración' };
 /** La auditoría en castellano: cada acción con su nombre, los perfiles como en pantalla y las fechas dd/mm/aaaa. */
@@ -2637,9 +2700,9 @@ function detalleAud(t){
     .replace(/· revisada\b/, '· controlada a mano').replace(/· sin tilde\b/, '· sin controlar').replace(/· fecha (\d)/, '· posesión desde $1')
     .replace(/(\d+) ([a-záéíóúñ]+)\((e?s)\)/gi, (m, n, p, x) => `${n} ${n === '1' ? p : p.replace(/ón$/, 'on') + x}`);
 }
-const CRITERIOS = { PLANILLA_UEST: 'estimada con la planilla de la UEST: fecha de ingreso menos la antigüedad declarada al iniciar el trámite', DECLARADA_ROGANTE: 'declarada por el rogante', SURGE_DOCUMENTAL: 'surge de la documental', SURGE_EXPEDIENTE: 'surge del expediente', CORREGIDA_A_MANO: 'corregida a mano', OTRO: 'otro criterio' };
+const CRITERIOS = { PLANILLA_UEST: 'estimada con la planilla de trámites: fecha de ingreso menos la antigüedad declarada al iniciar el trámite', DECLARADA_ROGANTE: 'declarada por el rogante', SURGE_DOCUMENTAL: 'surge de la documental', SURGE_EXPEDIENTE: 'surge del expediente', CORREGIDA_A_MANO: 'corregida a mano', OTRO: 'otro criterio' };
 /** Las señales del sistema en palabras, para la lista, la ficha y el Excel. */
-const SENALES = { NOMBRE_SEGUN_OCR: 'nombre tomado del texto del PDF: confirmarlo contra la resolución', SIN_PARCELA_CATASTRO: 'Catastro no encontró la parcela',
+const SENALES = { NOMBRE_SEGUN_OCR: 'nombre tomado del texto del PDF: falta confirmarlo contra la resolución', SIN_PARCELA_CATASTRO: 'Catastro no encontró la parcela',
   PARCELA_BALDIA: 'Catastro la da como baldía', RURAL: 'inmueble rural', MULTIPLES_MATRICULAS: 'afecta más de una matrícula',
   CESION_RECIENTE: 'posesión por cesión de hace menos de diez años', ROGANTE_PERSONA_JURIDICA: 'el rogante es una persona jurídica',
   OTRA_LOCALIDAD: 'el rogante tiene el domicilio en otra localidad que el inmueble', DOMICILIO_COMPARTIDO: 'domicilio compartido con otro expediente',
@@ -2707,7 +2770,7 @@ function padronTexto(d, corto){
   const i = d.inscripcion;
   if(!i) return hayPadron() ? 'sin cruzar' : 'no cargado';
   const e = i.estado, base = PADRON_CORTO[e] || String(e || '').replace(/_/g, ' ').toLowerCase();
-  if(e === 'NO_FIGURA_EN_PADRON') return base + (sinResolucionPlanilla(d) ? (corto ? ' (sin resolución)' : ' (la planilla no registra resolución)') : corto ? '' : ' (el cruce es por nombre: confirmarlo a mano)');
+  if(e === 'NO_FIGURA_EN_PADRON') return base + (sinResolucionPlanilla(d) ? (corto ? ' (sin resolución)' : ' (la planilla no registra resolución)') : corto ? '' : ' (el cruce es por nombre: falta confirmarlo)');
   if(corto) return base;
   if(e === 'INSCRIPTA' || e === 'PROVISORIA' || e === 'OBSERVADA') return base + (i.diario ? ' · diario ' + i.diario : '') + ' · cruce por nombre';
   if(e === 'AMBIGUO') return (i.confianza === 'anio_incompatible' ? 'ambigua: el año de la anotación no cierra con el del expediente' : 'ambigua: el nombre aparece más de una vez')
@@ -2813,13 +2876,13 @@ const veDatosCrudos = () => !YO || !!(YO.permisos || {}).administrar;
 /** La clasificación en palabras, para las filas de carga, los globos del mapa y el KML. */
 const NOMBRE_CLASE = { ELEGIBLE: 'elegible', ELEGIBLE_BORDE: 'elegible, en el borde', NO_ELEGIBLE: 'no elegible', NO_ELEGIBLE_BORDE: 'no elegible, en el borde', SIN_DATO: 'sin fecha', REVISAR: 'sin fecha, con dudas', NO_APLICA: 'no aplica' };
 const nombreClase = c => NOMBRE_CLASE[c] || String(c || '').replace(/_/g, ' ').toLowerCase();
-const VEREDICTOS = { ELEGIBLE: 'Elegible', ELEGIBLE_BORDE: 'Elegible, en el borde', NO_ELEGIBLE: 'No elegible', NO_ELEGIBLE_BORDE: 'No elegible, en el borde', SIN_DATO: 'Sin fecha de posesión', REVISAR: 'Sin fecha de posesión, con dudas', NO_APLICA: 'No ordena la inscripción' };
+const VEREDICTOS = { ELEGIBLE: 'Elegible', ELEGIBLE_BORDE: 'Elegible, en el borde', NO_ELEGIBLE: 'No elegible', NO_ELEGIBLE_BORDE: 'No elegible, en el borde', SIN_DATO: 'Sin fecha', REVISAR: 'Sin fecha, con dudas', NO_APLICA: 'No ordena la inscripción' };
 /** Lo estimado con la planilla nunca se muestra como firme: "Elegible (estimado)". */
 const conEstimado = (t, est) => est ? t + ' (estimado)' : t;
 /** Qué quiere decir "elegible" con el criterio en uso: va junto a la cifra principal del Resumen y de la planilla. */
 function queEsElegible(){
   const cfg = config();
-  return `Elegible quiere decir que cumple el requisito de antigüedad de la posesión según el criterio configurado (${cfg.regla === 'CORTE_FIJO' ? 'posesión anterior al ' + isoATexto(cfg.fechaCorte) : 'diez años de posesión al día de hoy'}); los demás requisitos de la ley se verifican en el trámite.`;
+  return `Elegible quiere decir que cumple el requisito de antigüedad de la posesión según el criterio configurado (${cfg.regla === 'CORTE_FIJO' ? 'posesión anterior al ' + isoATexto(cfg.fechaCorte) : 'plazo móvil de 10 años al día de hoy (proyecto PE-13/26, con media sanción)'}); los demás requisitos de la ley se verifican en el trámite.`;
 }
 /** "1 resolución leída" / "13 resoluciones leídas", con el número ya en castellano. */
 const plural = (n, uno, varios) => `${miles(n)} ${Number(n) === 1 ? uno : varios}`;
@@ -2890,7 +2953,7 @@ $('protagonista').addEventListener('keydown', e => { const t = e.target.closest(
  */
 function pintarPasos(RLr, DPr, nPlan){
   const n = contarPasos(registros), hace = puedeCargar(), cuantos = PASOS.filter(p => p !== 'PDF' || nPlan);
-  const pdf = DPr.filter(r => proximoPaso(r) === 'PDF'), borde = pdf.filter(r => cl(r.derivado).endsWith('_BORDE')), bEsc = borde.filter(escaneada).length, muestra = pdf.filter(enMuestra).length;
+  const pp = nPlan ? paraPedir() : [[], [], []], borde = pp[0].concat(pp[1]), bEsc = pp[0].length, muestra = pp[2].length;
   const leer = registros.filter(r => proximoPaso(r) === 'LEER');
   const sinLeer = leer.filter(r => r.fuente === 'texto_incompleto').length, aparte = leer.filter(deLaPlanilla).length, sinFecha = leer.length - sinLeer - aparte;
   const choques = RLr.filter(r => proximoPaso(r) === 'CONTROLAR' && chocaConPlanilla(r)).length;
@@ -2927,7 +2990,7 @@ function pintarDonde(){
 function verElegiblesEnMapa(localidad){
   guardados = null; vaciarFiltros(); ponerFiltro('ELEGIBLE');
   if(localidad){ const s = $('fLoc'); if(![...s.options].some(o => o.value === localidad)) s.add(new Option(localidad, localidad)); s.value = localidad; }
-  marcarChips(); pagina = 0; pintarTodo(); ir('mapa');
+  marcarChips(); pagina = 0; pintarFiltrado(); ir('mapa');
 }
 $('ranking').addEventListener('click', e => { if(e.target.closest('#verMapaTodas')){ e.preventDefault(); verElegiblesEnMapa(null); return; }
   const t = e.target.closest('.item[data-loc]'); if(t) verElegiblesEnMapa(t.dataset.loc); });
@@ -3023,7 +3086,7 @@ function pintarTabla(){
     const lugar = esc([d.geo && d.geo.dep_nombre, mz(d)].filter(Boolean).join(' · '));
     const verMapa = `<a href="#" class="ver-mapa" data-ver-mapa="${esc(r.hash)}" title="${enElMapa(r) ? 'Ver este expediente en el mapa' : 'No está en el mapa: la ficha dice por qué'}">Ver en el mapa</a>`;
     return `<tr class="fila ${d.revision && d.revision.revisado ? 'rev' : ''}" data-i="${registros.indexOf(r)}">
-      <td class="exp">${esc(d.expediente || '—')}<div class="mini">${esc(d.resolucion_numero ? d.resolucion_numero + '/' + (d.resolucion_anio || '') : '')}</div><div class="mini solo-movil">${esc(d.rogante_principal || '')}<br>${esc(loc(d))} · ${verMapa}</div></td>
+      <td class="exp">${esc(d.expediente || '—')}<div class="mini">${esc(d.resolucion_numero ? d.resolucion_numero + '/' + (d.resolucion_anio || '') : '')}</div><div class="mini solo-movil">${esc(d.rogante_principal || '')}</div><div class="mini sin-col-lugar">${esc(loc(d))} · ${verMapa}</div></td>
       <td class="col-rog">${esc(d.rogante_principal || '—')}${d.cantidad_rogantes > 1 ? ` <span class="mini">+${d.cantidad_rogantes - 1}</span>` : ''}${marcas ? `<div class="mini">${esc(marcas)}</div>` : ''}</td>
       <td><b>${esc(d.posee_desde ? d.posee_desde.slice(0, 4) : '—')}</b><div class="mini">${!d.posee_desde ? '' : d.posee_desde_precision === 'anio' ? 'año aprox.' : d.posee_desde_precision === 'mes' ? 'mes ' + esc(d.posee_desde.slice(5, 7)) : esc(d.posee_desde.slice(8, 10) + '/' + d.posee_desde.slice(5, 7))}</div></td>
       <td>${tagDe(c, est, certeza(r) === 'controlado')}${tagInsc(d)}${d.revisar && !est ? ' <span class="tag p-r">Con dudas</span>' : ''}${!est && chocaConPlanilla(r) ? `<span class="nota-roja">la planilla estimaba ${esc(nombreClase(pe.clasificacion))}${pe.posee_desde ? ' (' + esc(pe.posee_desde.slice(0, 4)) + ')' : ''}</span>` : ''}</td>
@@ -3261,7 +3324,7 @@ function verEnMapa(hash){
     return;
   }
   guardados = null;
-  if(!vista.includes(r)){ vaciarFiltros(); $('buscar').value = r.derivado.expediente || ''; pagina = 0; pintarTodo(); }
+  if(!vista.includes(r)){ vaciarFiltros(); $('buscar').value = r.derivado.expediente || ''; pagina = 0; pintarFiltrado(); }
   pendienteMapa = r;
   if(mapaVisible()) pintarMapa(); else ir('mapa');
 }
@@ -3274,72 +3337,67 @@ document.addEventListener('click', e => { const a = e.target.closest('[data-ubic
 function abrirLista(filtros){
   guardados = null; vaciarFiltros();
   for(const x of String(filtros).split('+')){ if(x.startsWith('INSC:')) $('fInsc').value = x.slice(5); else ponerFiltro(x); }
-  marcarChips(); pagina = 0; pintarTodo(); ir('expedientes');
+  marcarChips(); pagina = 0; pintarFiltrado(); ir('expedientes');
 }
 /**
- * La planilla de trámites de la UEST: qué estima, cuánto se le puede creer y cuánto está ubicado. Todo lo de esta
- * pantalla es estimado (fecha de ingreso menos la antigüedad declarada), salvo lo que ya tiene la resolución leída.
+ * La planilla de trámites (SIA): qué estima, cuánto se le puede creer, qué PDF pedir y dónde está cada uno. Todo lo de
+ * esta pantalla es estimado (fecha de ingreso menos la antigüedad declarada), salvo lo que ya tiene la resolución leída.
  */
 function pintarPlanilla(){
   const pl = resumenSrv.planilla || {};
   $('btnSIAUbicar').disabled = $('btnSIALista').disabled = !pl.cargada;
   // Sin planilla, un solo recuadro: qué es y el botón de cargar (a quien no carga, que todavía no está).
   $('siaVacia').classList.toggle('oculto', !!pl.cargada); $('siaCuerpo').classList.toggle('oculto', !pl.cargada);
-  ['siaAcciones','siaBajada','siaSub'].forEach(id => $(id).classList.toggle('oculto', !pl.cargada));
+  ['siaArchivo','siaBajada'].forEach(id => $(id).classList.toggle('oculto', !pl.cargada));
   $('siaVaciaConsulta').classList.toggle('oculto', puedeCargar());
-  if(!pl.cargada){ $('siaSub').innerHTML = ''; $('siaTarjetas').innerHTML = ''; return; }
+  if(!pl.cargada){ $('siaSub').innerHTML = ''; $('siaBarra').innerHTML = $('siaLeyenda').innerHTML = ''; return; }
   const E = registros.filter(deLaPlanilla), D = E.map(r => r.derivado), porClase = {};
   for(const d of D){ const c = cl(d); porClase[c] = (porClase[c] || 0) + 1; }
-  const k = c => porClase[c] || 0, pc = (a, b) => b ? Math.round(a / b * 100) : 0, cfg = config(), m = cfg.margenBordeMeses;
-  const antF = k('ELEGIBLE'), antB = k('ELEGIBLE_BORDE'), posB = k('NO_ELEGIBLE_BORDE'), posF = k('NO_ELEGIBLE');
-  const ant = antF + antB, pos = posF + posB, borde = antB + posB, usable = ant + pos, sin = D.length - usable;
-  const conRes = E.filter(r => r.planilla && r.planilla.con_resolucion && cl(r.derivado).startsWith('ELEGIBLE')).length;
-  $('siaSub').innerHTML = `<span>Archivo: <b>${esc(pl.archivo || 'sin nombre')}</b></span>${pl.cargado_en ? `<span>cargado el <b>${esc(fechaHora(pl.cargado_en))}</b></span>` : ''}<span><b>${miles(pl.expedientes)}</b> expedientes</span>`;
-  // La cifra principal: todo estimado, y se ve distinto de lo leído (borde punteado, barra rayada, etiqueta).
-  const tramos = [[antF, 'var(--verde)'], [borde, '#c9911e'], [posF, 'var(--barra-no)'], [sin, 'var(--barra-sin)']];
-  $('siaPrincipal').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="rot">Elegibles</span><span class="tag p-est">estimado</span></div>
-    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span class="cifra">${miles(ant)}</span><span class="de">de ${miles(usable)} con antigüedad usable${usable ? ` · ${pc(ant, usable)} %` : ''}</span></div>
-    <div class="barra rayada">${tramos.map(([n, c]) => n ? `<div style="width:${n / D.length * 100}%;background:${c}"></div>` : '').join('')}</div>
-    <div class="leyenda2" style="gap:6px 16px"><span><i class="cuadro" style="background:var(--verde)"></i>elegible</span><span><i class="cuadro" style="background:#c9911e"></i>en el borde (±${m} ${m === 1 ? 'mes' : 'meses'} del corte)</span><span><i class="cuadro" style="background:var(--barra-no)"></i>no elegible</span>${sin ? '<span><i class="cuadro" style="background:var(--barra-sin)"></i>sin antigüedad usable</span>' : ''}</div>
-    <span class="mini" style="line-height:1.45">Cuenta los ${miles(D.length)} expedientes de la planilla que todavía no tienen la resolución leída${pl.con_lectura ? ` (otros ${miles(pl.con_lectura)} ya la tienen y manda la lectura)` : ''}. ${queEsElegible()}</span>`;
-  // Cada tarjeta abre Expedientes con lo de la planilla filtrado así.
-  const tarjeta = (t, n, col, mini, lista, est) => `<div class="tarjeta${est ? ' est' : ''}${lista && n ? ' clicable' : ''}"${lista && n ? ` data-lista="${lista}" role="button" tabindex="0" title="Ver cuáles son en Expedientes"` : ''}><div class="t"><span>${t}</span></div><span class="n ${col}">${miles(n)}</span><span class="mini">${est ? '<span class="tag p-est">estimado</span> ' : ''}${mini}</span></div>`;
-  $('siaTarjetas').innerHTML =
-    tarjeta('Elegibles', ant, 'c-v', `${conRes ? `${miles(conRes)} con resolución según la planilla: se puede pedir el PDF` : 'ninguna con resolución según la planilla'}`, 'ELEGIBLE+ESTIMADA', true) +
-    tarjeta('En el borde', borde, 'c-a', `dentro de las elegibles y las no elegibles: a menos de ${m} ${m === 1 ? 'mes' : 'meses'} del corte, la resolución puede cambiar el resultado`, 'BORDE+ESTIMADA', true) +
-    tarjeta('No elegibles', pos, 'c-g', usable ? `${pc(pos, usable)} % de las que tienen antigüedad usable` : '', 'NO_ELEGIBLE+ESTIMADA', true) +
-    tarjeta('Sin antigüedad usable', sin, 'c-r', 'la planilla no trae la fecha de ingreso o la antigüedad: no se puede estimar', 'SIN_DATO+ESTIMADA') +
-    tarjeta('Con la resolución ya leída', pl.con_lectura, 'c-m', 'esas ya no se estiman: manda la lectura', 'LEIDA_PLANILLA');
-  // ¿Cuánto se le puede creer? Con pocos casos un porcentaje engaña: hasta 30 comparadas se muestra "tantas de tantas".
-  const v = pl.validacion || {}, cmp = Number(v.comparadas) || 0, dif = v.diferencia_mediana_anios;
-  $('siaCreerCuerpo').innerHTML = `
-    ${cmp ? `<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span class="cifra-media c-m" id="siaAcierto">${cmp >= 30 ? pc(v.coinciden, cmp) + ' %' : `${miles(v.coinciden)} de ${miles(cmp)}`}</span>
-      <span style="color:var(--texto2);flex:1;min-width:180px">${cmp >= 30 ? `de ${miles(cmp)} expedientes` : 'expedientes'} con la resolución leída: la planilla coincide con la resolución en si es elegible o no elegible</span></div>
-    <div><div class="fila-m"><span>Comparadas</span><b>${miles(cmp)}</b></div><div class="fila-m"><span>Coinciden</span><b>${miles(v.coinciden)}</b></div>${dif != null ? `<div class="fila-m"><span>Diferencia típica en el año de inicio de la posesión</span><b>${miles(dif)} ${dif === 1 ? 'año' : 'años'}</b></div>` : ''}${v.sin_comparar ? `<div class="fila-m"><span>Leídas sin fecha para comparar</span><b>${miles(v.sin_comparar)}</b></div>` : ''}</div>` : ''}
-    <p class="mini" style="margin:0">${!cmp ? 'Todavía no hay resoluciones leídas de expedientes de la planilla: cuando se lean, se mide acá. ' : cmp < 30 ? 'Todavía son pocas para sacar conclusiones. ' : ''}Cuantas más resoluciones se lean, mejor se sabe. Conviene empezar por las del borde: la lista para pedir los PDF ya las pone primero.</p>`;
-  // El cruce con el Padrón, por el nombre del iniciador: cada estado abre en Expedientes lo estimado con ese estado.
-  if(!hayPadron()) $('siaPadronCuerpo').innerHTML = '<p class="mini" style="margin:0">Todavía no se cargó el Padrón del Registro: sin él no se sabe cuáles de estos expedientes figuran inscriptos.</p>'
-    + (puedeCargar() ? '<div class="acciones"><button class="sec" data-ir="padron">Ir a cargar el Padrón</button></div>' : '');
-  else {
-    const porInsc = {}; for(const d of D){ const e = estadoInsc(d); porInsc[e] = (porInsc[e] || 0) + 1; }
-    const fila = (t, e, col, nota) => { const n = porInsc[e] || 0;
-      return `<div class="fila-m${n ? ' clicable' : ''}"${n ? ` data-lista="ESTIMADA+INSC:${e}" role="button" tabindex="0" title="Ver cuáles son en Expedientes"` : ''}><span>${t}${n && nota ? `<span class="mini" style="display:block">${nota}</span>` : ''}</span><b class="${col}">${miles(n)}</b></div>`; };
-    $('siaPadronCuerpo').innerHTML = `<div id="siaPadronFilas">${fila('Inscriptas', 'INSCRIPTA', 'c-m')}${fila('Provisorias u observadas', 'TRABADA', 'c-a')}
-      ${fila('No figuran en el Padrón', 'NO_FIGURA_EN_PADRON', 'c-r', 'con resolución según la planilla')}${fila('Sin resolución según la planilla', 'SIN_RESOLUCION', 'c-g', 'nada que inscribir todavía: no se cuentan como no inscriptos')}${fila('Ambiguas', 'AMBIGUO', 'c-g')}${fila('Sin cruzar', 'SIN', 'c-g', 'sin nombre del iniciador')}</div>
-      <p class="mini" style="margin:0">El Padrón no trae DNI, cuenta ni expediente: el cruce es por nombre, y solo cuando el nombre aparece una vez de cada lado y el año cierra. Antes de dar uno por no inscripto, confirmalo a mano. Tocá un renglón para ver cuáles son.</p>`;
-  }
-  // Dónde está cada uno en el mapa.
-  const parcela = D.filter(d => d.geo && d.geo.catastro && d.geo.catastro.encontrada).length, aprox = D.filter(d => d.geo && d.geo.ubicacion_aproximada && d.geo.lat != null).length;
-  const sinUbicar = D.filter(d => !d.geo || d.geo.lat == null).length, sinConsultar = D.filter(d => d.geo && d.geo.cuenta_normalizada && !d.geo.catastro).length;
+  const k = c => porClase[c] || 0, m = config().margenBordeMeses, meses = `${m} ${m === 1 ? 'mes' : 'meses'}`;
+  const antB = k('ELEGIBLE_BORDE'), posB = k('NO_ELEGIBLE_BORDE'), ant = k('ELEGIBLE') + antB, pos = k('NO_ELEGIBLE') + posB, sin = D.length - ant - pos, leidas = Number(pl.con_lectura) || 0;
+  $('siaSub').innerHTML = `<b>${esc(pl.archivo || 'sin nombre')}</b>${pl.cargado_en ? ` · cargada el ${esc(fechaHora(pl.cargado_en))}` : ''} · ${plural(pl.expedientes, 'expediente', 'expedientes')}`;
+  // REPARTO: una barra que se toca (cada parte abre su lista en Expedientes) y debajo lo mismo en palabras, sin otra
+  // cifra grande. Lo estimado va rayado; lo que ya tiene la resolución leída, lleno: ahí manda la lectura.
+  const partes = [
+    [ant, 'ELEGIBLE+ESTIMADA', 'tramo-est', 'background-color:var(--verde)', `<b>${miles(ant)}</b> elegibles${antB ? ` <span class="mini">(${miles(antB)} en el borde)</span>` : ''}`, 'elegibles estimados'],
+    [pos, 'NO_ELEGIBLE+ESTIMADA', 'tramo-est', 'background-color:var(--barra-no)', `<b>${miles(pos)}</b> no elegibles${posB ? ` <span class="mini">(${miles(posB)} en el borde)</span>` : ''}`, 'no elegibles estimados'],
+    [sin, 'SIN_DATO+ESTIMADA', 'tramo-est', 'background-color:var(--barra-sin)', `<b>${miles(sin)}</b> sin fecha <span class="mini">(la planilla no trae antigüedad usable)</span>`, 'sin fecha: la planilla no trae antigüedad usable'],
+    [leidas, 'LEIDA_PLANILLA', '', 'background:var(--acento)', `<b>${miles(leidas)}</b> con la resolución leída: manda la lectura`, 'con la resolución leída'] ];
+  const cuadro = (cls, st) => `<i class="cuadro ${cls}" style="${st}"></i>`;
+  $('siaBarra').innerHTML = partes.map(([n, lista, cls, st, , nombre]) => n ? `<a href="#" class="${cls}" style="flex:${n} 1 0;${st}" data-lista="${lista}" aria-label="${miles(n)} ${nombre}: ver cuáles son" title="${miles(n)} ${nombre}"></a>` : '').join('');
+  $('siaLeyenda').innerHTML = partes.map(([n, lista, cls, st, txt]) => n ? `<a href="#" data-lista="${lista}" title="Ver cuáles son en Expedientes">${cuadro(cls, st)}${txt}</a>` : '').join('');
+  const borde = antB + posB;
+  $('siaAclara').innerHTML = (borde ? `<a href="#" data-lista="BORDE+ESTIMADA">${plural(borde, 'queda', 'quedan')} en el borde</a>, a menos de ${meses} del corte: la resolución puede cambiar el resultado. ` : '') + queEsElegible();
+  // ¿CUÁNTO SE LE PUEDE CREER? La muestra al azar es la que vale para medir; todo lo leído no es al azar.
+  const v = pl.validacion || {}, mu = v.muestra || {}, ac = aciertoPlanilla(v), dif = v.diferencia_mediana_anios;
+  const fila = (t, nota, b, id) => `<div class="fila-m"><span>${t}${nota ? ` <span class="mini">${nota}</span>` : ''}</span><b${id ? ` id="${id}"` : ''}>${b}</b></div>`;
+  $('siaCreerCuerpo').innerHTML = `<div>
+      ${fila('En la muestra al azar', mu.expedientes ? `(${miles(mu.leidas || 0)} de ${miles(mu.expedientes)} ya leídos)` : '', ac.cifraMuestra || 'todavía no', 'siaAciertoMuestra')}
+      ${fila('En todo lo leído', '(no es al azar)', ac.cifraTodo || 'todavía no', 'siaAciertoTodo')}
+      ${dif != null ? fila('Diferencia típica en el año', '', `${miles(dif)} ${dif === 1 ? 'año' : 'años'}`) : ''}</div>
+    <p class="mini" style="margin:0">Coincide quiere decir que la planilla y la resolución dan el mismo resultado: elegible o no elegible. La muestra al azar es la que vale para medir: 1 de cada 200 expedientes, elegidos por una cuenta fija sobre su número. Hasta 30 comparadas se muestra "x de y", sin porcentaje.${!Number(v.comparadas) ? ' Cuando se lean resoluciones de la planilla, se mide acá.' : ''}</p>`;
+  // PEDIR LOS PDF: en un orden fijo, el mismo de la lista que se baja (paraPedir).
+  const g = paraPedir(), total = g[0].length + g[1].length + g[2].length;
+  $('siaPedirCuerpo').innerHTML = `<div>${fila('1 · Del borde, con la resolución escaneada', hayInventario() ? '' : '(falta el inventario de digitalizados)', miles(g[0].length))}${fila('2 · Resto del borde', '', miles(g[1].length))}${fila('3 · Muestra al azar', '', miles(g[2].length))}</div>`;
+  $('btnSIALista').textContent = `Bajar la lista para pedir los PDF (${miles(total)})`; if(!total) $('btnSIALista').disabled = true;
+  // UBICACIÓN: lo de la parcela se dibuja en el mapa; lo ubicado por la localidad, no (se cuenta en "Por lugar").
+  const conLat = D.filter(d => d.geo && d.geo.lat != null), aprox = conLat.filter(d => d.geo.ubicacion_aproximada).length, parcela = conLat.length - aprox;
+  const sinUbicar = D.length - conLat.length, sinConsultar = D.filter(d => d.geo && d.geo.cuenta_normalizada && !d.geo.catastro).length;
   const noEncontro = D.filter(d => d.geo && d.geo.catastro && !d.geo.catastro.encontrada).length;
-  $('siaCatastroCuerpo').innerHTML = `<div><div class="fila-m"><span>Por la parcela de Catastro</span><b>${miles(parcela)}</b></div><div class="fila-m"><span>Por la localidad (aproximado)</span><b>${miles(aprox)}</b></div><div class="fila-m"><span>Sin ubicar</span><b>${miles(sinUbicar)}</b></div></div>
-    <p class="mini" style="margin:0">${sinConsultar ? `${miles(sinConsultar)} con cuenta todavía sin consultar en Catastro${puedeCargar() ? ': "Ubicar en Catastro" las consulta de a tandas, y si se corta, se vuelve a tocar y sigue donde quedó. El mismo botón ubica las resoluciones leídas' : ''}. ` : 'Todas las cuentas ya se consultaron en Catastro. '}${noEncontro ? `Catastro no encontró la parcela de ${miles(noEncontro)}: se vuelven a probar pasados 30 días. ` : ''}Las que no traen cuenta se ubican por la localidad, si la planilla la trae.</p>`;
+  $('siaCatastroCuerpo').innerHTML = `<div>${fila('Por la parcela de Catastro', '', miles(parcela))}${fila('Por la localidad', '(aproximado, no se dibuja)', miles(aprox))}${fila('Sin ubicar', '', miles(sinUbicar))}</div>
+    <p class="mini" style="margin:0">${sinConsultar ? `${plural(sinConsultar, 'tiene', 'tienen')} cuenta y todavía no se ${sinConsultar === 1 ? 'consultó' : 'consultaron'} en Catastro${puedeCargar() ? ': el botón las consulta (y también las resoluciones leídas); si se corta, se vuelve a tocar y sigue donde quedó' : ''}. ` : 'Todas las cuentas ya se consultaron en Catastro. '}${noEncontro ? `Catastro no encontró la parcela de ${miles(noEncontro)}: se vuelven a probar pasados 30 días. ` : ''}Las que no traen cuenta se ubican por la localidad, si la planilla la trae.</p>`;
+  // EL PADRÓN, en una línea: se ve en cada ficha y, en números, en Cargar y cruzar. Se cuenta solo lo que tiene
+  // resolución según la planilla: un trámite sin resolución no tiene nada que inscribir.
+  if(!hayPadron()){ $('siaPadronCuerpo').innerHTML = `Todavía no se cargó el Padrón del Registro: sin él no se sabe cuáles de estos expedientes figuran inscriptos.${puedeCargar() ? ' <a href="#" data-ir="padron">Ir a cargar el Padrón</a>' : ''}`; return; }
+  const conRes = D.filter(d => !sinResolucionPlanilla(d)), porInsc = {};
+  for(const d of conRes){ const e = estadoInsc(d); porInsc[e] = (porInsc[e] || 0) + 1; }
+  const parte = (e, uno, varios) => { const n = porInsc[e] || 0; return n ? `<a href="#" data-lista="ESTIMADA+CON_RESOLUCION+INSC:${e}" title="Ver cuáles son en Expedientes">${plural(n, uno, varios)}</a>` : `${miles(0)} ${varios}`; };
+  $('siaPadronCuerpo').innerHTML = `El cruce con el Padrón se ve en cada ficha${puedeCargar() ? ' y, en números, en <a href="#" data-ir="cargar">Cargar y cruzar</a>' : ''}. De la planilla se cuenta solo lo que tiene resolución según la planilla, ${plural(conRes.length, 'expediente', 'expedientes')}: `
+    + [parte('INSCRIPTA', 'inscripta', 'inscriptas'), parte('TRABADA', 'provisoria u observada', 'provisorias u observadas'), parte('NO_FIGURA_EN_PADRON', 'no figura por nombre', 'no figuran por nombre'), parte('AMBIGUO', 'ambigua', 'ambiguas')]
+      .concat(porInsc.SIN ? [parte('SIN', 'sin nombre para cruzar', 'sin nombre para cruzar')] : []).join(' · ') + '. El cruce es por nombre: antes de dar uno por no inscripto, falta confirmarlo.';
 }
-$('siaTarjetas').addEventListener('click', e => { const t = e.target.closest('[data-lista]'); if(t) abrirLista(t.dataset.lista); });
-$('siaTarjetas').addEventListener('keydown', e => { const t = e.target.closest('[data-lista]'); if(t && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); abrirLista(t.dataset.lista); } });
-$('siaPadronCuerpo').addEventListener('click', e => { const t = e.target.closest('[data-lista]'); if(t){ abrirLista(t.dataset.lista); return; } const b = e.target.closest('[data-ir]'); if(b) ir(b.dataset.ir); });
-$('siaPadronCuerpo').addEventListener('keydown', e => { const t = e.target.closest('[data-lista]'); if(t && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); abrirLista(t.dataset.lista); } });
+['siaReparto','siaPadronCuerpo'].forEach(id => $(id).addEventListener('click', e => { const t = e.target.closest('[data-lista]'), b = e.target.closest('[data-ir]');
+  if(t){ e.preventDefault(); abrirLista(t.dataset.lista); } else if(b){ e.preventDefault(); ir(b.dataset.ir); } }));
 /**
  * Lo que se está viendo, para abrir con Excel (en la web, el kit y el modo suelto, siempre con los filtros puestos):
  * títulos y valores con los mismos nombres de la pantalla, fechas dd/mm/aaaa y, en cada fila, de dónde sale: la
@@ -3390,16 +3448,17 @@ function planillaExcel(lista){
   return [COLUMNAS_EXCEL.map(([, t]) => t).join(';')].concat(filas).join('\r\n');
 }
 $('expCsv').addEventListener('click', () => descargar('﻿' + planillaExcel(ordenar(vista)), 'expedientes_ley_pierri.csv', 'text/csv;charset=utf-8'));
-/** La lista para pedir los PDF: primero los del borde (donde la estimación puede cambiar), después los elegibles. */
+/**
+ * La lista para pedir los PDF, en el orden de paraPedir(): del borde con la resolución escaneada, el resto del borde y la
+ * muestra al azar, con la columna "Para qué". Sin nombres ni DNI: es para pedir los PDF.
+ */
 $('btnSIALista').addEventListener('click', () => {
-  const orden = { ELEGIBLE_BORDE: 0, NO_ELEGIBLE_BORDE: 0, ELEGIBLE: 1 }, texto = { ELEGIBLE_BORDE: 'elegible, en el borde', NO_ELEGIBLE_BORDE: 'no elegible, en el borde', ELEGIBLE: 'elegible' };
-  // Si ya hay un PDF cargado de ese expediente (de trámite o sin leer), no se pide.
-  const lista = registros.filter(r => deLaPlanilla(r) && !r.leida_aparte && cl(r.derivado) in orden).sort((a, b) => orden[cl(a.derivado)] - orden[cl(b.derivado)]
-    || ((b.planilla && b.planilla.con_resolucion ? 1 : 0) - (a.planilla && a.planilla.con_resolucion ? 1 : 0)) || String(a.derivado.expediente).localeCompare(String(b.derivado.expediente)));
-  const c = v => { const t = v == null ? '' : String(v); return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
-  const filas = lista.map(r => { const d = r.derivado, p = r.planilla || {};
-    return [d.expediente, texto[cl(d)], d.posee_desde ? d.posee_desde.slice(0, 4) : '', d.resolucion_numero || '', d.resolucion_fecha ? d.resolucion_fecha.split('-').reverse().join('/') : '', [p.estado, p.etapa].filter(Boolean).join(' · '), loc(d), d.geo && d.geo.dep_nombre || '', d.geo && d.geo.cuenta_normalizada || ''].map(c).join(';'); });
-  descargar('\ufeff' + ['Expediente;Estimación;Posee desde (año);Resolución N°;Fecha de resolución;Trámite;Localidad;Departamento;Cuenta'].concat(filas).join('\r\n'), 'pedir_pdf_planilla_uest.csv', 'text/csv;charset=utf-8');
+  const texto = { ELEGIBLE: 'elegible', ELEGIBLE_BORDE: 'elegible, en el borde', NO_ELEGIBLE: 'no elegible', NO_ELEGIBLE_BORDE: 'no elegible, en el borde', SIN_DATO: 'sin fecha' };
+  const c = v => { const t = v == null ? '' : String(v); return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const filas = paraPedir().flatMap((grupo, i) => grupo.map(r => { const d = r.derivado, p = r.planilla || {};
+    const para = PARA_QUE[i] + (i < 2 && enMuestra(r) ? ' · también en la muestra al azar' : '');
+    return [d.expediente, para, texto[cl(d)] || nombreClase(cl(d)), d.posee_desde ? d.posee_desde.slice(0, 4) : '', d.resolucion_numero || '', d.resolucion_fecha ? d.resolucion_fecha.split('-').reverse().join('/') : '', [p.estado, p.etapa].filter(Boolean).join(' · '), loc(d), d.geo && d.geo.dep_nombre || '', d.geo && d.geo.cuenta_normalizada || ''].map(c).join(';'); }));
+  descargar('\ufeff' + ['Expediente;Para qué;Estimación;Posee desde (año);Resolución N°;Fecha de resolución;Trámite;Localidad;Departamento;Cuenta'].concat(filas).join('\r\n'), 'pedir_pdf_planilla_tramites.csv', 'text/csv;charset=utf-8');
 });
 /** Versión web: muestra al costado el PDF guardado (cifrado en el repositorio), solo las páginas de esta resolución. */
 let visorTarea = 0;
@@ -3683,8 +3742,8 @@ function abrirExpediente(hash){
   ir('expedientes');
   vaciarFiltros(); pagina = 0;
   // Con número se la busca; sin número se va a la página donde está en la lista completa.
-  if(r.derivado.expediente){ $('buscar').value = r.derivado.expediente; pintarTodo(); }
-  else { pintarTodo(); pagina = Math.max(0, Math.floor(ordenar(vista).indexOf(r) / POR_PAG)); pintarTabla(); }
+  if(r.derivado.expediente){ $('buscar').value = r.derivado.expediente; pintarFiltrado(); }
+  else { pintarFiltrado(); pagina = Math.max(0, Math.floor(ordenar(vista).indexOf(r) / POR_PAG)); pintarTabla(); }
   setTimeout(() => {
     const idx = String(registros.indexOf(r));
     const fila = document.querySelector(`#filas tr.fila[data-i="${idx}"]`);
@@ -3696,7 +3755,7 @@ function abrirExpediente(hash){
 document.addEventListener('click', e => { const a = e.target.closest('[data-abrir]'); if(!a) return; e.preventDefault(); abrirExpediente(a.dataset.abrir); });
 /** Los expedientes de una misma parcela, juntos en la lista (se buscan por la cuenta). Lo que se estaba viendo vuelve con "volver". */
 document.addEventListener('click', e => { const a = e.target.closest('[data-cuenta]'); if(!a) return; e.preventDefault();
-  if(mapa) mapa.closePopup(); if(!guardados) guardados = estadoFiltros(); ir('expedientes'); vaciarFiltros(); pagina = 0; $('buscar').value = a.dataset.cuenta; pintarTodo(); });
+  if(mapa) mapa.closePopup(); if(!guardados) guardados = estadoFiltros(); ir('expedientes'); vaciarFiltros(); pagina = 0; $('buscar').value = a.dataset.cuenta; pintarFiltrado(); });
 /** Lleva a la tabla de Expedientes filtrada por estado en el Registro, para ver cuáles son. Las tarjetas del Registro cuentan lo leído. */
 /** Los nombres de Catastro y los del inventario difieren en abreviaturas: Gral./General, Pte./Presidente. */
 const CLAVE_DEP = new Map();   // son 26 departamentos: se normaliza cada nombre una sola vez
@@ -3811,7 +3870,7 @@ function pintarMapa(){
     // leído o controlado), con lo que dice cada fuente: la planilla, el Padrón, Catastro y el inventario.
     const html = () => { const nEst = rs.filter(deLaPlanilla).length, nLei = rs.length - nEst, cuentas = new Set(ds.map(d => d.geo.cuenta_normalizada).filter(Boolean));
       return `<div style="font:12.5px Public Sans,sans-serif;max-width:100%"><b>${esc(loc(ds[0]))}</b>${mz(ds[0]) ? ' · ' + esc(mz(ds[0])) : ''}<br>` +
-      `<span class="globo-cuenta">${rs.length === 1 ? (nEst ? 'Un expediente, estimado con la planilla de la UEST (no se leyó la resolución)' : 'Un expediente, con la resolución leída')
+      `<span class="globo-cuenta">${rs.length === 1 ? (nEst ? 'Un expediente, estimado con la planilla de trámites (no se leyó la resolución)' : 'Un expediente, con la resolución leída')
         : `${miles(rs.length)} expedientes en este punto: ` + (nEst && nLei ? `${plural(nEst, 'estimado', 'estimados')} con la planilla · ${miles(nLei)} con la resolución leída` : nEst ? 'todos estimados con la planilla (no se leyó la resolución)' : 'todos con la resolución leída')}</span><br>` +
       (hayPadron() ? '' : '<span class="mini">Padrón del Registro: no cargado.</span><br>') +
       // La lista corre adentro del globo: con varios en el mismo punto, el globo no tapa todo el mapa.
@@ -3851,7 +3910,7 @@ function pintarMapa(){
 document.addEventListener('click', e => { const a = e.target.closest('[data-ver-loc]'); if(!a) return; e.preventDefault();
   if(mapa) mapa.closePopup(); guardados = estadoFiltros();
   const s = $('fLoc'), v = a.dataset.verLoc; $('fDep').value = ''; $('fSec').value = ''; if(![...s.options].some(o => o.value === v)) s.add(new Option(v, v)); s.value = v;
-  ir('expedientes'); pagina = 0; pintarTodo(); });
+  ir('expedientes'); pagina = 0; pintarFiltrado(); });
 
 $('expJson').addEventListener('click', () => descargar(JSON.stringify({ sistema: 'Relevamiento Ley Pierri', autor: 'Baltasar Corna Fantin', organismo: 'Escribanía General de Gobierno de Córdoba', fecha: new Date().toISOString(), origen: origenNombre, config: config(), resumen: resumenSrv, resultados: registros }, null, 1), 'relevamiento_ley_pierri.json', 'application/json'));
 /**
@@ -3863,7 +3922,7 @@ $('expKml').addEventListener('click', () => {
   const x = s => String(s == null ? '' : s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
   const CERT_KML = { estimado: 'estimado con la planilla', leido: 'leído', controlado: 'controlado' };
   const marcas = Array.from(grupos.entries()).map(([k, rs]) => { const [lat, lon] = k.split(','), ds = rs.map(r => r.derivado);
-    const desc = rs.map(r => { const d = r.derivado, c = certeza(r); return `${d.expediente} — ${d.rogante_principal || ''} — ${mayus1(nombreClase(cl(d)))}${c === 'estimado' ? ' (estimado con la planilla de la UEST, sin la resolución leída)' : c === 'controlado' ? ' (resolución leída y controlada)' : ' (resolución leída)'} — posee desde ${fechaExcel(d.posee_desde, d.posee_desde_precision) || '?'}`; }).join('\n');
+    const desc = rs.map(r => { const d = r.derivado, c = certeza(r); return `${d.expediente} — ${d.rogante_principal || ''} — ${mayus1(nombreClase(cl(d)))}${c === 'estimado' ? ' (estimado con la planilla de trámites, sin la resolución leída)' : c === 'controlado' ? ' (resolución leída y controlada)' : ' (resolución leída)'} — posee desde ${fechaExcel(d.posee_desde, d.posee_desde_precision) || '?'}`; }).join('\n');
     const cert = certezaPunto(rs), nEst = rs.filter(deLaPlanilla).length, cual = nEst && nEst < rs.length ? 'incluye estimados' : CERT_KML[cert];
     return `<Placemark><name>${x([loc(ds[0]), mz(ds[0])].filter(Boolean).join(' ') + ' (' + ds.length + ') · ' + cual)}</name><description>${x(desc)}</description><styleUrl>#${colorDe(ds.map(cl))}${cert === 'estimado' ? '-est' : ''}</styleUrl><Point><coordinates>${lon},${lat},0</coordinates></Point></Placemark>`; }).join('\n');
   // Los colores del mapa, en el orden de KML (aabbggrr); lo que incluye estimados, translúcido.
