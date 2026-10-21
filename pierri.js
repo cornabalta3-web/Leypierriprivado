@@ -811,8 +811,10 @@ const servidor = http.createServer(async (req, res) => {
       if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return json(res, { error: 'la fecha corregida debe ser AAAA-MM-DD' }, 400);
       const TIPOS = ['RESOLUCION_INSCRIPCION', 'RESOLUCION_RECTIFICA', 'RESOLUCION_DESESTIMA', 'RESOLUCION_CANCELA', 'RESOLUCION_TRAMITE', 'CEDULA_NOTIFICACION'];
       const tipo = TIPOS.includes(String(c.tipo_documento)) ? String(c.tipo_documento) : null;
-      r.revision = { revisado: !!c.revisado, revisor: String(c.revisor || '').slice(0, 80) || null,
+      // Firma quien ingresó (sin usuarios, nadie). "Con dudas" queda sin controlar, con la observación.
+      r.revision = { revisado: !!c.revisado, revisor: sesion ? String(sesion.nombre || sesion.usuario || '').slice(0, 80) || null : null,
         nota: String(c.nota || '').slice(0, 500) || null, posee_desde: fecha || null, tipo_documento: tipo, en: ahora() };
+      if (!c.revisado && c.dudas) r.revision.dudas = true;
       aplicarRevision(r, cfgElegibilidad());
       q.setRevision.run(r.revision.revisado ? 1 : 0, r.revision.en, r.revision.revisor, r.revision.nota,
         JSON.stringify({ posee_desde: r.revision.posee_desde, tipo_documento: r.revision.tipo_documento }), JSON.stringify(r), r.hash);

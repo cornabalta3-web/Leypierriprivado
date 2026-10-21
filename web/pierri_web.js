@@ -1361,23 +1361,25 @@
     const fecha = String(c.posee_desde || '').trim();
     if (fecha && (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || isNaN(Date.parse(fecha)))) throw new Error('La fecha corregida debe ser una fecha válida (día, mes y año).');
     const tipo = TIPOS.includes(String(c.tipo_documento)) ? String(c.tipo_documento) : null;
-    const rev = limpiar({ revisado: !!c.revisado, revisor: String(c.revisor || '').trim().slice(0, 80) || null, nota: String(c.nota || '').trim().slice(0, 500) || null,
-      posee_desde: fecha || null, tipo_documento: tipo, en: ahora() });
-    const d0 = await datos();
-    const reg = d0.registros.find(r => r.hash === id);
+    // Firma quien ingresó: no se escribe a mano. "Con dudas" queda sin controlar, con la observación.
+    const rev = limpiar({ revisado: !!c.revisado, dudas: !c.revisado && !!c.dudas || null, revisor: String(s.nombre || s.usuario || '').trim().slice(0, 80) || null,
+      nota: String(c.nota || '').trim().slice(0, 500) || null, posee_desde: fecha || null, tipo_documento: tipo, en: ahora() });
+    // La resolución se busca en lo último que se calculó (VISTA): volver a calcular todo solo para encontrarla trababa la
+    // página. El Tablero vuelve a traer los datos después de guardar, y ahí se calcula una sola vez.
+    if (!VISTA) await datos();
+    const reg = VISTA.todos.find(r => r.hash === id && r.derivado);
     if (!reg) throw new Error('No encuentro esa resolución.');
     let escrito = null;
     await ocupado(() => transaccion(async estado => {
       const ab = await abrirEstado(estado, s);
       const revs = (await abrirJSON(ab.dek, await estado.leer(RUTAS.revisiones))) || {};
       revs[id] = rev;
-      anotar(ab.boveda, s, 'revision', [reg.derivado.expediente || reg.archivo, rev.revisado ? 'controlada a mano' : 'sin controlar', rev.posee_desde ? 'posesión desde ' + rev.posee_desde.split('-').reverse().join('/') : '', rev.tipo_documento ? 'tipo corregido: ' + rev.tipo_documento : ''].filter(Boolean).join(' · '));
+      anotar(ab.boveda, s, 'revision', [reg.derivado.expediente || reg.archivo, rev.revisado ? 'controlada a mano' : rev.dudas ? 'con dudas' : 'sin controlar', rev.posee_desde ? 'posesión desde ' + rev.posee_desde.split('-').reverse().join('/') : '', rev.tipo_documento ? 'tipo corregido: ' + rev.tipo_documento : ''].filter(Boolean).join(' · '));
       escrito = { dek: ab.dek, revisiones: limpiar(revs) };
       return { [RUTAS.revisiones]: await sellarDatos(ab.dek, revs), [RUTAS.admin]: await sellarBovedaDe(ab, s) };
     }, 'Actualización del relevamiento'));
     alGuardar(s, escrito.dek, { revisiones: escrito.revisiones });
-    const r1 = (await datos()).registros.find(r => r.hash === id);
-    return { ok: true, revision: rev, clasificacion: r1 ? window.PierriCore.clasificar(r1.derivado) : null };
+    return { ok: true, revision: rev, clasificacion: null };   // la clasificación nueva la trae el próximo /api/datos
   }
 
   // ───────────── Padrón, inventario y Catastro ─────────────

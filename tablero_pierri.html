@@ -229,7 +229,7 @@ td.exp{white-space:nowrap;font-weight:600}
 .detalle{background:var(--suave)}
 .detalle dl{display:grid;grid-template-columns:minmax(118px,max-content) 1fr;gap:4px 16px;margin:0;font-size:13px}
 .detalle dt{color:var(--texto2)} .detalle dd{margin:0;overflow-wrap:anywhere;min-width:0}
-/* "Lo que se sabe de este expediente": una línea por fuente, separado de los datos de arriba. */
+/* "Qué dice cada fuente": un renglón por fuente, siempre en el mismo orden; lo que no coincide va en rojo. */
 .detalle .sabe{margin-top:12px;padding-top:10px;border-top:1px solid var(--linea2)}
 .detalle .sabe h3{font-size:13px;font-weight:700;margin:0 0 6px;color:var(--texto)}
 .detalle .sabe .no-hay{color:var(--texto2)}
@@ -243,17 +243,47 @@ tr.fila.rev td:first-child{box-shadow:inset 3px 0 0 var(--verde)}
 .boton-ver{display:inline-block;font:600 13px "Public Sans",sans-serif;padding:9px 14px;border-radius:var(--r2);border:1px solid var(--marca);background:var(--marca);color:#fff;text-decoration:none}
 .boton-ver:hover{background:var(--marca2)}
 button.boton-ver{cursor:pointer}
-/* Visor de la resolución original (versión web): al costado, para corregir mirando el PDF */
-.visor{position:fixed;top:0;right:0;bottom:0;width:min(46vw,780px);background:var(--blanco);border-left:1px solid var(--linea2);box-shadow:-10px 0 28px rgba(0,0,0,.2);z-index:900;display:flex;flex-direction:column}
+/* Visor de la resolución original (versión web). En la pantalla ancha ocupa el lugar de la lista y la ficha queda al
+   costado, con el control fijo al pie (el visor ya no lo tapa). En el teléfono se abre a pantalla completa. */
+.visor{position:fixed;top:0;right:0;bottom:0;width:100vw;background:var(--blanco);border-left:1px solid var(--linea2);box-shadow:-10px 0 28px rgba(0,0,0,.2);z-index:900;display:flex;flex-direction:column}
 .visor-cab{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--linea)}
 .visor-cab .t{flex:1;min-width:0;display:flex;flex-direction:column}
 .visor-cab b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .visor-cuerpo{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--fondo)}
 .visor-cuerpo canvas{width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
-@media (max-width:900px){.visor{width:100vw}}
-@media (min-width:901px){body.con-visor main{margin-right:min(46vw,780px)}
-  /* Con el PDF al costado la tabla queda angosta: sin las columnas secundarias, la ficha y "Guardar revisión" entran a la vista */
-  body.con-visor #v-expedientes .col-sec{display:none} body.con-visor #v-expedientes .tag{white-space:normal}}
+#barraControl{display:none;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--blanco);border:1px solid var(--linea);border-radius:var(--r);padding:10px 16px;font-size:14px}
+@media (min-width:901px){
+  /* La pantalla entera: arriba la barra, abajo el PDF y la ficha, cada uno con su propio desplazamiento. */
+  body.con-visor #v-lista{display:grid;grid-template-columns:minmax(0,3fr) minmax(360px,2fr);grid-template-rows:auto minmax(0,1fr);gap:12px;height:calc(100vh - 16px)}
+  body.con-visor #barraControl{display:flex;grid-column:1 / -1;grid-row:1}
+  body.con-visor .visor{position:relative;top:auto;right:auto;bottom:auto;width:auto;height:auto;min-height:0;grid-column:1;grid-row:2;border:1px solid var(--linea2);border-radius:var(--r);box-shadow:none;z-index:1;overflow:hidden}
+  body.con-visor #v-lista>.panel{grid-column:2;grid-row:2;min-height:0;overflow:auto;display:block}
+  body.con-visor #v-lista .tabla-scroll{overflow:visible}
+  body.con-visor #v-lista>.bajada,body.con-visor #v-lista>.leyenda,body.con-visor #v-lista .pag,body.con-visor #v-lista thead,body.con-visor #filas tr.fila,body.con-visor #v-expedientes>.barra-f,body.con-visor #v-expedientes>.cab{display:none}
+  body.con-visor tr.det .revision{position:sticky;bottom:0;z-index:2;box-shadow:0 -8px 14px rgba(0,0,0,.10)}
+  body.con-visor .ficha-cab .pos-control{display:none}}
+/* La ficha: arriba el resultado con su marca, la escalera Estimado → Leído → Controlado y la fecha que manda. */
+.ficha-cab{display:flex;flex-direction:column;gap:8px;margin:0 0 4px}
+.ficha-cab h3{margin:0;font-size:17px;font-weight:800;overflow-wrap:anywhere}
+.ficha-cab p{margin:0;font-size:13.5px;overflow-wrap:anywhere}
+.ficha-cab .linea-res{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.escalera{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px}
+.escalera .esc{padding:2px 9px;border-radius:99px;border:1px solid var(--linea2);color:var(--texto2)}
+.escalera .esc.est{border:1.5px dashed var(--verde);color:var(--verde)}
+.escalera .esc.hecho{background:var(--verde);border-color:var(--verde);color:var(--blanco)}
+.escalera .esc.duda{border-color:var(--ambar);color:var(--ambar);background:var(--ambar2)}
+.detalle .sabe .no-coincide{color:var(--rojo)}
+.revision{border-top:2px solid var(--marca)}
+.rv-modos{display:flex;flex-wrap:wrap;gap:8px}
+.rv-modos button{background:var(--blanco);color:var(--texto);border:1px solid var(--linea2)}
+.rv-modos button[aria-pressed="true"]{background:var(--marca);color:#fff;border-color:var(--marca)}
+.revision:not([data-modo="corregir"]) .rv-solo-corregir{display:none}
+.rv-aviso{margin:0;padding:8px 10px;border-radius:var(--r2);background:var(--ambar2);color:var(--ambar);font-size:13px}
+.rv-aviso:empty{display:none}
+.rv-pie{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.rv-pie>.mini{flex:1 1 180px}
+.revision .controles{gap:8px 10px}
+.detalle .sabe dd button{padding:3px 9px;font-size:12px;margin-left:6px}
 .clicable{cursor:pointer;transition:box-shadow .12s,border-color .12s}
 tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 .clicable:hover{border-color:var(--acento);box-shadow:0 1px 6px rgba(22,67,110,.14)}
@@ -304,7 +334,6 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
 </style>
 </head>
 <body>
-<aside class="visor oculto" id="visor" aria-label="Resolución original"><div class="visor-cab"><div class="t"><b id="visorTitulo"></b><span class="mini" id="visorSub"></span></div><button class="sec" id="visorCerrar">Cerrar</button></div><div class="visor-cuerpo" id="visorPaginas"></div></aside>
 <div class="ing-fondo oculto" id="ingreso"><div class="ing-caja">
   <h2>Relevamiento Ley Pierri</h2><p class="sub">Escribanía General de Gobierno de Córdoba</p>
   <div id="ingForm">
@@ -486,7 +515,10 @@ tr.rc-resalte td{background:var(--ambar2)!important;transition:background .4s}
     </div></div>
 
     <div id="v-lista">
-      <div class="bajada"><p id="subTabla"></p><div class="acciones"><button id="expCsv" class="sec" title="Un archivo que abre Excel con las filas que muestra la lista: títulos y valores en castellano, fechas dd/mm/aaaa y de dónde sale cada fila">Bajar en Excel lo que estoy viendo</button></div></div>
+      <!-- Con el PDF abierto: el visor ocupa el lugar de la lista y la ficha queda al costado (ver body.con-visor). -->
+      <div id="barraControl" role="region" aria-label="Controlar contra el PDF"></div>
+      <div class="bajada"><p id="subTabla"></p><div class="acciones"><button id="btnEmpezar" class="oculto" title="Abre la primera de la lista con su PDF al lado; al guardar pasa a la siguiente">Empezar a controlar</button><button id="expCsv" class="sec" title="Un archivo que abre Excel con las filas que muestra la lista: títulos y valores en castellano, fechas dd/mm/aaaa y de dónde sale cada fila">Bajar en Excel lo que estoy viendo</button></div></div>
+      <aside class="visor oculto" id="visor" aria-label="Resolución original"><div class="visor-cab"><div class="t"><b id="visorTitulo"></b><span class="mini" id="visorSub"></span></div><button class="sec" id="visorCerrar">Cerrar el PDF</button></div><div class="visor-cuerpo" id="visorPaginas"></div></aside>
       <div class="panel">
         <div class="tabla-scroll">
           <table>
@@ -1637,7 +1669,12 @@ document.querySelectorAll('[data-ir-vista]').forEach(a => a.addEventListener('cl
 window.addEventListener('hashchange', () => ir(location.hash.slice(1)));
 
 async function api(ruta, opciones){ if(WEB) return window.PIERRI_WEB.api(ruta, opciones); const r = await fetch(ruta, opciones); const j = await r.json().catch(() => ({})); if(!r.ok || j.error) throw new Error(j.error || ('respuesta ' + r.status)); return j; }
-async function cargarDesdeServidor(volverATraer){
+/**
+ * Trae los datos y vuelve a dibujar todo. Si había una ficha abierta, la vuelve a abrir con lo que se estaba escribiendo
+ * y el foco donde estaba (al terminar Catastro o una carga larga no se pierde una corrección a medio escribir). fresca:
+ * después de guardar, la ficha la abre quien guardó, con lo guardado.
+ */
+async function cargarDesdeServidor(volverATraer, fresca){
   // En la web lo descifrado queda en la pestaña; "Volver a traer los datos" lo pide de nuevo (lo que cargaron otros).
   const d = await api(WEB && volverATraer === true ? '/api/web/recargar' : '/api/datos');
   registros = (d.registros || []).filter(r => r && r.derivado && !r.repetido_de);
@@ -1651,7 +1688,26 @@ async function cargarDesdeServidor(volverATraer){
   $('subApp').textContent = d.config && d.config.key ? `clave cargada (${d.config.key}) · ${({ 'claude-haiku-4-5-20251001': 'Haiku 4.5', 'claude-sonnet-4-6': 'Sonnet 4.6' })[d.config.modelo] || d.config.modelo}` : 'sin clave: se lee solo por texto';
   if(WEB) $('subInstr').textContent = res.instrucciones_modelo ? 'instrucciones cargadas' : 'faltan: sin ellas no se puede usar la IA (se cargan una sola vez)';
   if(d.config){ ponerCriterio(d.config); $('modelo').value = d.config.modelo || 'claude-haiku-4-5-20251001'; if(d.config.key) $('apiKey').value = d.config.key; }
+  const antes = fresca ? null : estadoFicha();
   pintarTodo();
+  if(antes) reponerFicha(antes);
+}
+/** Lo que hay en la ficha abierta: de qué expediente es, lo escrito en el control y dónde estaba el foco. */
+function estadoFicha(){
+  const det = fichaAbierta(); if(!det) return null;
+  const caja = det.querySelector('.revision'), ae = document.activeElement, campos = caja ? [...caja.querySelectorAll('input,select')] : [];
+  return { hash: det.dataset.hash, modo: caja ? caja.dataset.modo : '', valores: campos.map(e => e.value), foco: ae && caja && caja.contains(ae) ? campos.indexOf(ae) : -1,
+    pos: ae && typeof ae.selectionStart === 'number' ? ae.selectionStart : null };
+}
+function reponerFicha(s){
+  const det = abrirFichaDe(s.hash);
+  if(!det){ if(visorReg && visorReg === s.hash) cerrarVisor(); return; }
+  const caja = det.querySelector('.revision'); if(!caja) return;
+  const campos = [...caja.querySelectorAll('input,select')];
+  if(s.modo) ponerModo(caja, s.modo);
+  s.valores.forEach((v, i) => { if(campos[i] && campos[i].value !== v) campos[i].value = v; });
+  avisoControl(caja);
+  const f = campos[s.foco]; if(f) try{ f.focus({ preventScroll: true }); if(s.pos != null && f.setSelectionRange) f.setSelectionRange(s.pos, s.pos); }catch(e){}
 }
 let avisoModelo = null;
 /** Informe por archivo: cuáles suman un expediente, cuáles son del mismo expediente que otro y cuáles no aportan nada. */
@@ -2428,7 +2484,7 @@ function pasa(r, ignorarLoc, ignorarPaso, fv){
   if(F.ctrl && est) return false;   // el control a mano es de lo leído
   if(F.ctrl === 'CONTROLADA' && !(d.revision && d.revision.revisado)) return false;
   if(F.ctrl === 'SIN_CONTROLAR' && d.revision && d.revision.revisado) return false;
-  if(F.ctrl === 'CON_DUDAS' && !d.revisar) return false;
+  if(F.ctrl === 'CON_DUDAS' && !d.revisar && !(d.revision && d.revision.dudas)) return false;
   if(!ignorarPaso && F.paso && F.paso !== 'PASO_' + proximoPaso(r)) return false;
   if(F.res && sinResolucionPlanilla(d)) return false;
   // "Sin ubicar en el mapa": lo que el mapa no dibuja (sin parcela de Catastro ni coordenadas de la lectura).
@@ -2655,14 +2711,16 @@ function mismaParcela(r){
   const c = cuentaDe(r.derivado); return c ? (PARCELAS.m.get(c) || []).filter(x => x !== r) : [];
 }
 /** "elegible, estimado" o "no elegible, resolución leída": de dónde sale cada expediente, para listarlo junto a otros. */
-const resultadoYOrigen = r => nombreClase(cl(r.derivado)) + (deLaPlanilla(r) ? ', estimado' : ', resolución leída');
+const resultadoYOrigen = r => { const k = certeza(r); return nombreClase(cl(r.derivado)) + ', ' + (k === 'estimado' ? 'estimado' : k === 'leido' ? 'leído' : r.derivado.revision && r.derivado.revision.revisado ? 'controlado a mano' : 'controlado con IA'); };
+/** Los rogantes de la resolución leída, cada uno con su DNI (o "sin DNI"), en una sola línea. */
+const rogantesTexto = r => { const l = ((r.extraido || {}).rogantes || []).map(x => `${x.apellido_nombre || 'sin nombre legible'} (${x.dni ? 'DNI ' + x.dni : 'sin DNI'})`); return l.length ? (l.length === 1 ? 'rogante: ' : 'rogantes: ') + l.join(', ') : ''; };
 /**
- * "Lo que se sabe de este expediente": una línea por fuente (la planilla, la resolución leída, Catastro, el Padrón y el
+ * "Qué dice cada fuente": un renglón por fuente (la planilla, la resolución, Catastro, el Padrón y el
  * inventario), y lo que no hay se dice como tal. Abajo, los otros expedientes de la misma parcela (la misma cuenta).
  */
 function loQueSeSabe(r){
   const d = r.derivado, g = d.geo || {}, c = g.catastro || {}, est = deLaPlanilla(r), p = r.planilla || {};
-  const fila = (t, v, falta) => `<dt>${t}</dt><dd${falta ? ' class="no-hay"' : ''}>${v}</dd>`, trozos = a => a.filter(Boolean).join(' · ');
+  const fila = (t, v, falta) => `<dt>${t}</dt><dd${falta === 'rojo' ? ' class="no-coincide"' : falta ? ' class="no-hay"' : ''}>${v}</dd>`, trozos = a => a.filter(Boolean).join(' · ');
   const declaro = (ingreso, a) => `ingresó el ${isoATexto(ingreso) || '—'} declarando ${a == null ? '—' : String(a).replace('.', ',')} año${a === 1 ? '' : 's'} de posesión`;
   // La planilla de trámites (solo la web: en el kit no se carga).
   let planilla = null;
@@ -2674,36 +2732,42 @@ function loQueSeSabe(r){
     const pe = r.planilla_estimaba, ep = r.en_planilla || pe;
     planilla = !ep ? fila('Planilla', hayPlanilla() ? 'no figura en la planilla cargada' : 'no cargada', true)
       : fila('Planilla', esc(trozos([`el trámite ${declaro(ep.fecha_ingreso, ep.antiguedad)}`, r.en_planilla && r.en_planilla.estado && 'trámite: ' + r.en_planilla.estado, r.en_planilla && r.en_planilla.etapa]))
-        + (pe ? `<br>${esc(`estimaba posesión desde ${pe.posee_desde ? pe.posee_desde.slice(0, 4) : '—'}: ${conEstimado(nombreClase(pe.clasificacion), true)}`)}${pe.coincide === false ? ' · <b class="c-r">no coincide con la resolución</b>' : pe.coincide ? ' · coincide con la resolución' : ''}` : ''));
+        + (pe ? `<br>${esc(`estimaba posesión desde ${pe.posee_desde ? pe.posee_desde.slice(0, 4) : '—'}: ${conEstimado(nombreClase(pe.clasificacion), true)}`)}${pe.coincide === false ? ' · <b class="c-r">no coincide con la resolución</b>' : pe.coincide ? ' · coincide con la resolución' : ''}` : ''), pe && pe.coincide === false ? 'rojo' : false);
   }
   // La resolución leída.
   const rev = d.revision || {}, archivo = r.tomo ? `${r.tomo.archivo} (páginas ${(Number(r.tomo.desde) || 0) + 1} a ${(Number(r.tomo.hasta) || 0) + 1})` : r.archivo;
-  const aparte = est && r.leida_aparte;
+  const aparte = est && r.leida_aparte, ex = r.extraido || {}, inm = ex.inmueble ? trozos([ex.inmueble.calle, ex.inmueble.numero, ex.inmueble.manzana && 'mz ' + ex.inmueble.manzana, ex.inmueble.superficie_texto]) : '';
+  const senales = (d.senales || []).filter(x => x !== 'SIN_PARCELA_CATASTRO' && x !== 'PARCELA_BALDIA').map(senal).join(' · '), dudas = !est && d.revisar ? motivosEnPalabras(r).join(' · ') : '';
   const resolucion = aparte
-    ? fila('Resolución leída', `ya hay un PDF de este expediente cargado, pero ${r.leida_aparte.tipo === 'RESOLUCION_TRAMITE' ? 'es una resolución de trámite: no dice desde cuándo posee' : r.leida_aparte.tipo === 'CEDULA_NOTIFICACION' ? 'es una cédula: no dice desde cuándo posee' : 'no se pudo leer' + (puedeCargar() ? ': falta leerlo con IA (Configuración)' : '')}. Mientras tanto vale la estimación. <a href="#" data-abrir="${esc(r.leida_aparte.hash)}">Ver ese documento</a>`, true)
+    ? fila('Resolución', `ya hay un PDF de este expediente cargado, pero ${r.leida_aparte.tipo === 'RESOLUCION_TRAMITE' ? 'es una resolución de trámite: no dice desde cuándo posee' : r.leida_aparte.tipo === 'CEDULA_NOTIFICACION' ? 'es una cédula: no dice desde cuándo posee' : 'no se pudo leer' + (puedeCargar() ? ': falta leerlo con IA (Configuración)' : '')}. Mientras tanto vale la estimación. <a href="#" data-abrir="${esc(r.leida_aparte.hash)}">Ver ese documento</a>`, true)
     : est
-    ? fila('Resolución leída', 'todavía no: la estimación es lo que se declaró al iniciar el trámite, y la resolución puede fijar otra antigüedad. '
+    ? fila('Resolución', 'todavía no: la estimación es lo que se declaró al iniciar el trámite, y la resolución puede fijar otra antigüedad. '
       + (puedeCargar() ? 'Para confirmarla, conseguí el PDF de la resolución y subilo en "Cargar y cruzar", en el menú: la lectura reemplaza a esta estimación.' : 'Se confirma cuando se lea la resolución.'), true)
-    : fila('Resolución leída', esc(trozos([d.resolucion_numero ? 'N° ' + d.resolucion_numero + (d.resolucion_fecha ? ' del ' + isoATexto(d.resolucion_fecha) : '') : 'sin número legible',
+    : fila('Resolución', esc(trozos([d.resolucion_numero ? 'N° ' + d.resolucion_numero + (d.resolucion_fecha ? ' del ' + isoATexto(d.resolucion_fecha) : '') : 'sin número legible',
       TIPO_NOMBRE[d.tipo_documento] || (d.tipo_documento ? '' : 'no se pudo saber de qué tipo es'), r.fuente === 'texto' ? 'leída por texto' : r.fuente === 'modelo' ? 'leída con IA' : 'sin leer (el texto del PDF no alcanzó)',
-      rev.revisado && 'controlada a mano', archivo && 'archivo ' + archivo])));
+      rev.revisado && 'controlada a mano', archivo && 'archivo ' + archivo]))
+      + `<br><span class="mini">${esc(trozos([d.posee_desde && 'posee desde ' + fechaPosesion(d) + (CRITERIOS[d.posesion_criterio] ? ' (' + CRITERIOS[d.posesion_criterio] + ')' : ''), rogantesTexto(r),
+        inm && 'inmueble: ' + inm, (d.matriculas || []).length && 'matrícula ' + d.matriculas.join(', '), d.titulares_registrales && 'titular ' + d.titulares_registrales]))}</span>`
+      + (ex.posesion && ex.posesion.texto_original ? `<br><span class="mini">dice: «${esc(ex.posesion.texto_original)}»</span>` : '')
+      + (senales ? `<br><span class="mini">${esc(senales)}</span>` : '') + (dudas ? `<br><span class="mini c-r">con dudas: ${esc(dudas)}</span>` : ''));
   // Catastro: la parcela por la cuenta.
   const catastro = c.encontrada ? fila('Catastro', esc(catastroTexto(c)))
     : c.encontrada === false ? fila('Catastro', 'no encontró la parcela de esa cuenta', true)
     : !g.cuenta_normalizada ? fila('Catastro', 'sin cuenta para consultar' + (g.ubicacion_aproximada ? ': ubicado aproximadamente por la localidad' : ''), true)
-    : fila('Catastro', 'sin consultar' + (SERVIDOR && puedeCargar() ? (WEB ? ': "Ubicar en Catastro", en Planilla de trámites' : ': "Ubicar en Catastro", en el mapa de Expedientes') : ''), true);
+    : fila('Catastro', 'sin consultar' + (SERVIDOR && puedeCargar() ? ' <button class="sec" data-ubicar="1">Ubicar en Catastro</button>' : ''), true);
   // El Padrón del Registro (cruce por nombre) y el inventario de expedientes digitalizados de la UEST.
   const i = d.inscripcion, padron = fila('Padrón', esc(padronTexto(d)), !i || i.estado === 'NO_FIGURA_EN_PADRON' || i.estado === 'SIN_NOMBRE_PARA_CRUZAR');
   const v = r.inventario, contra = est ? 'la planilla' : 'la resolución', coincide = (x, que) => x === false ? ` (${que}NO coincide con ${contra})` : x ? ` (${que}coincide)` : '';
   const inventario = v ? fila('Inventario', esc(trozos([v.estado_digitalizacion, 'cuenta ' + (v.cuenta || 'sin cuenta') + coincide(v.cuenta_coincide, ''), 'resolución N° ' + (v.nro_resolucion || 'sin número') + coincide(v.resolucion_coincide, ''),
       v.iniciador && 'SUAC: ' + v.iniciador + (v.dni ? ' DNI ' + v.dni : '') + coincide(v.dni_coincide, 'DNI ')])))
     : fila('Inventario', hayInventario() ? 'no está en el inventario cargado' : 'no cargado', true);
+  const inventarioRojo = v && (v.cuenta_coincide === false || v.resolucion_coincide === false || v.dni_coincide === false);
   // Los otros expedientes de la misma parcela: los primeros, con enlace; todos juntos, en la lista.
   const otros = mismaParcela(r), MAX = 8;
   const parcela = otros.length ? `<p class="parcela-misma">En la misma parcela (cuenta ${esc(g.cuenta_normalizada)}): <b>${plural(otros.length, 'expediente más', 'expedientes más')}</b> · `
     + otros.slice(0, MAX).map(x => `<a href="#" data-abrir="${esc(x.hash)}">${esc(x.derivado.expediente || 'sin número')}</a> <span>(${esc(resultadoYOrigen(x))})</span>`).join(' · ')
     + (otros.length > MAX ? ` · y ${miles(otros.length - MAX)} más` : '') + ` · <a href="#" data-cuenta="${esc(g.cuenta_normalizada)}">verlos juntos en la lista</a></p>` : '';
-  return `<div class="sabe"><h3>Lo que se sabe de este expediente</h3><dl>${planilla || ''}${resolucion}${catastro}${padron}${inventario}</dl>${parcela}</div>`;
+  return `<div class="sabe"><h3>Qué dice cada fuente</h3><dl>${planilla || ''}${resolucion}${catastro}${padron}${inventarioRojo ? inventario.replace('<dd>', '<dd class="no-coincide">') : inventario}</dl>${parcela}</div>`;
 }
 /** "Datos completos" (lo que guardó el sistema, crudo) es para quien administra; sin usuarios, para quien tiene el archivo. */
 const veDatosCrudos = () => !YO || !!(YO.permisos || {}).administrar;
@@ -2906,6 +2970,7 @@ function pintarTabla(){
   const va = $('volverAntes'); if(va) va.addEventListener('click', e => { e.preventDefault(); if(g.desde && g.desde !== 'expedientes') ir(g.desde); else restaurarFiltros(); });
   // Lo que se baja es lo que se ve, y el botón lo dice.
   $('expCsv').textContent = `Bajar en Excel lo que estoy viendo (${miles(total)})`; $('expCsv').disabled = !total;
+  $('btnEmpezar').classList.toggle('oculto', !(enModoControl() && total && puedeRevisar()));
   const nAct = activos.length; $('btnFiltros').textContent = nAct ? `Filtros (${nAct})` : 'Filtros';
   $('vacio').classList.toggle('oculto', total > 0 || !registros.length);
   $('pagInfo').textContent = total ? `${miles(desde + 1)}–${miles(Math.min(desde + POR_PAG, total))} de ${miles(total)}` : '';
@@ -2949,47 +3014,151 @@ $('filas').addEventListener('click', e => {
   const vp = e.target.closest('[data-verpdf]');
   if(vp){ abrirVisor(vp.dataset); return; }
   const caja = e.target.closest('.revision');
-  if(caja){ if(e.target.classList.contains('rv-guardar')) guardarRevision(caja); return; }
+  if(caja){ const m = e.target.closest('.rv-modo'); if(m) elegirModo(caja, m.dataset.modo); else if(e.target.classList.contains('rv-guardar')) guardarRevision(caja); return; }
   const tr = e.target.closest('tr.fila'); if(!tr) return;
-  if(visorReg && registros[Number(tr.dataset.i)] && registros[Number(tr.dataset.i)].hash !== visorReg) cerrarVisor();
   const sig = tr.nextElementSibling; if(sig && sig.classList.contains('det')){ sig.remove(); return; }
-  document.querySelectorAll('tr.det').forEach(x => x.remove());
-  const r = registros[Number(tr.dataset.i)], d = r.derivado, e2 = r.extraido || {}, g = d.geo || {};
-  const rog = (e2.rogantes || []).map(x => { const dom = x.domicilio || {};
-    return [x.apellido_nombre || 'sin nombre legible', x.dni ? 'DNI ' + x.dni : 'sin DNI', x.estado_civil, [dom.calle, dom.numero, dom.localidad].filter(Boolean).join(' ')].filter(Boolean).map(esc).join(' · '); }).join('<br>');
-  const rev = d.revision || {};
-  if(deLaPlanilla(r)){ tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="6" class="detalle">${fichaPlanilla(r)}</td></tr>`); return; }
-  tr.insertAdjacentHTML('afterend', `<tr class="det"><td colspan="6" class="detalle"><p style="margin:0 0 10px;font-size:14px"><b class="${cl(d).startsWith('ELEGIBLE') ? 'c-v' : cl(d).startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(VEREDICTOS[cl(d)] || cl(d))}</b> · posee desde ${esc(fechaPosesion(d))} · ${config().regla === 'CORTE_FIJO' ? 'corte ' + esc((config().fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p>${fichaMapa(r)}<dl>
-    <dt>Rogantes</dt><dd>${rog || '—'}</dd>
-    <dt>Posesión</dt><dd>${esc(fechaPosesion(d))}${d.posee_desde ? ' — ' + esc(CRITERIOS[d.posesion_criterio] || (d.posesion_criterio ? String(d.posesion_criterio).replace(/_/g, ' ').toLowerCase() : 'sin decir cómo se fijó')) : ''}${e2.posesion && e2.posesion.texto_original ? `<br><span class="mini">dice: «${esc(e2.posesion.texto_original)}»</span>` : ''}</dd>
-    <dt>Inmueble</dt><dd>${esc([e2.inmueble && e2.inmueble.calle, e2.inmueble && e2.inmueble.numero, e2.inmueble && e2.inmueble.manzana && 'mz ' + e2.inmueble.manzana, e2.inmueble && e2.inmueble.superficie_texto].filter(Boolean).join(' · ') || '—')}</dd>
-    <dt>Matrículas</dt><dd>${esc([(d.matriculas || []).join(', ') || 'sin matrícula', d.titulares_registrales && 'titular ' + d.titulares_registrales, g.cuenta_normalizada ? 'cuenta ' + g.cuenta_normalizada : 'sin cuenta'].filter(Boolean).join(' · '))}</dd>
-    <dt>Señales</dt><dd>${esc((d.senales || []).filter(x => x !== 'SIN_PARCELA_CATASTRO' && x !== 'PARCELA_BALDIA').map(senal).join(' · ') || '—')}</dd>
-    <dt>Con dudas</dt><dd>${esc(motivosEnPalabras(r).join(' · ') || (d.revisar ? 'sí' : 'no'))}</dd>
-  </dl>
-  ${loQueSeSabe(r)}
-  ${SERVIDOR && !WEB ? `<div class="acciones" style="margin-top:12px"><a class="boton-ver" href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">Ver la resolución original</a><span class="mini">se abre el PDF tal como lo leyó el sistema, para controlarlo</span></div>` : ''}
-  ${WEB ? (r.pdf_web ? `<div class="acciones" style="margin-top:12px"><button class="boton-ver" data-verpdf="${esc(r.pdf_web)}" data-desde="${r.tomo ? Number(r.tomo.desde) || 0 : ''}" data-hasta="${r.tomo ? Number(r.tomo.hasta) || 0 : ''}" data-nombre="${esc(r.archivo || '')}" data-exp="${esc(d.expediente || '')}" data-reg="${esc(r.hash)}">Ver la resolución original</button><span class="mini">se abre al costado el PDF tal como lo leyó el sistema, para controlarlo</span></div>`
-    : `<p class="mini" style="margin:12px 0 0">El PDF de esta resolución todavía no está guardado en la web.${YO && YO.permisos && YO.permisos.cargar ? ' Subilo en "Cargar y cruzar", en el menú: si ya estaba leído, se guarda sin volver a leerlo y queda para verlo acá.' : ''}</p>`) : ''}
-  ${SERVIDOR && (!WEB || (YO && YO.permisos && YO.permisos.revisar)) ? `<div class="revision" data-id="${encodeURIComponent(r.hash)}">
-    <label class="tilde"><input type="checkbox" class="rv-ok" ${rev.revisado ? 'checked' : ''}> <b>Controlada a mano</b> contra el documento</label>
-    <div class="controles">
-      <div class="grupo"><label>Corregir el tipo</label><select class="rv-tipo">
-        <option value="">como lo leyó el sistema (${esc(TIPO_NOMBRE[d.tipo_documento] || 'sin tipo')})</option>
-        <option value="RESOLUCION_INSCRIPCION" ${rev.tipo_documento === 'RESOLUCION_INSCRIPCION' ? 'selected' : ''}>ordena la inscripción</option>
-        <option value="RESOLUCION_RECTIFICA" ${rev.tipo_documento === 'RESOLUCION_RECTIFICA' ? 'selected' : ''}>rectifica o amplía</option>
-        <option value="RESOLUCION_DESESTIMA" ${rev.tipo_documento === 'RESOLUCION_DESESTIMA' ? 'selected' : ''}>desestima</option>
-        <option value="RESOLUCION_CANCELA" ${rev.tipo_documento === 'RESOLUCION_CANCELA' ? 'selected' : ''}>cancela</option>
-        <option value="RESOLUCION_TRAMITE" ${rev.tipo_documento === 'RESOLUCION_TRAMITE' ? 'selected' : ''}>de trámite (aprueba, emplaza, suspende)</option>
-      </select></div>
-      <div class="grupo"><label>Corregir la fecha de posesión</label><input type="text" class="rv-fecha fecha" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" value="${esc(isoATexto(rev.posee_desde))}" style="width:130px"></div>
-      <div class="grupo"><label>Quién la controló</label><input type="text" class="rv-quien" value="${esc(rev.revisor || (WEB && YO ? YO.nombre || YO.usuario : ''))}" placeholder="nombre o iniciales" style="width:150px"></div>
-      <div class="grupo" style="flex:1;min-width:190px"><label>Observación</label><input type="text" class="rv-nota" value="${esc(rev.nota || '')}" placeholder="qué hubo que corregir"></div>
-      <button class="rv-guardar">Guardar revisión</button>
-    </div>
-    <span class="mini rv-estado">${rev.en ? (rev.revisado ? 'Controlada a mano el ' : 'Corrección guardada el ') + fechaHora(rev.en) + (rev.revisor ? ' por ' + esc(rev.revisor) : '') : 'Sin controlar'}</span>
-  </div>` : ''}${veDatosCrudos() ? `<details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ extraido: e2, derivado: d }, null, 1))}</pre></details>` : ''}</td></tr>`);
+  abrirFicha(tr);
 });
+// Al escribir la fecha o cambiar el tipo, el aviso dice antes de guardar si cambia el resultado (solo ese renglón: no se
+// redibuja nada más, así el foco y el cursor quedan donde estaban).
+// Va en el documento, después de la máscara de la fecha (mascaraFecha): así ve la fecha ya con sus barras.
+document.addEventListener('input', e => { const caja = e.target.closest && e.target.closest('#filas .revision'); if(caja && e.target.matches('.rv-fecha,.rv-tipo')) avisoControl(caja); });
+$('filas').addEventListener('change', e => { const caja = e.target.closest('.revision'); if(caja && e.target.matches('.rv-tipo')) avisoControl(caja); });
+
+/** La ficha abierta (la fila de detalle, debajo de la fila de su expediente) y su registro. */
+function fichaAbierta(){ return document.querySelector('#filas tr.det'); }
+function regDeHash(h){ return registros.find(x => x.hash === h) || null; }
+/** ¿Puede controlar contra el documento? En la web, quien tiene el permiso; en el kit, con usuarios, también; sin usuarios, sí. */
+function puedeRevisar(){ return SERVIDOR && (WEB ? !!(YO && YO.permisos && YO.permisos.revisar) : !YO || !YO.permisos || !!YO.permisos.revisar); }
+/** Se entró desde "Controlar" (la lista filtrada por ese paso): el botón es "Guardar y siguiente". */
+function enModoControl(){ return F.paso === 'PASO_CONTROLAR'; }
+/** La posición en la lista de "Controlar": "3 de 75" y el que sigue. */
+function lugarEnControl(r){
+  const lista = ordenar(vista), i = lista.indexOf(r);
+  return { n: i + 1, de: lista.length, sig: i >= 0 ? lista[i + 1] || null : null };
+}
+/** Abre la ficha debajo de su fila (cierra la que hubiera). Si el PDF abierto es de otro expediente, lo cierra. */
+function abrirFicha(tr){
+  const r = registros[Number(tr.dataset.i)]; if(!r) return null;
+  if(visorReg && r.hash !== visorReg) cerrarVisor();
+  document.querySelectorAll('#filas tr.det').forEach(x => x.remove());
+  tr.insertAdjacentHTML('afterend', `<tr class="det" data-hash="${esc(r.hash)}"><td colspan="6" class="detalle">${fichaHTML(r)}</td></tr>`);
+  const det = tr.nextElementSibling, caja = det.querySelector('.revision'); if(caja) avisoControl(caja);
+  pintarBarraControl();
+  return det;
+}
+/** Abre la ficha de un expediente que está en la página de la lista que se ve; si no está, no hace nada. */
+function abrirFichaDe(hash){
+  const i = registros.findIndex(x => x.hash === hash), tr = i >= 0 && document.querySelector(`#filas tr.fila[data-i="${i}"]`);
+  return tr ? abrirFicha(tr) : null;
+}
+/**
+ * La ficha de un expediente, leído o estimado con la planilla: arriba el resultado con su marca de certeza, la escalera
+ * y la fecha que manda; después "Qué dice cada fuente" (cinco renglones fijos) y los de la misma parcela; al pie, el PDF
+ * y el control contra el documento (solo quien puede controlar, y solo lo leído: lo estimado no tiene nada que controlar).
+ */
+function fichaHTML(r){
+  const d = r.derivado, est = deLaPlanilla(r);
+  const pdf = est ? '' : SERVIDOR && !WEB ? `<div class="acciones" style="margin-top:12px"><a class="boton-ver" href="/api/documento?id=${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">Ver la resolución original</a><span class="mini">se abre el PDF tal como lo leyó el sistema, para controlarlo</span></div>`
+    : WEB ? (r.pdf_web ? `<div class="acciones" style="margin-top:12px"><button class="boton-ver" data-verpdf="${esc(r.pdf_web)}" data-desde="${r.tomo ? Number(r.tomo.desde) || 0 : ''}" data-hasta="${r.tomo ? Number(r.tomo.hasta) || 0 : ''}" data-nombre="${esc(r.archivo || '')}" data-exp="${esc(d.expediente || '')}" data-reg="${esc(r.hash)}">Ver la resolución original</button><span class="mini">el PDF ocupa el lugar de la lista y esta ficha queda al costado, para controlarlo</span></div>`
+      : `<p class="mini" style="margin:12px 0 0">El PDF de esta resolución todavía no está guardado en la web.${puedeCargar() ? ' Subilo en "Cargar y cruzar", en el menú: si ya estaba leído, se guarda sin volver a leerlo y queda para verlo acá.' : ''}</p>`) : '';
+  return cabFicha(r) + loQueSeSabe(r) + pdf + (!est && puedeRevisar() ? controlHTML(r) : '');
+}
+/** Arriba de la ficha: quién, el resultado con su marca, la escalera, la fecha que manda, el próximo paso y el mapa. */
+function cabFicha(r){
+  const d = r.derivado, est = deLaPlanilla(r), c = cl(d), k = certeza(r), g = d.geo || {}, rev = d.revision || {}, p = proximoPaso(r);
+  const nombre = d.rogante_principal || ((r.extraido || {}).rogantes || [])[0] && r.extraido.rogantes[0].apellido_nombre || '';
+  const como = est ? 'con la planilla de trámites, sin la resolución leída' : k === 'controlado' ? (rev.revisado ? 'según la resolución leída, controlada a mano' : 'según la resolución leída, controlada con IA') : 'según la resolución leída';
+  const lugar = [loc(d) !== '(SIN LOCALIDAD)' ? loc(d) : null, g.dep_nombre, g.cuenta_normalizada ? 'cuenta ' + g.cuenta_normalizada : 'sin cuenta'].filter(Boolean).join(' · ');
+  const ctrl = enModoControl() && !est && puedeRevisar() ? lugarEnControl(r) : null;
+  return `<div class="ficha-cab">
+    ${ctrl && ctrl.n ? `<p class="mini pos-control"><b>${miles(ctrl.n)} de ${miles(ctrl.de)}</b> · Controlar contra el PDF${ctrl.sig ? ' · siguiente: ' + esc(ctrl.sig.derivado.expediente || 'sin número') : ' · es la última'}</p>` : ''}
+    <h3>${esc(d.expediente || 'Sin número de expediente')}${nombre ? ' · ' + esc(nombre) : ''}${d.cantidad_rogantes > 1 ? ` <span class="mini">y ${miles(d.cantidad_rogantes - 1)} más</span>` : ''}</h3>
+    <div class="linea-res">${tagDe(c, est, k === 'controlado')}<span>${como}</span></div>
+    ${escalera(r)}
+    <p>${fechaQueManda(r)}</p>
+    <p class="mini">${esc(lugar)} · Próximo paso: <b>${esc(PASO_FICHA[p][puedeCargar() ? 0 : 1])}</b></p>
+    ${fichaMapa(r)}
+  </div>`;
+}
+/** El próximo paso de un solo expediente, para quien lo hace y, sin tono de orden, para quien consulta. */
+const PASO_FICHA = { PDF: ['Conseguir el PDF de la resolución', 'Falta el PDF de la resolución'], LEER: ['Leerla con IA o a mano', 'Falta leerla'],
+  CONTROLAR: ['Controlarla contra el PDF', 'Falta controlarla contra el documento'], PADRON: ['Confirmar en el Padrón a mano', 'Falta confirmar el Padrón'], NADA: ['Sin pendientes', 'Sin pendientes'] };
+/** La escalera Estimado → Leído → Controlado. Sin planilla cargada (y en el kit) no hay estimación: empieza en Leído. */
+function escalera(r){
+  const d = r.derivado, est = deLaPlanilla(r), k = certeza(r), rev = d.revision || {};
+  const paso = (t, cls, nota) => `<span class="esc ${cls}">${t}${nota ? ': ' + nota : cls === 'hecho' || cls === 'est' ? ' ✓' : ''}</span>`;
+  const pasos = [];
+  if(hayPlanilla()) pasos.push(est || r.planilla_estimaba ? paso('Estimado', 'est') : paso('Estimado', '', r.en_planilla ? 'la planilla no traía con qué' : 'no figura en la planilla'));
+  pasos.push(est ? paso('Leído', '', r.leida_aparte ? 'el PDF cargado no dice la posesión' : 'falta') : r.fuente === 'texto_incompleto' ? paso('Leído', '', 'falta (el texto del PDF no alcanzó)')
+    : paso(r.fuente === 'modelo' ? 'Leído con IA' : 'Leído por texto', 'hecho'));
+  pasos.push(est ? paso('Controlado', '', 'falta') : k === 'controlado' ? paso(rev.revisado ? 'Controlado a mano' : 'Controlado con IA', 'hecho') : rev.dudas ? paso('Controlado', 'duda', 'con dudas') : paso('Controlado', '', 'falta'));
+  return `<div class="escalera" aria-label="Certeza">${pasos.join('<span aria-hidden="true">→</span>')}</div>`;
+}
+/** La fecha que manda el resultado y de dónde sale: de la resolución, corregida a mano, o estimada con la planilla. */
+function fechaQueManda(r){
+  const d = r.derivado, est = deLaPlanilla(r), cfg = config(), rev = d.revision || {}, pl = r.planilla || {};
+  const corte = cfg.regla === 'CORTE_FIJO' ? 'corte ' + esc(isoATexto(cfg.fechaCorte)) : 'diez años de posesión al día de hoy';
+  const res = [d.resolucion_numero ? 'Resolución N° ' + d.resolucion_numero : 'la resolución', d.resolucion_fecha ? 'del ' + isoATexto(d.resolucion_fecha) : ''].filter(Boolean).join(' ');
+  if(!d.posee_desde) return `<b>Fecha que manda:</b> ninguna todavía: ${esc(est ? d.sin_estimar || 'la planilla no trae con qué estimarla' : r.fuente === 'texto_incompleto' ? 'falta leer la resolución' : 'la resolución leída no dice desde cuándo posee')} · ${corte}`;
+  const de = est ? `estimada con la planilla de trámites (ingresó el ${isoATexto(pl.fecha_ingreso) || '—'} declarando ${pl.antiguedad == null ? '—' : String(pl.antiguedad).replace('.', ',')} años)`
+    : rev.posee_desde ? `corregida a mano${rev.revisor ? ' por ' + rev.revisor : ''} mirando ${res}`
+    : `de ${res}, ${r.fuente === 'modelo' ? 'leída con IA' : 'leída por texto'}`;
+  return `<b>Fecha que manda:</b> posee desde ${esc(fechaPosesion(d))}${est ? ' (estimado)' : ''}, ${esc(de)} · ${corte}`;
+}
+/**
+ * El control contra el documento, al pie de la ficha: Coincide · Corregir la fecha (dd/mm/aaaa, con el tipo) · Con
+ * dudas, y la observación, obligatoria si cambia el resultado o si hay dudas. Firma quien ingresó: no se escribe.
+ */
+function controlHTML(r){
+  const d = r.derivado, rev = d.revision || {};
+  const modo = rev.posee_desde || rev.tipo_documento ? 'corregir' : rev.revisado ? 'ok' : rev.dudas ? 'dudas' : '';
+  const b = (m, t) => `<button type="button" class="rv-modo" data-modo="${m}" aria-pressed="${modo === m}">${t}</button>`;
+  const tipos = [['RESOLUCION_INSCRIPCION', 'ordena la inscripción'], ['RESOLUCION_RECTIFICA', 'rectifica o amplía'], ['RESOLUCION_DESESTIMA', 'desestima'], ['RESOLUCION_CANCELA', 'cancela'], ['RESOLUCION_TRAMITE', 'de trámite (aprueba, emplaza, suspende)']];
+  const quien = YO ? `Lo controla ${esc(YO.nombre || YO.usuario)} (el usuario con que ingresaste).` : '';
+  const estado = rev.en ? (rev.revisado ? 'Controlada a mano el ' : rev.dudas ? 'Marcada con dudas el ' : 'Corrección guardada el ') + fechaHora(rev.en) + (rev.revisor ? ' por ' + esc(rev.revisor) : '') : 'Sin controlar';
+  return `<div class="revision" data-id="${encodeURIComponent(r.hash)}" data-modo="${modo}">
+    <div class="rv-modos" role="group" aria-label="Qué dice el PDF">${b('ok', 'Coincide')}${b('corregir', 'Corregir la fecha')}${b('dudas', 'Con dudas')}</div>
+    <div class="controles">
+      <div class="grupo rv-solo-corregir"><label>Posee desde (dd/mm/aaaa)</label><input type="text" class="rv-fecha fecha" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" value="${esc(isoATexto(rev.posee_desde))}" style="width:130px"></div>
+      <div class="grupo rv-solo-corregir"><label>Tipo de resolución</label><select class="rv-tipo" style="width:190px;max-width:100%"><option value="">como se leyó: ${esc(TIPO_NOMBRE[d.tipo_documento] || 'sin tipo')}</option>${tipos.map(([v, t]) => `<option value="${v}"${rev.tipo_documento === v ? ' selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="grupo" style="flex:1;min-width:190px"><label>Observación (obligatoria si cambia el resultado o hay dudas)</label><input type="text" class="rv-nota" value="${esc(rev.nota || '')}" placeholder="qué dice el PDF o qué hubo que corregir"></div>
+    </div>
+    <p class="rv-aviso" role="status"></p>
+    <div class="rv-pie"><span class="mini">${quien ? quien + ' ' : ''}<span class="rv-estado">${estado}</span></span><button class="rv-guardar">${enModoControl() ? 'Guardar y siguiente' : 'Guardar'}</button></div>
+  </div>`;
+}
+/** Elegir Coincide, Corregir la fecha o Con dudas. Corregir muestra la fecha y el tipo, y lleva el foco a la fecha. */
+function ponerModo(caja, modo){
+  caja.dataset.modo = modo;
+  caja.querySelectorAll('.rv-modo').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.modo === modo)));
+  avisoControl(caja);
+}
+function elegirModo(caja, modo){
+  ponerModo(caja, modo);
+  const f = caja.querySelector(modo === 'corregir' ? '.rv-fecha' : '.rv-nota'); if(f && modo !== 'ok') try{ f.focus(); }catch(e){}
+}
+/**
+ * Lo que va a pasar al guardar: con la fecha (y el tipo) que se escribió, ¿cambia el resultado? Devuelve la clase nueva,
+ * o null si no cambia nada (Coincide y Con dudas no tocan la fecha) o la fecha está a medio escribir.
+ */
+function resultadoNuevo(caja){
+  const r = regDeHash(decodeURIComponent(caja.dataset.id)); if(!r || caja.dataset.modo !== 'corregir') return null;
+  const t = caja.querySelector('.rv-fecha').value.trim(), iso = t.length === 10 ? textoAIso(t) : '', tipo = caja.querySelector('.rv-tipo').value;
+  if(iso === null || (!iso && !tipo)) return null;
+  const x = Object.assign({}, r.derivado);
+  if(tipo) x.tipo_documento = tipo;
+  if(iso){ x.posee_desde = iso; x.elegibilidad = P.evaluarElegibilidad(P.parseFecha(iso), config()); }
+  return P.clasificar(x);
+}
+/** El aviso del control: si cambia el resultado, lo dice antes de guardar. Solo toca su propio renglón. */
+function avisoControl(caja){
+  const r = regDeHash(decodeURIComponent(caja.dataset.id)), av = caja.querySelector('.rv-aviso'); if(!r || !av) return;
+  const antes = cl(r.derivado), k = resultadoNuevo(caja);
+  const t = k && k !== antes ? `Con ${caja.querySelector('.rv-tipo').value && !caja.querySelector('.rv-fecha').value.trim() ? 'este tipo' : 'esta fecha'} pasa a ${VEREDICTOS[k] || nombreClase(k)} (hoy: ${nombreClase(antes)}). Escribí en la observación por qué.`
+    : caja.dataset.modo === 'dudas' ? 'Queda sin controlar, con tu observación, para que la mire quien decide.' : '';
+  if(av.textContent !== t) av.textContent = t;
+}
 
 /**
  * Por qué un expediente no está en el mapa, en palabras: sin cuenta, Catastro no encontró la parcela, todavía no se
@@ -3005,7 +3174,8 @@ function porQueNoEnMapa(r){
 /** "Ver en el mapa" en la ficha; si no se puede, por qué, y "Ubicar en Catastro" a quien puede cargar (si hay cuenta). */
 function fichaMapa(r){
   if(enElMapa(r)) return `<div class="acciones" style="margin:0 0 10px"><button class="sec" data-ver-mapa="${esc(r.hash)}">Ver en el mapa</button></div>`;
-  const g = r.derivado.geo || {}, ubicar = SERVIDOR && puedeCargar() && g.cuenta_normalizada && !(g.catastro && g.catastro.encontrada);
+  // Sin consultar, el botón va en el renglón Catastro de la ficha: acá solo para volver a probar lo que no encontró.
+  const g = r.derivado.geo || {}, ubicar = SERVIDOR && puedeCargar() && g.cuenta_normalizada && g.catastro && g.catastro.encontrada === false;
   return `<p class="sin-mapa mini">No está en el mapa: ${esc(porQueNoEnMapa(r))}.${ubicar ? ' <button class="sec" data-ubicar="1">Ubicar en Catastro</button>' : ''}</p>`;
 }
 /**
@@ -3029,19 +3199,6 @@ function verEnMapa(hash){
 }
 document.addEventListener('click', e => { const a = e.target.closest('[data-ver-mapa]'); if(!a) return; e.preventDefault(); verEnMapa(a.dataset.verMapa); });
 document.addEventListener('click', e => { const a = e.target.closest('[data-ubicar]'); if(!a) return; e.preventDefault(); const b = $('btnCatastro'); if(b && !b.disabled){ a.disabled = true; b.click(); } });
-/**
- * La ficha de un expediente estimado con la planilla de la UEST: quién lo inició, dónde está y, abajo, lo que se sabe de
- * él (qué se declaró al iniciar el trámite, qué falta para confirmarlo, Catastro, el Padrón y el inventario).
- */
-function fichaPlanilla(r){
-  const d = r.derivado, g = d.geo || {}, cfg = config(), k = cl(d);
-  return `<p style="margin:0 0 10px;font-size:14px"><b class="${k.startsWith('ELEGIBLE') ? 'c-v' : k.startsWith('NO_ELEGIBLE') ? 'c-g' : 'c-r'}">${esc(conEstimado(VEREDICTOS[k] || k, true))}</b> · con la planilla de la UEST, sin la resolución leída · ${cfg.regla === 'CORTE_FIJO' ? 'corte ' + esc((cfg.fechaCorte || '2006-01-01').split('-').reverse().join('/')) : 'plazo móvil de 10 años'}</p>${fichaMapa(r)}<dl>
-    <dt>Iniciador</dt><dd>${esc(d.rogante_principal || '—')}${d.dni_principal ? ' · DNI ' + esc(d.dni_principal) : ''}</dd>
-    <dt>Inmueble</dt><dd>${esc([g.localidad, g.calle, g.ped_nombre && 'pedanía ' + g.ped_nombre, g.cuenta_normalizada ? 'cuenta ' + g.cuenta_normalizada : 'sin cuenta'].filter(Boolean).join(' · '))}</dd>
-  </dl>
-  ${loQueSeSabe(r)}
-  ${veDatosCrudos() ? `<details><summary>Datos completos</summary><pre>${esc(JSON.stringify({ planilla: r.planilla || {}, derivado: d }, null, 1))}</pre></details>` : ''}`;
-}
 /**
  * Abre Expedientes con exactamente estos filtros ("ELEGIBLE+ESTIMADA", "LEIDA+INSC:TRABADA", "SIN_UBICAR"…), sin
  * arrastrar los que había. La bajada de Expedientes los nombra, con "ver todas".
@@ -3183,8 +3340,8 @@ async function abrirVisor(ds){
   $('visor').classList.remove('oculto'); document.body.classList.add('con-visor');
   $('visorTitulo').textContent = ds.exp ? 'Expediente ' + ds.exp : (ds.nombre || 'Resolución original');
   $('visorSub').textContent = 'trayendo el PDF y descifrándolo…'; $('visorPaginas').innerHTML = '';
-  const ficha = document.querySelector('#filas tr.det'), caja = ficha && (ficha.querySelector('.revision') || ficha);
-  if(caja) try{ caja.scrollIntoView({ block: 'nearest' }); }catch(e){}
+  // El visor ocupa el lugar de la lista y la ficha queda al costado: se sube hasta el principio de la pantalla.
+  pintarBarraControl(); try{ $('v-lista').scrollIntoView({ block: 'start' }); }catch(e){}
   const archivo = ds.exp && ds.nombre ? ds.nombre.replace(/#.*$/, '') + ' · ' : '';
   try{
     const r = await api('/api/web/pdf?h=' + encodeURIComponent(ds.verpdf));
@@ -3207,36 +3364,69 @@ async function abrirVisor(ds){
     } finally { await doc.destroy(); }
   }catch(err){ if(yo === visorTarea) $('visorSub').textContent = 'No se pudo abrir: ' + err.message; }
 }
-function cerrarVisor(){ visorTarea++; visorReg = null; $('visor').classList.add('oculto'); document.body.classList.remove('con-visor'); $('visorPaginas').innerHTML = ''; }
+/** Cierra el PDF: vuelve la lista, con la ficha abierta donde estaba. */
+function cerrarVisor(){
+  visorTarea++; visorReg = null; $('visor').classList.add('oculto'); document.body.classList.remove('con-visor'); $('visorPaginas').innerHTML = '';
+  const det = fichaAbierta(); if(det) try{ det.previousElementSibling.scrollIntoView({ block: 'start' }); }catch(e){}
+}
 $('visorCerrar').addEventListener('click', cerrarVisor);
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('visor').classList.contains('oculto')) cerrarVisor(); });
+/** Abre el PDF del expediente de la ficha abierta, si está guardado en la web (para "Empezar a controlar" y "Guardar y siguiente"). */
+function abrirPdfDeFicha(){ const b = document.querySelector('#filas tr.det [data-verpdf]'); if(b) abrirVisor(b.dataset); else if(!$('visor').classList.contains('oculto')) cerrarVisor(); }
+/**
+ * La barra de arriba mientras se mira el PDF (en lugar de la de filtros): en qué expediente se está, y desde "Controlar",
+ * "3 de 75 · siguiente: …". "Volver a la lista" cierra el PDF; lo guardado no se pierde.
+ */
+function pintarBarraControl(){
+  const det = fichaAbierta(), r = det && regDeHash(det.dataset.hash);
+  const ctrl = r && enModoControl() && !deLaPlanilla(r) ? lugarEnControl(r) : null;
+  $('barraControl').innerHTML = !r ? '' : `<span>${ctrl && ctrl.n ? `<b>${miles(ctrl.n)} de ${miles(ctrl.de)}</b> · Controlar contra el PDF${ctrl.sig ? ' · siguiente: ' + esc(ctrl.sig.derivado.expediente || 'sin número') : ' · es la última'}` : `<b>${esc(r.derivado.expediente || 'Sin número')}</b> · la resolución en PDF, al lado de su ficha`}</span>
+    <button class="sec" id="btnSalirControl">Volver a la lista (lo guardado no se pierde)</button>`;
+  const b = $('btnSalirControl'); if(b) b.addEventListener('click', cerrarVisor);
+}
+/** "Empezar a controlar": abre la primera de la lista de "Controlar" con su PDF al lado. Al guardar, pasa a la siguiente. */
+$('btnEmpezar').addEventListener('click', () => { pagina = 0; pintarTabla(); const tr = document.querySelector('#filas tr.fila'); if(!tr) return; abrirFicha(tr); abrirPdfDeFicha(); if($('visor').classList.contains('oculto')) try{ tr.scrollIntoView({ block: 'start' }); }catch(e){} });
 
-/** Guarda la revisión manual de una resolución: tilde, corrección de fecha, quién y observación. */
+/**
+ * Guarda el control de una resolución: Coincide, la fecha (y el tipo) corregidos, o Con dudas, con la observación.
+ * Firma quien ingresó (lo pone el servidor). Se recalcula una sola vez (cargarDesdeServidor) y siempre se avisa cómo
+ * quedó, aunque ya no aparezca en la lista. Desde "Controlar", abre la siguiente (con su PDF, si se estaba mirando).
+ */
 async function guardarRevision(caja){
-  const btn = caja.querySelector('.rv-guardar'), est = caja.querySelector('.rv-estado');
-  // La fecha se escribe dd/mm/aaaa y se guarda aaaa-mm-dd; vacía, queda la que leyó el sistema.
-  const txtFecha = caja.querySelector('.rv-fecha').value.trim(), fecha = txtFecha ? textoAIso(txtFecha) : '';
-  if(fecha === null){ est.textContent = 'No se pudo guardar: la fecha de posesión va con día, mes y año (dd/mm/aaaa), o vacía para dejar la que leyó el sistema.'; caja.querySelector('.rv-fecha').focus(); return; }
+  const btn = caja.querySelector('.rv-guardar'), est = caja.querySelector('.rv-estado'), modo = caja.dataset.modo || '';
+  const id = decodeURIComponent(caja.dataset.id), r0 = regDeHash(id), rev0 = (r0 && r0.derivado.revision) || {};
+  const nota = caja.querySelector('.rv-nota').value.trim();
+  const decir = (t, foco) => { est.textContent = t; const f = foco && caja.querySelector(foco); if(f) try{ f.focus(); }catch(e){} };
+  if(!modo) return decir('Elegí qué dice el PDF: Coincide, Corregir la fecha o Con dudas.');
+  // La fecha se escribe dd/mm/aaaa y se guarda aaaa-mm-dd. Coincide y Con dudas dejan la corrección que ya hubiera.
+  const txtFecha = modo === 'corregir' ? caja.querySelector('.rv-fecha').value.trim() : '', fecha = txtFecha ? textoAIso(txtFecha) : '';
+  if(fecha === null) return decir('No se pudo guardar: la fecha de posesión va con día, mes y año (dd/mm/aaaa), o vacía para dejar la que leyó el sistema.', '.rv-fecha');
+  const tipo = modo === 'corregir' ? caja.querySelector('.rv-tipo').value : rev0.tipo_documento || '';
+  if(modo === 'corregir' && !fecha && !tipo) return decir('Escribí la fecha que dice el PDF (dd/mm/aaaa) o elegí el tipo de resolución.', '.rv-fecha');
+  const k = resultadoNuevo(caja);
+  if(k && r0 && k !== cl(r0.derivado) && !nota) return decir(`Falta la observación: con esta corrección pasa a ${VEREDICTOS[k] || nombreClase(k)}. Escribí por qué.`, '.rv-nota');
+  if(modo === 'dudas' && !nota) return decir('Falta la observación: escribí cuál es la duda.', '.rv-nota');
+  // Desde "Controlar": cuál sigue, antes de recargar (al quedar controlada, esta sale de la lista).
+  const control = enModoControl() && btn.textContent === 'Guardar y siguiente', sig = control && r0 ? lugarEnControl(r0).sig : null;
+  const conPdf = !$('visor').classList.contains('oculto');
   btn.disabled = true; est.textContent = 'guardando…';
   try{
-    const r = await api('/api/revision', { method: 'POST', body: JSON.stringify({
-      id: decodeURIComponent(caja.dataset.id),
-      revisado: caja.querySelector('.rv-ok').checked,
-      posee_desde: fecha,
-      tipo_documento: caja.querySelector('.rv-tipo').value,
-      revisor: caja.querySelector('.rv-quien').value,
-      nota: caja.querySelector('.rv-nota').value,
-    }) });
-    const texto = 'Guardada · queda como ' + nombreClase(r.clasificacion);
-    est.textContent = texto;
-    await cargarDesdeServidor();
-    // Al recargar se redibuja la tabla: se vuelve a abrir la misma ficha para seguir trabajando sobre ella.
-    const id = decodeURIComponent(caja.dataset.id), i = registros.findIndex(x => x.hash === id);
-    const tr = i >= 0 && document.querySelector(`#filas tr.fila[data-i="${i}"]`);
-    if(tr){ tr.click(); const est2 = document.querySelector('tr.det .rv-estado'); if(est2) est2.textContent = texto; }
+    await api('/api/revision', { method: 'POST', body: JSON.stringify({ id, revisado: modo !== 'dudas', dudas: modo === 'dudas',
+      posee_desde: modo === 'corregir' ? fecha : rev0.posee_desde || '', tipo_documento: tipo, nota }) });
+  }catch(err){ est.textContent = 'No se pudo guardar: ' + err.message; btn.disabled = false; return; }
+  await cargarDesdeServidor(false, true);
+  const r1 = regDeHash(id), exp = r1 && r1.derivado.expediente || (r0 && r0.derivado.expediente) || 'la resolución';
+  const texto = 'Guardada · queda como ' + (r1 ? nombreClase(cl(r1.derivado)) : '—') + (modo === 'dudas' ? ', con dudas' : ', controlada');
+  if(control && sig && abrirFichaDe(sig.hash)){
+    if(conPdf) abrirPdfDeFicha(); else { const f = fichaAbierta(); if(f) try{ f.previousElementSibling.scrollIntoView({ block: 'start' }); }catch(e){} }
+    avisar(`${texto.replace('Guardada', 'Guardada ' + exp)}. Sigue ${sig.derivado.expediente || 'la siguiente'}.`);
     return;
-  }catch(err){ est.textContent = 'No se pudo guardar: ' + err.message; }
-  btn.disabled = false;
+  }
+  // La misma ficha queda abierta (si sigue en la lista) con lo guardado; si salió de la lista, el aviso lleva a ella.
+  const det = abrirFichaDe(id);
+  if(det){ const e2 = det.querySelector('.rv-estado'); if(e2) e2.textContent = texto; if(conPdf) abrirPdfDeFicha(); }
+  else if(conPdf) cerrarVisor();
+  avisar(`${texto.replace('Guardada', 'Guardada ' + exp)}${det ? '' : ': ya no aparece en esta lista.'}${control && !sig ? ' Era la última de la lista de "Controlar".' : ''}`, false, det ? '' : ` <a href="#" data-abrir="${esc(id)}">Abrirla</a>`);
 }
 /**
  * "Por lugar", al costado del mapa: cuántos hay en cada lugar con los filtros puestos, con la parte estimada rayada y
@@ -3555,9 +3745,12 @@ $('expKml').addEventListener('click', () => {
 });
 function descargar(contenido, nombre, tipo){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([contenido], { type: tipo })); a.download = nombre; a.click(); URL.revokeObjectURL(a.href); }
 /** Un aviso arriba de la pantalla, se esté donde se esté. Lo que salió bien se va solo; un error queda hasta cerrarlo. */
-function avisar(t, err){
-  $('aviso').innerHTML = `<div class="msg ${err ? 'err' : ''}" role="${err ? 'alert' : 'status'}"><span>${esc(t)}</span>${err ? '<button class="cerrar-aviso" title="Cerrar el aviso" aria-label="Cerrar el aviso">×</button>' : ''}</div>`;
-  if(!err) setTimeout(() => { const m = $('aviso').querySelector('.msg span'); if(m && m.textContent === t) $('aviso').innerHTML = ''; }, 9000);
+/** Un aviso arriba, que se va solo a los 9 segundos (los errores quedan hasta cerrarlos). extra: HTML armado acá (un enlace), nunca datos sin esc(). */
+let avisoN = 0;
+function avisar(t, err, extra){
+  const n = ++avisoN;
+  $('aviso').innerHTML = `<div class="msg ${err ? 'err' : ''}" role="${err ? 'alert' : 'status'}" data-n="${n}"><span>${esc(t)}${extra || ''}</span>${err ? '<button class="cerrar-aviso" title="Cerrar el aviso" aria-label="Cerrar el aviso">×</button>' : ''}</div>`;
+  if(!err) setTimeout(() => { if($('aviso').querySelector(`.msg[data-n="${n}"]`)) $('aviso').innerHTML = ''; }, 9000);
 }
 $('aviso').addEventListener('click', e => { if(e.target.closest('.cerrar-aviso')) $('aviso').innerHTML = ''; });
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
